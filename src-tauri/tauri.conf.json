@@ -2,6 +2,11 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "worklog",
   "version": "0.1.0",
+  "plugins": {
+    "fs": {
+      "requireLiteralLeadingDot": false
+    }
+  },
   "identifier": "com.regisx001.worklog",
   "build": {
     "beforeDevCommand": "bun run dev",
