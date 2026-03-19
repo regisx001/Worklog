@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worklog — CINDER</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+       CINDER DESIGN TOKENS — Three-tier system
+       ============================================================ */
+
+        :root {
+            /* — Primitive Tokens — */
+            --raw-111: #111111;
+            --raw-1a1: #1A1A1A;
+            --raw-222: #222222;
+            --raw-333: #333333;
+            --raw-444: #444444;
+            --raw-555: #555555;
+            --raw-777: #777777;
+            --raw-eee: #EEEEEE;
+            --raw-lime: #A8FF3E;
+            --raw-lime-dim: #1E2E0A;
+            --raw-amber: #FFB800;
+            --raw-red: #FF3E3E;
+            --raw-cyan: #3EFFEF;
+
+            /* — Semantic Tokens — */
+            --bg-concrete: var(--raw-111);
+            --bg-slab: var(--raw-1a1);
+            --bg-stencil: var(--raw-222);
+            --border-raw: var(--raw-333);
+            --border-chalk: var(--raw-555);
+            --text-chalk: var(--raw-eee);
+            --text-dust: var(--raw-777);
+            --text-ash: var(--raw-444);
+            --accent-lime: var(--raw-lime);
+            --accent-dim: var(--raw-lime-dim);
+            --status-ok: var(--raw-lime);
+            --status-warn: var(--raw-amber);
+            --status-error: var(--raw-red);
+            --status-info: var(--raw-cyan);
+
+            /* — Spacing Scale (8px base) — */
+            --sp-half: 4px;
+            --sp-1: 8px;
+            --sp-2: 16px;
+            --sp-3: 24px;
+            --sp-4: 32px;
+            --sp-6: 48px;
+            --sp-8: 64px;
+
+            /* — Typography — */
+            --font: 'Space Mono', 'Courier New', monospace;
+            --t-2xs: 10px;
+            --t-xs: 11px;
+            --t-sm: 13px;
+            --t-base: 14px;
+            --t-lg: 16px;
+            --t-xl: 20px;
+            --t-2xl: 24px;
+
+            /* — Component Tokens — */
+            --sidebar-w: 220px;
+            --detail-w: 340px;
+            --statusbar-h: 32px;
+
+            /* — Motion: ZERO — */
+            --dur: 0ms;
+        }
+
+        /* ============================================================
+       RESET & BASE
+       ============================================================ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            border-radius: 0 !important;
+            /* CINDER: zero radius universally */
+            transition: none !important;
+            /* CINDER: zero motion */
+            animation: none !important;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-concrete);
+            color: var(--text-chalk);
+            font-family: var(--font);
+            font-size: var(--t-sm);
+            line-height: 1.5;
+            letter-spacing: 0;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        input,
+        textarea,
+        select {
+            cursor: text;
+            font-family: var(--font);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-concrete);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-raw);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-chalk);
+        }
+
+        /* Focus ring — CINDER spec: flush 2px lime, no offset */
+        :focus-visible {
+            outline: 2px solid var(--accent-lime);
+            outline-offset: 0;
+        }
+
+        /* ============================================================
+       SKIP NAV (Accessibility)
+       ============================================================ */
+        .skip-nav {
+            position: absolute;
+            top: -100%;
+            left: 0;
+            padding: var(--sp-1) var(--sp-2);
+            background: var(--accent-lime);
+            color: var(--bg-concrete);
+            font-size: var(--t-sm);
+            font-weight: 700;
+            text-decoration: none;
+            z-index: 9999;
+        }
+
+        .skip-nav:focus {
+            top: 0;
+        }
+
+        /* ============================================================
+       APP SHELL
+       ============================================================ */
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-width: 900px;
+        }
+
+        #main-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+       SIDEBAR — Component Tokens
+       ============================================================ */
+        #sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-concrete);
+            border-right: 1px solid var(--border-raw);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #sidebar.collapsed {
+            width: 0;
+            border-right: none;
+        }
+
+        .sb-label {
+            padding: var(--sp-2) var(--sp-2) var(--sp-1);
+            font-size: var(--t-xs);
+            font-weight: 700;
+            color: var(--border-chalk);
+            /* CINDER signature: // comment syntax for section labels */
+            white-space: nowrap;
+        }
+
+        .sb-item {
+            height: 32px;
+            display: flex;
+            align-items: center;
+            padding: 0 var(--sp-2);
+            font-size: var(--t-sm);
+            color: var(--text-dust);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .sb-item:hover {
+            background: var(--bg-slab);
+            color: var(--text-chalk);
+        }
+
+        .sb-item.active {
+            color: var(--text-chalk);
+        }
+
+        .sb-item.active .sb-prompt {
+            color: var(--accent-lime);
+        }
+
+        .sb-prompt {
+            color: var(--text-dust);
+            margin-right: 0;
+        }
+
+        .sb-footer {
+            margin-top: auto;
+            padding: var(--sp-1) var(--sp-2);
+            border-top: 1px solid var(--border-raw);
+        }
+
+        .sb-footer-text {
+            font-size: var(--t-2xs);
+            color: var(--text-ash);
+            line-height: 1.8;
+        }
+
+        /* ============================================================
+       KANBAN BOARD
+       ============================================================ */
+        #board {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: var(--bg-concrete);
+        }
+
+        .k-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-raw);
+            overflow: hidden;
+        }
+
+        .k-col:last-child {
+            border-right: none;
+        }
+
+        .k-col-header {
+            padding: var(--sp-2) var(--sp-2) var(--sp-1);
+            border-bottom: 1px solid var(--border-raw);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: var(--bg-concrete);
+        }
+
+        .k-col-title {
+            font-size: var(--t-xs);
+            font-weight: 700;
+            color: var(--text-dust);
+            text-transform: uppercase;
+        }
+
+        /* Column accent colors */
+        .col-todo .k-col-title {
+            color: var(--text-dust);
+        }
+
+        .col-inprog .k-col-title {
+            color: var(--status-info);
+        }
+
+        .col-done .k-col-title {
+            color: var(--status-ok);
+        }
+
+        .k-col-count {
+            font-size: var(--t-xs);
+            color: var(--text-ash);
+        }
+
+        .k-cards {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--sp-1);
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-half);
+        }
+
+        /* ============================================================
+       TICKET CARD — Component
+       ============================================================ */
+        .ticket-card {
+            background: var(--bg-slab);
+            border: 1px solid var(--border-raw);
+            padding: var(--sp-1) 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ticket-card:hover {
+            border-color: var(--border-chalk);
+            background: var(--bg-stencil);
+        }
+
+        .ticket-card.selected {
+            border-color: var(--accent-lime);
+            background: var(--bg-stencil);
+        }
+
+        .ticket-card:focus-visible {
+            outline: 2px solid var(--accent-lime);
+            outline-offset: 0;
+        }
+
+        .tc-top {
+            font-size: var(--t-sm);
+            font-weight: 700;
+            color: var(--text-chalk);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* CINDER ticket format: TKT-NNN | TITLE */
+        .tc-id {
+            font-size: var(--t-xs);
+            font-weight: 400;
+            color: var(--text-dust);
+        }
+
+        .tc-sep {
+            color: var(--text-ash);
+            margin: 0 4px;
+        }
+
+        .tc-labels {
+            font-size: var(--t-xs);
+            color: var(--accent-lime);
+            margin-top: var(--sp-half);
+            /* CINDER: [label] bracket syntax — plain text, no pills */
+        }
+
+        /* ============================================================
+       DETAIL PANEL
+       ============================================================ */
+        #detail-panel {
+            width: var(--detail-w);
+            background: var(--bg-slab);
+            border-left: 1px solid var(--border-raw);
+            flex-shrink: 0;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #detail-panel.open {
+            display: flex;
+        }
+
+        .dp-header {
+            padding: var(--sp-2);
+            border-bottom: 1px solid var(--border-raw);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .dp-id {
+            font-size: var(--t-xs);
+            color: var(--text-dust);
+        }
+
+        .dp-close {
+            font-size: var(--t-xs);
+            color: var(--text-dust);
+            background: none;
+            border: 1px solid var(--border-raw);
+            padding: 2px var(--sp-1);
+            font-family: var(--font);
+        }
+
+        .dp-close:hover {
+            border-color: var(--border-chalk);
+            color: var(--text-chalk);
+        }
+
+        .dp-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--sp-2);
+        }
+
+        .dp-title {
+            font-size: var(--t-lg);
+            font-weight: 700;
+            color: var(--text-chalk);
+            background: none;
+            border: none;
+            border-bottom: 1px solid transparent;
+            width: 100%;
+            font-family: var(--font);
+            padding: var(--sp-half) 0;
+            margin-bottom: var(--sp-2);
+        }
+
+        .dp-title:hover {
+            border-bottom-color: var(--border-raw);
+        }
+
+        .dp-title:focus {
+            border-bottom-color: var(--accent-lime);
+            outline: none;
+        }
+
+        .dp-field {
+            margin-bottom: var(--sp-2);
+        }
+
+        .dp-label {
+            font-size: var(--t-xs);
+            color: var(--text-dust);
+            text-transform: uppercase;
+            margin-bottom: var(--sp-half);
+            display: block;
+        }
+
+        .dp-input,
+        .dp-textarea,
+        .dp-select {
+            width: 100%;
+            background: var(--bg-concrete);
+            border: 1px solid transparent;
+            color: var(--text-chalk);
+            font-family: var(--font);
+            font-size: var(--t-sm);
+            padding: 6px var(--sp-1);
+            line-height: 1.5;
+        }
+
+        .dp-input:hover,
+        .dp-textarea:hover,
+        .dp-select:hover {
+            border-color: var(--border-raw);
+        }
+
+        .dp-input:focus,
+        .dp-textarea:focus,
+        .dp-select:focus {
+            border-color: var(--accent-lime);
+            outline: none;
+        }
+
+        .dp-textarea {
+            resize: vertical;
+            min-height: 96px;
+        }
+
+        .dp-select {
+            cursor: pointer;
+        }
+
+        .dp-hint {
+            font-size: var(--t-2xs);
+            color: var(--text-ash);
+            margin-top: var(--sp-half);
+        }
+
+        .dp-static {
+            font-size: var(--t-xs);
+            color: var(--text-dust);
+            padding: var(--sp-half) 0;
+        }
+
+        .dp-actions {
+            display: flex;
+            gap: var(--sp-1);
+            flex-wrap: wrap;
+            margin-top: var(--sp-3);
+        }
+
+        /* ============================================================
+       BUTTONS — Component Tokens
+       ============================================================ */
+        .btn {
+            font-family: var(--font);
+            font-size: var(--t-xs);
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border: 1px solid;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--sp-half);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--accent-lime);
+            outline-offset: 0;
+        }
+
+        .btn:disabled {
+            background: var(--bg-concrete);
+            color: var(--text-ash);
+            border-color: var(--border-raw);
+            pointer-events: none;
+        }
+
+        /* Primary — CINDER spec exact */
+        .btn-primary {
+            background: var(--bg-slab);
+            color: var(--accent-lime);
+            border-color: var(--accent-lime);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-lime);
+            color: var(--bg-concrete);
+        }
+
+        .btn-primary:active {
+            background: #7ACC2A;
+            color: var(--bg-concrete);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-dust);
+            border-color: var(--border-raw);
+        }
+
+        .btn-ghost:hover {
+            color: var(--text-chalk);
+            border-color: var(--border-chalk);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--status-error);
+            border-color: var(--status-error);
+        }
+
+        .btn-danger:hover {
+            background: var(--status-error);
+            color: var(--bg-concrete);
+        }
+
+        /* ============================================================
+       STATUS BAR
+       ============================================================ */
+        #statusbar {
+            height: var(--statusbar-h);
+            background: var(--bg-slab);
+            border-top: 1px solid var(--border-raw);
+            display: flex;
+            align-items: center;
+            padding: 0 var(--sp-2);
+            gap: var(--sp-2);
+            font-size: var(--t-xs);
+            color: var(--text-dust);
+            flex-shrink: 0;
+        }
+
+        /* CINDER: everything in statusbar uses [bracket] syntax */
+        .sb-branch {
+            color: var(--accent-lime);
+        }
+
+        .sb-dirty {
+            color: var(--status-warn);
+            display: none;
+        }
+
+        .sb-spacer {
+            flex: 1;
+        }
+
+        .sb-sync-btn {
+            font-family: var(--font);
+            font-size: var(--t-xs);
+            font-weight: 700;
+            text-transform: uppercase;
+            background: var(--bg-concrete);
+            color: var(--accent-lime);
+            border: 1px solid var(--accent-lime);
+            padding: 1px 10px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .sb-sync-btn:hover {
+            background: var(--accent-lime);
+            color: var(--bg-concrete);
+        }
+
+        .sb-sync-btn:focus-visible {
+            outline: 2px solid var(--accent-lime);
+            outline-offset: 0;
+        }
+
+        /* ============================================================
+       COMMAND PALETTE
+       ============================================================ */
+        #cmd-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            z-index: 1000;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 80px;
+        }
+
+        #cmd-overlay.open {
+            display: flex;
+        }
+
+        #cmd-box {
+            width: 560px;
+            background: var(--bg-slab);
+            border: 1px solid var(--border-chalk);
+            max-height: 420px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #cmd-input-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-raw);
+            padding: 0 var(--sp-2);
+        }
+
+        /* CINDER: > shell prompt in command palette */
+        .cmd-gt {
+            color: var(--accent-lime);
+            font-size: var(--t-2xl);
+            font-weight: 700;
+            margin-right: var(--sp-1);
+            line-height: 1;
+            user-select: none;
+        }
+
+        #cmd-input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-chalk);
+            font-family: var(--font);
+            font-size: var(--t-base);
+            padding: 12px 0;
+            outline: none;
+        }
+
+        #cmd-input::placeholder {
+            color: var(--text-ash);
+        }
+
+        #cmd-results {
+            overflow-y: auto;
+            max-height: 340px;
+        }
+
+        .cmd-item {
+            padding: 10px var(--sp-2);
+            font-size: var(--t-sm);
+            color: var(--text-dust);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-raw);
+        }
+
+        .cmd-item:last-child {
+            border-bottom: none;
+        }
+
+        .cmd-item:hover,
+        .cmd-item.active {
+            background: var(--bg-stencil);
+            color: var(--text-chalk);
+        }
+
+        .cmd-item:hover .cmd-item-arrow,
+        .cmd-item.active .cmd-item-arrow {
+            color: var(--accent-lime);
+        }
+
+        .cmd-item-arrow {
+            color: var(--text-ash);
+            font-weight: 700;
+        }
+
+        .cmd-item-label {
+            flex: 1;
+        }
+
+        .cmd-item-key {
+            font-size: var(--t-2xs);
+            color: var(--text-ash);
+        }
+
+        /* ============================================================
+       NEW TICKET MODAL
+       ============================================================ */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.72);
+            z-index: 1200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-slab);
+            border: 1px solid var(--border-chalk);
+            padding: var(--sp-3);
+            width: 480px;
+        }
+
+        .modal-title {
+            font-size: var(--t-base);
+            font-weight: 700;
+            color: var(--accent-lime);
+            margin-bottom: var(--sp-2);
+        }
+
+        .modal-label {
+            display: block;
+            font-size: var(--t-xs);
+            color: var(--text-dust);
+            text-transform: uppercase;
+            margin-bottom: var(--sp-half);
+        }
+
+        .modal-input,
+        .modal-select,
+        .modal-textarea {
+            width: 100%;
+            background: var(--bg-concrete);
+            border: 1px solid var(--border-raw);
+            color: var(--text-chalk);
+            font-family: var(--font);
+            font-size: var(--t-sm);
+            padding: 6px var(--sp-1);
+            margin-bottom: 12px;
+        }
+
+        .modal-input:focus,
+        .modal-select:focus,
+        .modal-textarea:focus {
+            border-color: var(--accent-lime);
+            outline: none;
+        }
+
+        .modal-textarea {
+            resize: vertical;
+            min-height: 64px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: var(--sp-1);
+            justify-content: flex-end;
+            margin-top: var(--sp-1);
+        }
+
+        /* ============================================================
+       CONFIRM DIALOG
+       ============================================================ */
+        #confirm-modal .modal-box {
+            border-color: var(--status-error);
+            width: 360px;
+        }
+
+        .confirm-title {
+            font-size: var(--t-base);
+            font-weight: 700;
+            color: var(--status-error);
+            margin-bottom: var(--sp-1);
+        }
+
+        .confirm-text {
+            font-size: var(--t-sm);
+            color: var(--text-dust);
+            margin-bottom: var(--sp-3);
+            line-height: 1.6;
+        }
+
+        /* ============================================================
+       TOAST
+       ============================================================ */
+        #toast {
+            position: fixed;
+            bottom: 48px;
+            right: var(--sp-2);
+            background: var(--bg-slab);
+            border: 1px solid var(--border-chalk);
+            padding: var(--sp-1) var(--sp-2);
+            font-size: var(--t-xs);
+            color: var(--text-chalk);
+            z-index: 3000;
+            display: none;
+            pointer-events: none;
+        }
+
+        #toast.visible {
+            display: block;
+        }
+
+        #toast.success {
+            border-color: var(--accent-lime);
+            color: var(--accent-lime);
+        }
+
+        #toast.error-t {
+            border-color: var(--status-error);
+            color: var(--status-error);
+        }
+
+        #toast.info-t {
+            border-color: var(--status-info);
+            color: var(--status-info);
+        }
+
+        /* ============================================================
+       EMPTY COLUMN STATE
+       ============================================================ */
+        .empty-col {
+            font-size: var(--t-xs);
+            color: var(--text-ash);
+            padding: var(--sp-2);
+            text-align: center;
+            border: 1px dashed var(--border-raw);
+            margin: var(--sp-1);
+        }
+
+        /* ============================================================
+       KEYBOARD SHORTCUT BADGE (status bar hint)
+       ============================================================ */
+        .kbd-hint {
+            font-size: var(--t-2xs);
+            color: var(--text-ash);
+            border: 1px solid var(--text-ash);
+            padding: 0 3px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Accessibility: Skip navigation -->
+    <a class="skip-nav" href="#board">Skip to board</a>
+
+    <!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+    <div id="app">
+
+        <div id="main-area" role="main">
+
+            <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
+            <nav id="sidebar" aria-label="Project navigation" aria-expanded="true">
+
+                <div class="sb-label">// PROJECTS</div>
+
+                <div class="sb-item active" data-board="worklog" tabindex="0" role="button" aria-current="true">
+                    <span class="sb-prompt">&gt;</span>&nbsp;worklog
+                </div>
+                <div class="sb-item" data-board="backend-api" tabindex="0" role="button">
+                    <span class="sb-prompt">&gt;</span>&nbsp;backend-api
+                </div>
+                <div class="sb-item" data-board="infra" tabindex="0" role="button">
+                    <span class="sb-prompt">&gt;</span>&nbsp;infra
+                </div>
+                <div class="sb-item" data-board="ml-pipeline" tabindex="0" role="button">
+                    <span class="sb-prompt">&gt;</span>&nbsp;ml-pipeline
+                </div>
+
+                <div class="sb-label" style="margin-top:var(--sp-1);">// BOARDS</div>
+                <div class="sb-item" data-board="sprint-01" tabindex="0" role="button">
+                    <span class="sb-prompt">&gt;</span>&nbsp;sprint-01
+                </div>
+                <div class="sb-item" data-board="backlog" tabindex="0" role="button">
+                    <span class="sb-prompt">&gt;</span>&nbsp;backlog
+                </div>
+
+                <div class="sb-footer">
+                    <div class="sb-footer-text">WORKLOG v0.1.0-mvp</div>
+                    <div class="sb-footer-text" style="color:var(--text-ash);">Ctrl+B toggle</div>
+                </div>
+            </nav>
+
+            <!-- =====================================================
+         KANBAN BOARD
+         ===================================================== -->
+            <div id="board" role="region" aria-label="Kanban board">
+
+                <div class="k-col col-todo" role="region" aria-label="To Do">
+                    <div class="k-col-header">
+                        <span class="k-col-title">TODO</span>
+                        <span class="k-col-count" id="cnt-todo">0</span>
+                    </div>
+                    <div class="k-cards" id="col-todo" role="list" aria-label="Todo tickets"></div>
+                </div>
+
+                <div class="k-col col-inprog" role="region" aria-label="In Progress">
+                    <div class="k-col-header">
+                        <span class="k-col-title">IN PROGRESS</span>
+                        <span class="k-col-count" id="cnt-inprog">0</span>
+                    </div>
+                    <div class="k-cards" id="col-inprog" role="list" aria-label="In progress tickets"></div>
+                </div>
+
+                <div class="k-col col-done" role="region" aria-label="Done">
+                    <div class="k-col-header">
+                        <span class="k-col-title">DONE</span>
+                        <span class="k-col-count" id="cnt-done">0</span>
+                    </div>
+                    <div class="k-cards" id="col-done" role="list" aria-label="Done tickets"></div>
+                </div>
+
+            </div>
+
+            <!-- =====================================================
+         DETAIL PANEL
+         ===================================================== -->
+            <aside id="detail-panel" aria-label="Ticket detail" aria-hidden="true">
+
+                <div class="dp-header">
+                    <span class="dp-id" id="dp-id">TKT-000</span>
+                    <div style="display:flex;align-items:center;gap:var(--sp-1);">
+                        <span style="font-size:var(--t-2xs);color:var(--text-ash);">ESC to close</span>
+                        <button class="dp-close" id="dp-close-btn" aria-label="Close detail panel">[×]</button>
+                    </div>
+                </div>
+
+                <div class="dp-body">
+                    <input class="dp-title" id="dp-title" type="text" aria-label="Ticket title"
+                        placeholder="TICKET TITLE" spellcheck="false" autocomplete="off">
+
+                    <div class="dp-field">
+                        <label class="dp-label" for="dp-status">STATUS</label>
+                        <select class="dp-select" id="dp-status" aria-label="Ticket status">
+                            <option value="todo">TODO</option>
+                            <option value="inprog">IN PROGRESS</option>
+                            <option value="done">DONE</option>
+                        </select>
+                    </div>
+
+                    <div class="dp-field">
+                        <label class="dp-label" for="dp-labels">LABELS</label>
+                        <input class="dp-input" id="dp-labels" type="text" placeholder="backend, api, p1"
+                            aria-label="Labels, comma-separated" spellcheck="false">
+                        <div class="dp-hint">comma-separated · rendered as [label] brackets</div>
+                    </div>
+
+                    <div class="dp-field">
+                        <label class="dp-label" for="dp-desc">DESCRIPTION</label>
+                        <textarea class="dp-textarea" id="dp-desc" aria-label="Ticket description, plain markdown"
+                            placeholder="Plain markdown. No toolbar."></textarea>
+                        <div class="dp-hint">inline edit · Enter to save · Escape to cancel</div>
+                    </div>
+
+                    <div class="dp-field">
+                        <div class="dp-label">CREATED</div>
+                        <div class="dp-static" id="dp-created"></div>
+                    </div>
+
+                    <div class="dp-actions">
+                        <button class="btn btn-primary" id="dp-save-btn">SAVE</button>
+                        <button class="btn btn-ghost" id="dp-move-btn">MOVE →</button>
+                        <button class="btn btn-danger" id="dp-delete-btn">DELETE</button>
+                    </div>
+                </div>
+            </aside>
+
+        </div><!-- /main-area -->
+
+        <!-- =====================================================
+       STATUS BAR
+       ===================================================== -->
+        <footer id="statusbar" role="contentinfo" aria-label="Git sync status bar">
+            <!-- CINDER: [brackets] for everything in the status bar -->
+            <span class="sb-branch" id="sb-branch">[main]</span>
+            <span class="sb-dirty" id="sb-dirty">[●] unsaved</span>
+            <span id="sb-push" style="color:var(--text-dust);">↑ 2 unpushed</span>
+            <span id="sb-pull" style="color:var(--text-dust);">↓ 0 to pull</span>
+            <span class="sb-spacer"></span>
+            <span class="kbd-hint">Ctrl+K</span>
+            <span style="font-size:var(--t-2xs);color:var(--text-ash);">palette</span>
+            <span class="kbd-hint" style="margin-left:var(--sp-1);">N</span>
+            <span style="font-size:var(--t-2xs);color:var(--text-ash);">new</span>
+            <button class="sb-sync-btn" id="sb-sync-btn" aria-label="Sync with git remote">SYNC</button>
+        </footer>
+
+    </div><!-- /app -->
+
+    <!-- ============================================================
+     COMMAND PALETTE
+     ============================================================ -->
+    <div id="cmd-overlay" role="dialog" aria-modal="true" aria-label="Command palette">
+        <div id="cmd-box">
+            <div id="cmd-input-row">
+                <span class="cmd-gt" aria-hidden="true">&gt;</span>
+                <input id="cmd-input" type="text" placeholder="type a command or search..."
+                    aria-label="Command palette input" autocomplete="off" spellcheck="false">
+            </div>
+            <div id="cmd-results" role="listbox" aria-label="Command results"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+     NEW TICKET MODAL
+     ============================================================ -->
+    <div id="new-ticket-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Create new ticket">
+        <div class="modal-box">
+            <div class="modal-title">// NEW TICKET</div>
+            <label class="modal-label" for="nt-title">TITLE *</label>
+            <input class="modal-input" id="nt-title" type="text" placeholder="TICKET TITLE" autocomplete="off">
+            <label class="modal-label" for="nt-labels">LABELS</label>
+            <input class="modal-input" id="nt-labels" type="text" placeholder="backend, api, p1">
+            <label class="modal-label" for="nt-status">COLUMN</label>
+            <select class="modal-select" id="nt-status">
+                <option value="todo">TODO</option>
+                <option value="inprog">IN PROGRESS</option>
+                <option value="done">DONE</option>
+            </select>
+            <label class="modal-label" for="nt-desc">DESCRIPTION</label>
+            <textarea class="modal-textarea" id="nt-desc" rows="3" placeholder="Describe the work..."></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" id="nt-cancel">CANCEL</button>
+                <button class="btn btn-primary" id="nt-create">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+     CONFIRM DIALOG
+     ============================================================ -->
+    <div id="confirm-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Confirm action">
+        <div class="modal-box">
+            <div class="confirm-title" id="confirm-title">DELETE TICKET?</div>
+            <div class="confirm-text" id="confirm-text">This cannot be undone.</div>
+            <div class="modal-actions">
+                <button class="btn btn-ghost" id="confirm-cancel">CANCEL</button>
+                <button class="btn btn-danger" id="confirm-ok">DELETE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- ============================================================
+     APPLICATION LOGIC
+     ============================================================ -->
+    <script>
+        'use strict';
+
+        // ——————————————————————————————————————————
+        // STATE
+        // ——————————————————————————————————————————
+        let tickets = [
+            { id: 'TKT-001', title: 'REFACTOR AUTH MIDDLEWARE', status: 'todo', labels: ['backend', 'api', 'p1'], desc: 'Clean up JWT validation logic and extract to dedicated middleware module.', created: '2026-03-10' },
+            { id: 'TKT-002', title: 'SETUP CI/CD PIPELINE', status: 'todo', labels: ['devops', 'infra'], desc: 'Configure GitHub Actions for test automation and deployment.', created: '2026-03-11' },
+            { id: 'TKT-003', title: 'ADD KEYBOARD NAVIGATION', status: 'todo', labels: ['frontend', 'a11y'], desc: 'J/K nav, Enter to open detail, Escape to close. Full vim-style board nav.', created: '2026-03-14' },
+            { id: 'TKT-004', title: 'DARK THEME TOKEN AUDIT', status: 'todo', labels: ['design', 'tokens'], desc: 'Audit all CSS custom properties against CINDER design spec.', created: '2026-03-15' },
+            { id: 'TKT-005', title: 'IMPLEMENT COMMAND PALETTE', status: 'inprog', labels: ['frontend', 'ux'], desc: 'Ctrl+K palette with fuzzy search over all application actions.', created: '2026-03-12' },
+            { id: 'TKT-006', title: 'WRITE ONBOARDING DOCS', status: 'inprog', labels: ['docs'], desc: 'README and getting started guide for new contributors.', created: '2026-03-13' },
+            { id: 'TKT-007', title: 'DATABASE SCHEMA MIGRATION', status: 'done', labels: ['backend', 'db'], desc: 'Migrate from v1 schema to v2 with new ticket fields and indexes.', created: '2026-03-08' },
+            { id: 'TKT-008', title: 'FIX SIDEBAR COLLAPSE BUG', status: 'done', labels: ['frontend', 'bug'], desc: 'Sidebar failed to re-render correctly after Ctrl+B toggle on narrow views.', created: '2026-03-09' },
+        ];
+
+        const COLS = ['todo', 'inprog', 'done'];
+        const COL_MAP = { todo: 'col-todo', inprog: 'col-inprog', done: 'col-done' };
+        let selectedId = null;
+        let pendingDelete = null;
+        let ticketSeq = 9;
+
+        // ——————————————————————————————————————————
+        // UTILITIES
+        // ——————————————————————————————————————————
+        function nextId() {
+            return `TKT-${String(ticketSeq++).padStart(3, '0')}`;
+        }
+
+        function fmtLabels(arr) {
+            if (!arr || !arr.length) return '';
+            return arr.map(l => `[${l.trim()}]`).join(' ');
+        }
+
+        function parseLabels(str) {
+            return str.split(',').map(l => l.replace(/[\[\]]/g, '').trim()).filter(Boolean);
+        }
+
+        let toastTimer = null;
+        function toast(msg, type = '') {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = 'visible ' + type;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.className = ''; }, 2200);
+        }
+
+        function setDirty(v) {
+            document.getElementById('sb-dirty').style.display = v ? 'inline' : 'none';
+        }
+
+        // ——————————————————————————————————————————
+        // BOARD RENDER
+        // ——————————————————————————————————————————
+        function renderBoard() {
+            COLS.forEach(col => {
+                const container = document.getElementById(COL_MAP[col]);
+                const countEl = document.getElementById(`cnt-${col}`);
+                const colTickets = tickets.filter(t => t.status === col);
+                countEl.textContent = colTickets.length;
+                container.innerHTML = '';
+
+                if (!colTickets.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty-col';
+                    empty.textContent = '// empty';
+                    container.appendChild(empty);
+                    return;
+                }
+
+                colTickets.forEach(ticket => container.appendChild(buildCard(ticket)));
+            });
+        }
+
+        function buildCard(ticket) {
+            const card = document.createElement('div');
+            card.className = 'ticket-card' + (ticket.id === selectedId ? ' selected' : '');
+            card.setAttribute('role', 'listitem');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('data-id', ticket.id);
+            card.setAttribute('aria-label', `${ticket.id}: ${ticket.title}`);
+            card.setAttribute('aria-selected', ticket.id === selectedId ? 'true' : 'false');
+
+            // Line 1: TKT-NNN | TITLE  (CINDER ticket card spec)
+            const top = document.createElement('div');
+            top.className = 'tc-top';
+            top.innerHTML =
+                `<span class="tc-id">${ticket.id}</span>` +
+                `<span class="tc-sep">|</span>` +
+                `${escHtml(ticket.title)}`;
+
+            card.appendChild(top);
+
+            // Line 2: [label] [label]  (CINDER: lime brackets, no pills)
+            if (ticket.labels && ticket.labels.length) {
+                const lbl = document.createElement('div');
+                lbl.className = 'tc-labels';
+                lbl.textContent = fmtLabels(ticket.labels);
+                card.appendChild(lbl);
+            }
+
+            card.addEventListener('click', () => openDetail(ticket.id));
+            card.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); openDetail(ticket.id); }
+            });
+
+            return card;
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ——————————————————————————————————————————
+        // DETAIL PANEL
+        // ——————————————————————————————————————————
+        function openDetail(id) {
+            const t = tickets.find(x => x.id === id);
+            if (!t) return;
+            selectedId = id;
+
+            document.getElementById('dp-id').textContent = t.id;
+            document.getElementById('dp-title').value = t.title;
+            document.getElementById('dp-status').value = t.status;
+            document.getElementById('dp-labels').value = t.labels ? t.labels.join(', ') : '';
+            document.getElementById('dp-desc').value = t.desc || '';
+            document.getElementById('dp-created').textContent = t.created || '—';
+
+            const panel = document.getElementById('detail-panel');
+            panel.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+
+            renderBoard();
+            document.getElementById('dp-title').focus();
+        }
+
+        function closeDetail() {
+            selectedId = null;
+            const panel = document.getElementById('detail-panel');
+            panel.classList.remove('open');
+            panel.setAttribute('aria-hidden', 'true');
+            renderBoard();
+        }
+
+        function saveDetail() {
+            const t = tickets.find(x => x.id === selectedId);
+            if (!t) return;
+            const title = document.getElementById('dp-title').value.trim().toUpperCase();
+            if (!title) { toast('TITLE REQUIRED', 'error-t'); return; }
+            t.title = title;
+            t.status = document.getElementById('dp-status').value;
+            t.labels = parseLabels(document.getElementById('dp-labels').value);
+            t.desc = document.getElementById('dp-desc').value;
+            setDirty(true);
+            renderBoard();
+            toast(`[${t.id}] SAVED`, 'success');
+        }
+
+        function moveNext() {
+            const t = tickets.find(x => x.id === selectedId);
+            if (!t) return;
+            const i = COLS.indexOf(t.status);
+            if (i < COLS.length - 1) {
+                t.status = COLS[i + 1];
+                document.getElementById('dp-status').value = t.status;
+                setDirty(true);
+                renderBoard();
+                toast(`MOVED → ${t.status.toUpperCase()}`, 'success');
+            } else {
+                toast('ALREADY IN DONE', 'info-t');
+            }
+        }
+
+        function movePrev() {
+            const t = tickets.find(x => x.id === selectedId);
+            if (!t) return
+            const i = COLS.indexOf(t.status);
+            if (i > 0) {
+                t.status = COLS[i - 1];
+                document.getElementById('dp-status').value = t.status;
+                setDirty(true);
+                renderBoard();
+                toast(`MOVED ← ${t.status.toUpperCase()}`, 'info-t');
+            } else {
+                toast('ALREADY IN TODO', 'info-t');
+            }
+        }
+
+        // ——————————————————————————————————————————
+        // DELETE
+        // ——————————————————————————————————————————
+        function confirmDelete(id) {
+            const t = tickets.find(x => x.id === id);
+            if (!t) return;
+            pendingDelete = id;
+            document.getElementById('confirm-title').textContent = `DELETE ${t.id}?`;
+            document.getElementById('confirm-text').textContent = `"${t.title}" — this cannot be undone.`;
+            openModal('confirm-modal');
+            document.getElementById('confirm-ok').focus();
+        }
+
+        function executeDelete() {
+            if (!pendingDelete) return;
+            tickets = tickets.filter(x => x.id !== pendingDelete);
+            toast(`[${pendingDelete}] DELETED`, 'error-t');
+            pendingDelete = null;
+            closeModal('confirm-modal');
+            closeDetail();
+            setDirty(true);
+            renderBoard();
+        }
+
+        // ——————————————————————————————————————————
+        // NEW TICKET
+        // ——————————————————————————————————————————
+        function openNewTicket(prefillStatus = 'todo') {
+            document.getElementById('nt-title').value = '';
+            document.getElementById('nt-labels').value = '';
+            document.getElementById('nt-desc').value = '';
+            document.getElementById('nt-status').value = prefillStatus;
+            openModal('new-ticket-modal');
+            document.getElementById('nt-title').focus();
+        }
+
+        function createTicket() {
+            const title = document.getElementById('nt-title').value.trim().toUpperCase();
+            if (!title) { toast('TITLE REQUIRED', 'error-t'); return; }
+            const id = nextId();
+            tickets.push({
+                id,
+                title,
+                status: document.getElementById('nt-status').value,
+                labels: parseLabels(document.getElementById('nt-labels').value),
+                desc: document.getElementById('nt-desc').value,
+                created: new Date().toISOString().split('T')[0],
+            });
+            closeModal('new-ticket-modal');
+            setDirty(true);
+            renderBoard();
+            toast(`[${id}] CREATED`, 'success');
+            // Auto-open the new ticket in the detail panel
+            openDetail(id);
+        }
+
+        // ——————————————————————————————————————————
+        // MODAL HELPERS
+        // ——————————————————————————————————————————
+        function openModal(id) {
+            const el = document.getElementById(id);
+            el.classList.add('open');
+            el.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('open');
+            el.setAttribute('aria-hidden', 'true');
+        }
+
+        // ——————————————————————————————————————————
+        // COMMAND PALETTE
+        // ——————————————————————————————————————————
+        const COMMANDS = [
+            { key: 'new ticket', label: 'new ticket', hint: 'N', action: () => openNewTicket() },
+            { key: 'move to done', label: 'move to done', hint: '→', action: () => { const t = tickets.find(x => x.id === selectedId); if (t) { t.status = 'done'; renderBoard(); setDirty(true); toast('MOVED → DONE', 'success'); } else toast('SELECT A TICKET FIRST', 'error-t'); } },
+            { key: 'move to inprog', label: 'move to in progress', hint: '', action: () => { const t = tickets.find(x => x.id === selectedId); if (t) { t.status = 'inprog'; renderBoard(); setDirty(true); toast('MOVED → IN PROGRESS', 'success'); } else toast('SELECT A TICKET FIRST', 'error-t'); } },
+            { key: 'move to todo', label: 'move to todo', hint: '', action: () => { const t = tickets.find(x => x.id === selectedId); if (t) { t.status = 'todo'; renderBoard(); setDirty(true); toast('MOVED → TODO', 'success'); } else toast('SELECT A TICKET FIRST', 'error-t'); } },
+            { key: 'delete ticket', label: 'delete ticket', hint: 'D', action: () => { if (selectedId) confirmDelete(selectedId); else toast('SELECT A TICKET FIRST', 'error-t'); } },
+            { key: 'push', label: 'push', hint: 'Ctrl+⇧+S', action: () => { setDirty(false); toast('PUSHED TO ORIGIN/MAIN', 'success'); } },
+            { key: 'pull', label: 'pull', hint: '', action: () => toast('ALREADY UP TO DATE', 'info-t') },
+            { key: 'toggle sidebar', label: 'toggle sidebar', hint: 'Ctrl+B', action: () => toggleSidebar() },
+            { key: 'close detail', label: 'close detail panel', hint: 'ESC', action: () => closeDetail() },
+            { key: 'open board worklog', label: 'open board: worklog', hint: '', action: () => { toast('LOADED BOARD: WORKLOG', 'info-t'); highlightSidebarItem('worklog'); } },
+            { key: 'open board backend', label: 'open board: backend-api', hint: '', action: () => { toast('LOADED BOARD: BACKEND-API', 'info-t'); highlightSidebarItem('backend-api'); } },
+            { key: 'open board infra', label: 'open board: infra', hint: '', action: () => { toast('LOADED BOARD: INFRA', 'info-t'); highlightSidebarItem('infra'); } },
+        ];
+
+        let cmdActiveIndex = -1;
+
+        function openCmdPalette() {
+            document.getElementById('cmd-input').value = '';
+            cmdActiveIndex = -1;
+            renderCmdResults('');
+            openModal('cmd-overlay');
+            document.getElementById('cmd-input').focus();
+        }
+
+        function closeCmdPalette() {
+            closeModal('cmd-overlay');
+        }
+
+        function renderCmdResults(query) {
+            const q = query.toLowerCase().trim();
+            const res = document.getElementById('cmd-results');
+            res.innerHTML = '';
+            cmdActiveIndex = -1;
+
+            // Also search tickets by ID/title if query looks like a ticket ref
+            let ticketMatches = [];
+            if (q.length >= 2) {
+                ticketMatches = tickets
+                    .filter(t => t.id.toLowerCase().includes(q) || t.title.toLowerCase().includes(q))
+                    .slice(0, 4)
+                    .map(t => ({
+                        key: t.id,
+                        label: `open ticket: ${t.id} — ${t.title}`,
+                        hint: 'ENTER',
+                        action: () => openDetail(t.id),
+                    }));
+            }
+
+            const filtered = [
+                ...ticketMatches,
+                ...COMMANDS.filter(c => !q || c.key.includes(q) || c.label.toLowerCase().includes(q)),
+            ].slice(0, 10);
+
+            if (!filtered.length) {
+                const empty = document.createElement('div');
+                empty.className = 'cmd-item';
+                empty.style.color = 'var(--text-ash)';
+                empty.textContent = '// no results';
+                res.appendChild(empty);
+                return;
+            }
+
+            filtered.forEach((cmd, i) => {
+                const item = document.createElement('div');
+                item.className = 'cmd-item';
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-index', i);
+                item.innerHTML =
+                    `<span class="cmd-item-arrow" aria-hidden="true">&gt;</span>` +
+                    `<span class="cmd-item-label">${escHtml(cmd.label)}</span>` +
+                    (cmd.hint ? `<span class="cmd-item-key">${escHtml(cmd.hint)}</span>` : '');
+                item.addEventListener('click', () => {
+                    closeCmdPalette();
+                    cmd.action();
+                });
+                res.appendChild(item);
+            });
+        }
+
+        function cmdNavigate(dir) {
+            const items = document.querySelectorAll('#cmd-results .cmd-item');
+            if (!items.length) return;
+            items.forEach(i => i.classList.remove('active'));
+            cmdActiveIndex = Math.max(0, Math.min(items.length - 1, cmdActiveIndex + dir));
+            items[cmdActiveIndex].classList.add('active');
+            items[cmdActiveIndex].scrollIntoView({ block: 'nearest' });
+        }
+
+        function cmdExecute() {
+            const items = document.querySelectorAll('#cmd-results .cmd-item');
+            if (cmdActiveIndex >= 0 && items[cmdActiveIndex]) {
+                items[cmdActiveIndex].click();
+            } else if (items.length === 1) {
+                items[0].click();
+            }
+        }
+
+        // ——————————————————————————————————————————
+        // SIDEBAR HELPERS
+        // ——————————————————————————————————————————
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const collapsed = sb.classList.toggle('collapsed');
+            sb.setAttribute('aria-expanded', String(!collapsed));
+            toast(collapsed ? 'SIDEBAR COLLAPSED' : 'SIDEBAR EXPANDED', 'info-t');
+        }
+
+        function highlightSidebarItem(boardName) {
+            document.querySelectorAll('.sb-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.board === boardName);
+                el.setAttribute('aria-current', el.dataset.board === boardName ? 'true' : 'false');
+            });
+        }
+
+        // ——————————————————————————————————————————
+        // KEYBOARD NAVIGATION (vim-style + shortcuts)
+        // ——————————————————————————————————————————
+        function getAllCards() {
+            return Array.from(document.querySelectorAll('.ticket-card[data-id]'));
+        }
+
+        function selectCardById(id) {
+            selectedId = id;
+            renderBoard();
+            // Scroll selected card into view
+            const card = document.querySelector(`.ticket-card[data-id="${id}"]`);
+            if (card) card.scrollIntoView({ block: 'nearest' });
+        }
+
+        function navigateCards(dir) {
+            // dir: +1 = next (J), -1 = prev (K)
+            const cards = getAllCards();
+            if (!cards.length) return;
+            if (!selectedId) {
+                selectCardById(cards[0].dataset.id);
+                return;
+            }
+            const idx = cards.findIndex(c => c.dataset.id === selectedId);
+            const next = cards[idx + dir];
+            if (next) selectCardById(next.dataset.id);
+        }
+
+        function moveSelectedStatus(dir) {
+            // dir: +1 = right (→), -1 = left (←)
+            const t = tickets.find(x => x.id === selectedId);
+            if (!t) { toast('SELECT A TICKET FIRST', 'error-t'); return; }
+            const i = COLS.indexOf(t.status);
+            const ni = i + dir;
+            if (ni < 0 || ni >= COLS.length) return;
+            t.status = COLS[ni];
+            if (document.getElementById('detail-panel').classList.contains('open')) {
+                document.getElementById('dp-status').value = t.status;
+            }
+            setDirty(true);
+            renderBoard();
+            toast(`MOVED ${dir > 0 ? '→' : '←'} ${t.status.toUpperCase()}`, 'success');
+        }
+
+        // ——————————————————————————————————————————
+        // GLOBAL KEYBOARD HANDLER
+        // ——————————————————————————————————————————
+        document.addEventListener('keydown', e => {
+            const cmdOpen = document.getElementById('cmd-overlay').classList.contains('open');
+            const newOpen = document.getElementById('new-ticket-modal').classList.contains('open');
+            const confirmOpen = document.getElementById('confirm-modal').classList.contains('open');
+            const detailOpen = document.getElementById('detail-panel').classList.contains('open');
+            const activeTag = document.activeElement?.tagName?.toLowerCase();
+            const inInput = ['input', 'textarea', 'select'].includes(activeTag);
+
+            // — Command Palette navigation —
+            if (cmdOpen) {
+                if (e.key === 'Escape') { e.preventDefault(); closeCmdPalette(); return; }
+                if (e.key === 'ArrowDown') { e.preventDefault(); cmdNavigate(+1); return; }
+                if (e.key === 'ArrowUp') { e.preventDefault(); cmdNavigate(-1); return; }
+                if (e.key === 'Enter') { e.preventDefault(); cmdExecute(); return; }
+                return; // all other keys go to cmd input, don't propagate
+            }
+
+            // — New Ticket Modal —
+            if (newOpen) {
+                if (e.key === 'Escape') { e.preventDefault(); closeModal('new-ticket-modal'); return; }
+                if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); createTicket(); return; }
+                return;
+            }
+
+            // — Confirm Dialog —
+            if (confirmOpen) {
+                if (e.key === 'Escape') { e.preventDefault(); closeModal('confirm-modal'); pendingDelete = null; return; }
+                if (e.key === 'Enter') { e.preventDefault(); executeDelete(); return; }
+                return;
+            }
+
+            // — Detail panel: Escape closes it —
+            if (e.key === 'Escape' && detailOpen) { e.preventDefault(); closeDetail(); return; }
+
+            // — Don't hijack inputs in detail panel —
+            if (inInput && detailOpen) {
+                // Ctrl+S saves from within detail inputs
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDetail(); }
+                return;
+            }
+
+            // — Global shortcuts (only when not in an input) —
+            if (e.ctrlKey && e.key === 'k') { e.preventDefault(); openCmdPalette(); return; }
+            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); toggleSidebar(); return; }
+            if (e.ctrlKey && e.shiftKey && e.key === 'S') { e.preventDefault(); setDirty(false); toast('PUSHED TO ORIGIN/MAIN', 'success'); return; }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDetail(); return; }
+
+            // Non-modifier shortcuts — only when not typing
+            if (!inInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                switch (e.key) {
+                    case 'n': case 'N':
+                        e.preventDefault(); openNewTicket(); break;
+                    case 'j': case 'J':
+                        e.preventDefault(); navigateCards(+1); break;
+                    case 'k': case 'K':
+                        e.preventDefault(); navigateCards(-1); break;
+                    case 'Enter':
+                        e.preventDefault(); if (selectedId) openDetail(selectedId); break;
+                    case 'ArrowRight':
+                        e.preventDefault(); moveSelectedStatus(+1); break;
+                    case 'ArrowLeft':
+                        e.preventDefault(); moveSelectedStatus(-1); break;
+                    case 'd': case 'D':
+                        e.preventDefault(); if (selectedId) confirmDelete(selectedId); break;
+                }
+            }
+        });
+
+        // ——————————————————————————————————————————
+        // COMMAND PALETTE INPUT HANDLER
+        // ——————————————————————————————————————————
+        document.getElementById('cmd-input').addEventListener('input', e => {
+            renderCmdResults(e.target.value);
+        });
+
+        // ——————————————————————————————————————————
+        // OVERLAY BACKDROP CLICK TO CLOSE
+        // ——————————————————————————————————————————
+        document.getElementById('cmd-overlay').addEventListener('click', e => {
+            if (e.target === document.getElementById('cmd-overlay')) closeCmdPalette();
+        });
+        document.getElementById('new-ticket-modal').addEventListener('click', e => {
+            if (e.target === document.getElementById('new-ticket-modal')) closeModal('new-ticket-modal');
+        });
+        document.getElementById('confirm-modal').addEventListener('click', e => {
+            if (e.target === document.getElementById('confirm-modal')) { closeModal('confirm-modal'); pendingDelete = null; }
+        });
+
+        // ——————————————————————————————————————————
+        // BUTTON WIRING
+        // ——————————————————————————————————————————
+        document.getElementById('dp-close-btn').addEventListener('click', closeDetail);
+        document.getElementById('dp-save-btn').addEventListener('click', saveDetail);
+        document.getElementById('dp-move-btn').addEventListener('click', moveNext);
+        document.getElementById('dp-delete-btn').addEventListener('click', () => { if (selectedId) confirmDelete(selectedId); });
+
+        document.getElementById('nt-cancel').addEventListener('click', () => closeModal('new-ticket-modal'));
+        document.getElementById('nt-create').addEventListener('click', createTicket);
+
+        document.getElementById('confirm-cancel').addEventListener('click', () => { closeModal('confirm-modal'); pendingDelete = null; });
+        document.getElementById('confirm-ok').addEventListener('click', executeDelete);
+
+        document.getElementById('sb-sync-btn').addEventListener('click', () => {
+            setDirty(false);
+            document.getElementById('sb-push').textContent = '↑ 0 unpushed';
+            toast('SYNCED WITH ORIGIN/MAIN', 'success');
+        });
+
+        // ——————————————————————————————————————————
+        // SIDEBAR ITEM CLICKS
+        // ——————————————————————————————————————————
+        document.querySelectorAll('.sb-item').forEach(el => {
+            el.addEventListener('click', () => {
+                highlightSidebarItem(el.dataset.board);
+                toast(`LOADED BOARD: ${el.dataset.board.toUpperCase()}`, 'info-t');
+            });
+            el.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+            });
+        });
+
+        // ——————————————————————————————————————————
+        // STATUS CHANGE IN DETAIL PANEL → mark dirty
+        // ——————————————————————————————————————————
+        document.getElementById('dp-status').addEventListener('change', () => setDirty(true));
+        document.getElementById('dp-title').addEventListener('input', () => setDirty(true));
+        document.getElementById('dp-labels').addEventListener('input', () => setDirty(true));
+        document.getElementById('dp-desc').addEventListener('input', () => setDirty(true));
+
+        // ——————————————————————————————————————————
+        // REDUCED MOTION RESPECT
+        // ——————————————————————————————————————————
+        // CINDER is already zero-motion by spec. This block is a no-op
+        // but included as an explicit statement of intent for auditors.
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            // Already fully compliant — no transitions or animations exist in CINDER.
+        }
+
+        // ——————————————————————————————————————————
+        // RESPONSIVE: COLLAPSE DETAIL PANEL BELOW 900px
+        // ——————————————————————————————————————————
+        function checkWidth() {
+            if (window.innerWidth < 900 && selectedId) {
+                closeDetail();
+            }
+        }
+        window.addEventListener('resize', checkWidth);
+
+        // ——————————————————————————————————————————
+        // INIT
+        // ——————————————————————————————————————————
+        renderBoard();
+
+        // Select first card silently on load (no detail panel open)
+        const firstCard = getAllCards()[0];
+        if (firstCard) selectedId = firstCard.dataset.id;
+        renderBoard();
+
+    </script>
+</body>
+
+</html>
