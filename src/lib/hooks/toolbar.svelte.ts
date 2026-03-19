@@ -9,7 +9,7 @@ export interface ToolbarState {
     onManualSync: () => void;
 }
 
-const noop = () => {};
+const noop = () => { };
 
 const initialToolbarState: ToolbarState = {
     projectName: "Project",
