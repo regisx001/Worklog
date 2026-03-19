@@ -11,23 +11,23 @@
         TooltipContent,
         TooltipTrigger,
     } from "$lib/components/ui/tooltip/index.js";
-    import type { Project, SyncState } from "./types.js";
+    import type { Board, SyncState } from "./types.js";
 
     interface SidebarProps {
-        projects: Project[];
-        activeProjectId: string;
+        boards: Board[];
+        activeBoardId: string | null;
         syncState: SyncState;
-        onSelectProject: (projectId: string) => void;
+        onSelectBoard: (boardId: string) => void;
         onOpenPalette: () => void;
         onOpenSettings: () => void;
         onCreateTicket: () => void;
     }
 
     let {
-        projects,
-        activeProjectId,
+        boards,
+        activeBoardId,
         syncState,
-        onSelectProject,
+        onSelectBoard,
         onOpenPalette,
         onOpenSettings,
         onCreateTicket,
@@ -53,9 +53,8 @@
         <div
             class="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
         >
-            <span>Projects</span>
-            <Badge variant="outline" class="h-5 px-1.5">{projects.length}</Badge
-            >
+            <span>Boards</span>
+            <Badge variant="outline" class="h-5 px-1.5">{boards.length}</Badge>
         </div>
         <Tooltip>
             <TooltipTrigger>
@@ -78,34 +77,41 @@
 
     <nav class="min-h-0 flex-1 overflow-y-auto p-2">
         <ul class="space-y-1">
-            {#each projects as project (project.id)}
+            {#if boards.length === 0}
                 <li>
-                    <button
-                        type="button"
-                        onclick={() => onSelectProject(project.id)}
-                        class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
-                        class:bg-sidebar-accent={project.id === activeProjectId}
-                        aria-current={project.id === activeProjectId
-                            ? "page"
-                            : undefined}
+                    <p
+                        class="rounded-md border border-dashed border-border px-2.5 py-4 text-center text-xs text-muted-foreground"
                     >
-                        <div class="min-w-0">
-                            <p class="truncate font-medium">{project.name}</p>
-                            <p class="mt-0.5 text-[11px] text-muted-foreground">
-                                Synced {project.lastSyncedAt}
-                            </p>
-                        </div>
-                        <Badge
-                            variant={project.localChanges > 0
-                                ? "secondary"
-                                : "outline"}
-                            class="shrink-0"
-                        >
-                            {project.localChanges}
-                        </Badge>
-                    </button>
+                        No boards available
+                    </p>
                 </li>
-            {/each}
+            {:else}
+                {#each boards as board (board.id)}
+                    <li>
+                        <button
+                            type="button"
+                            onclick={() => onSelectBoard(board.id)}
+                            class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
+                            class:bg-sidebar-accent={board.id === activeBoardId}
+                            aria-current={board.id === activeBoardId
+                                ? "page"
+                                : undefined}
+                        >
+                            <div class="min-w-0">
+                                <p class="truncate font-medium">{board.name}</p>
+                                <p
+                                    class="mt-0.5 text-[11px] text-muted-foreground"
+                                >
+                                    {board.description || "No description"}
+                                </p>
+                            </div>
+                            <Badge variant="outline" class="shrink-0">
+                                {board.id.slice(-4).toUpperCase()}
+                            </Badge>
+                        </button>
+                    </li>
+                {/each}
+            {/if}
         </ul>
     </nav>
 

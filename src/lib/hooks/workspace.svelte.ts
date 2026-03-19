@@ -2,28 +2,37 @@ import type { WorkspaceMeta } from '$lib/components/app/types';
 import { getDb, closeDb, WorkspaceRepo } from '$lib/db';
 import { runMigrations } from '$lib/db/migrate';
 
-interface AppStoreLike {
-    get: <T>(key: string) => Promise<T | null | undefined>;
-    set: (key: string, value: unknown) => Promise<void>;
-    save: () => Promise<void>;
+const WORKSPACE_PATH_KEY = 'last_workspace_path';
+let initInFlight: Promise<void> | null = null;
+
+function getSavedWorkspacePath(): string | null {
+    if (typeof window === 'undefined') return null;
+
+    try {
+        return window.localStorage.getItem(WORKSPACE_PATH_KEY);
+    } catch {
+        return null;
+    }
 }
 
-let appStore: AppStoreLike | null = null;
-let appStoreInitTried = false;
+function saveWorkspacePath(path: string) {
+    if (typeof window === 'undefined') return;
 
-async function getAppStore(): Promise<AppStoreLike | null> {
-    if (appStore || appStoreInitTried) return appStore;
-
-    appStoreInitTried = true;
     try {
-        const { load } = await import('@tauri-apps/plugin-store');
-        appStore = await load('worklog.json');
+        window.localStorage.setItem(WORKSPACE_PATH_KEY, path);
     } catch {
-        // Running outside Tauri (e.g. browser dev mode): store is optional.
-        appStore = null;
+        // Ignore storage failures and continue with in-memory app state.
     }
+}
 
-    return appStore;
+function clearSavedWorkspacePath() {
+    if (typeof window === 'undefined') return;
+
+    try {
+        window.localStorage.removeItem(WORKSPACE_PATH_KEY);
+    } catch {
+        // Ignore storage failures and continue with in-memory app state.
+    }
 }
 
 type WorkspaceStatus =
@@ -42,25 +51,37 @@ export function useWorkspace() {
 
     // Called once on app boot from +layout.svelte
     async function init() {
-        try {
-            _status = 'idle';
-            _error = null;
+        if (_status === 'ready' && _path) return;
+        if (initInFlight) return initInFlight;
 
-            const store = await getAppStore();
-            const saved = store
-                ? (await store.get<string>('last_workspace_path')) ?? null
-                : null;
+        initInFlight = (async () => {
+            try {
+                _status = 'idle';
+                _error = null;
 
-            if (saved) {
+                const saved = getSavedWorkspacePath();
+                if (!saved) {
+                    _status = 'no_workspace';
+                    return;
+                }
+
                 await open_workspace(saved);
-                return;
-            }
 
-            _status = 'no_workspace';
-        } catch (e) {
-            _error = String(e);
-            _status = 'error';
-        }
+                if (_path !== saved) {
+                    _path = null;
+                    _meta = null;
+                    clearSavedWorkspacePath();
+                    _status = 'no_workspace';
+                }
+            } catch (e) {
+                _error = String(e);
+                _status = 'error';
+            } finally {
+                initInFlight = null;
+            }
+        })();
+
+        return initInFlight;
     }
 
     // Called when user picks a folder via OS dialog
@@ -88,11 +109,7 @@ export function useWorkspace() {
             _meta = await WorkspaceRepo.getWorkspaceMeta(db);
             _path = path;
 
-            const store = await getAppStore();
-            if (store) {
-                await store.set('last_workspace_path', path);
-                await store.save();
-            }
+            saveWorkspacePath(path);
 
             _status = 'ready';
         } catch (e) {
@@ -103,9 +120,11 @@ export function useWorkspace() {
 
     async function close() {
         await closeDb();
+        clearSavedWorkspacePath();
         _path = null;
         _meta = null;
         _status = 'no_workspace';
+        _error = null;
     }
 
     return {

@@ -1,165 +1,84 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button/index.js";
+  import KanbanWorkspaceView from "$lib/components/app/KanbanWorkspaceView.svelte";
+  import CommandPalette from "$lib/components/app/CommandPalette.svelte";
+  import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
+  import { useBoards } from "$lib/hooks/boards.svelte";
+  import { useTickets } from "$lib/hooks/tickets.svelte";
   import {
     resetToolbarState,
     setToolbarState,
   } from "$lib/hooks/toolbar.svelte.js";
-  import KanbanColumn from "$lib/components/app/KanbanColumn.svelte";
-  import Sidebar from "$lib/components/app/Sidebar.svelte";
-  import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
-  import SyncStatusBar from "$lib/components/app/SyncStatusBar.svelte";
-  import CommandPalette from "$lib/components/app/CommandPalette.svelte";
+  import { useWorkspace } from "$lib/hooks/workspace.svelte";
   import type {
     CommandAction,
-    Project,
+    Comment,
     SyncState,
-    Ticket,
     TicketStatus,
+    UpdateTicketInput,
   } from "$lib/components/app/types.js";
 
-  let projects = $state<Project[]>([
-    {
-      id: "core",
-      name: "Core Compiler",
-      localChanges: 2,
-      lastSyncedAt: "2m ago",
-    },
-    {
-      id: "desktop",
-      name: "Desktop Shell",
-      localChanges: 0,
-      lastSyncedAt: "8m ago",
-    },
-    {
-      id: "devx",
-      name: "Developer UX",
-      localChanges: 1,
-      lastSyncedAt: "12m ago",
-    },
-  ]);
+  const workspace = useWorkspace();
+  const boards = useBoards(() => workspace.path);
+  const tickets = useTickets(
+    () => workspace.path,
+    () => boards.active?.id ?? null,
+  );
 
-  let tickets = $state<Ticket[]>([
-    {
-      id: "TK-101",
-      board_id: "core",
-      title: "Persist board state between restarts",
-      description:
-        "- Save board data in local storage\n- Restore selected ticket on load",
-      status: "todo",
-      labels: ["enhancement"],
-      comments: [
-        {
-          author: "Mia",
-          body: "Prefer filesystem snapshot over localStorage.",
-          timestamp: "09:12",
-        },
-      ],
-      created_at: "2026-03-18T09:12:00Z",
-      updated_at: "2026-03-18T09:12:00Z",
-    },
-    {
-      id: "TK-102",
-      board_id: "core",
-      title: "Keyboard reorder in kanban columns",
-      description: "Enable moving a focused card with shortcuts.",
-      status: "in_progress",
-      labels: ["feature"],
-      comments: [],
-      created_at: "2026-03-18T10:04:00Z",
-      updated_at: "2026-03-18T10:04:00Z",
-    },
-    {
-      id: "TK-103",
-      board_id: "core",
-      title: "Add markdown preview in detail panel",
-      description: "Render plain markdown-like line breaks instantly.",
-      status: "done",
-      labels: ["ui"],
-      comments: [
-        {
-          author: "Noah",
-          body: "Shipped with escaped HTML output.",
-          timestamp: "Yesterday",
-        },
-      ],
-      created_at: "2026-03-17T16:20:00Z",
-      updated_at: "2026-03-17T16:20:00Z",
-    },
-    {
-      id: "TK-104",
-      board_id: "desktop",
-      title: "Attach native notifications for due dates",
-      description: "Hook Tauri notification API.",
-      status: "todo",
-      labels: ["desktop"],
-      comments: [],
-      created_at: "2026-03-18T13:05:00Z",
-      updated_at: "2026-03-18T13:05:00Z",
-    },
-    {
-      id: "TK-105",
-      board_id: "devx",
-      title: "Command palette action indexing",
-      description: "Support fuzzy filter across labels and ids.",
-      status: "in_progress",
-      labels: ["perf"],
-      comments: [],
-      created_at: "2026-03-18T14:30:00Z",
-      updated_at: "2026-03-18T14:30:00Z",
-    },
-  ]);
-
-  let activeProjectId = $state("core");
   let selectedTicketId = $state<string | null>(null);
   let detailOpen = $state(false);
   let commandPaletteOpen = $state(false);
-  let syncState = $state<SyncState>("pending_changes");
+  let syncState = $state<SyncState>("up_to_date");
+  let localPendingChanges = $state(0);
+  let pageError = $state<string | null>(null);
 
-  const activeProject = $derived.by(() => {
-    return (
-      projects.find((project) => project.id === activeProjectId) ?? projects[0]
-    );
-  });
-
-  const visibleTickets = $derived.by(() => {
-    return tickets.filter((ticket) => ticket.board_id === activeProjectId);
-  });
+  const activeBoard = $derived.by(() => boards.active);
 
   const todoTickets = $derived.by(() =>
-    visibleTickets.filter((ticket) => ticket.status === "todo"),
+    tickets.tickets.filter((ticket) => ticket.status === "todo"),
   );
   const inProgressTickets = $derived.by(() =>
-    visibleTickets.filter((ticket) => ticket.status === "in_progress"),
+    tickets.tickets.filter((ticket) => ticket.status === "in_progress"),
   );
   const doneTickets = $derived.by(() =>
-    visibleTickets.filter((ticket) => ticket.status === "done"),
+    tickets.tickets.filter((ticket) => ticket.status === "done"),
   );
 
   const selectedTicket = $derived.by(() => {
     if (!selectedTicketId) return null;
-    return tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
-  });
-
-  const pendingChanges = $derived.by(() => {
-    return projects.reduce((sum, project) => sum + project.localChanges, 0);
-  });
-
-  function markProjectDirty(projectId: string) {
-    projects = projects.map((project) =>
-      project.id === projectId
-        ? {
-            ...project,
-            localChanges: project.localChanges + 1,
-            lastSyncedAt: "now",
-          }
-        : project,
+    return (
+      tickets.tickets.find((ticket) => ticket.id === selectedTicketId) ?? null
     );
-    syncState = "pending_changes";
+  });
+
+  const pendingChanges = $derived.by(() => localPendingChanges);
+
+  function setFailure(context: string, error: unknown) {
+    const detail = error instanceof Error ? error.message : String(error);
+    pageError = `${context}: ${detail}`;
+    console.error(context, error);
   }
 
-  function selectProject(projectId: string) {
-    activeProjectId = projectId;
+  function markDirty() {
+    localPendingChanges += 1;
+    if (syncState !== "syncing") {
+      syncState = "pending_changes";
+    }
+  }
+
+  async function selectBoard(boardId: string) {
+    const nextBoard = boards.boards.find((board) => board.id === boardId);
+    if (!nextBoard) return;
+
+    boards.setActive(nextBoard);
     selectedTicketId = null;
     detailOpen = false;
+
+    try {
+      await tickets.load();
+    } catch (error) {
+      setFailure("Failed to load board tickets", error);
+    }
   }
 
   function openTicket(ticketId: string) {
@@ -167,20 +86,20 @@
     detailOpen = true;
   }
 
-  function moveTicket(ticketId: string, nextStatus: TicketStatus) {
-    const ticket = tickets.find((entry) => entry.id === ticketId);
+  async function moveTicket(ticketId: string, nextStatus: TicketStatus) {
+    const ticket = tickets.tickets.find((entry) => entry.id === ticketId);
     if (!ticket || ticket.status === nextStatus) return;
 
-    tickets = tickets.map((entry) =>
-      entry.id === ticketId
-        ? { ...entry, status: nextStatus, updated_at: new Date().toISOString() }
-        : entry,
-    );
-    markProjectDirty(ticket.board_id);
+    try {
+      await tickets.update(ticketId, { status: nextStatus });
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to move ticket", error);
+    }
   }
 
   function quickMoveTicket(ticketId: string) {
-    const ticket = tickets.find((entry) => entry.id === ticketId);
+    const ticket = tickets.tickets.find((entry) => entry.id === ticketId);
     if (!ticket) return;
 
     const cycle: Record<TicketStatus, TicketStatus> = {
@@ -189,66 +108,76 @@
       done: "todo",
     };
 
-    moveTicket(ticketId, cycle[ticket.status]);
+    void moveTicket(ticketId, cycle[ticket.status]);
   }
 
-  function createTicket() {
-    const serial = tickets.length + 101;
-    const id = `TK-${serial}`;
-    const nextTicket: Ticket = {
-      id,
-      board_id: activeProjectId,
-      title: "New ticket",
-      description: "Describe the task clearly and keep it actionable.",
-      status: "todo",
-      labels: ["feature"],
-      comments: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+  async function createTicket() {
+    if (!activeBoard) {
+      pageError = "No active board selected.";
+      return;
+    }
+
+    try {
+      const nextTicket = await tickets.create({
+        board_id: activeBoard.id,
+        title: "New ticket",
+        description: "Describe the task clearly and keep it actionable.",
+        labels: ["feature"],
+      });
+
+      selectedTicketId = nextTicket.id;
+      detailOpen = true;
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to create ticket", error);
+    }
+  }
+
+  async function updateTicket(ticketId: string, updates: UpdateTicketInput) {
+    try {
+      await tickets.update(ticketId, updates);
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to update ticket", error);
+    }
+  }
+
+  async function addComment(ticketId: string, body: string) {
+    const target = tickets.tickets.find((ticket) => ticket.id === ticketId);
+    if (!target || !body.trim()) return;
+
+    const comment: Comment = {
+      author: "You",
+      body: body.trim(),
+      timestamp: new Date().toISOString(),
     };
 
-    tickets = [nextTicket, ...tickets];
-    selectedTicketId = id;
-    detailOpen = true;
-    markProjectDirty(activeProjectId);
+    try {
+      await tickets.update(ticketId, {
+        comments: [...target.comments, comment],
+      });
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to add comment", error);
+    }
   }
 
-  function updateTicket(
-    ticketId: string,
-    updates: Partial<
-      Pick<Ticket, "title" | "description" | "status" | "labels">
-    >,
-  ) {
-    const target = tickets.find((ticket) => ticket.id === ticketId);
-    if (!target) return;
-    tickets = tickets.map((ticket) =>
-      ticket.id === ticketId
-        ? { ...ticket, ...updates, updated_at: new Date().toISOString() }
-        : ticket,
-    );
-    markProjectDirty(target.board_id);
-  }
+  async function createBoard() {
+    if (!workspace.path) {
+      pageError = "Open a workspace first.";
+      return;
+    }
 
-  function addComment(ticketId: string, body: string) {
-    const target = tickets.find((ticket) => ticket.id === ticketId);
-    if (!target) return;
-
-    tickets = tickets.map((ticket) => {
-      if (ticket.id !== ticketId) return ticket;
-      return {
-        ...ticket,
-        comments: [
-          ...ticket.comments,
-          {
-            author: "You",
-            body,
-            timestamp: "Just now",
-          },
-        ],
-        updated_at: new Date().toISOString(),
-      };
-    });
-    markProjectDirty(target.board_id);
+    try {
+      await boards.create({
+        name: `Board ${boards.boards.length + 1}`,
+        description: "Created from the main page",
+      });
+      await tickets.load();
+      syncState = "pending_changes";
+    } catch (error) {
+      setFailure("Failed to create board", error);
+    }
   }
 
   function manualSync() {
@@ -256,13 +185,18 @@
     syncState = "syncing";
 
     window.setTimeout(() => {
-      projects = projects.map((project) => ({
-        ...project,
-        localChanges: 0,
-        lastSyncedAt: "now",
-      }));
+      localPendingChanges = 0;
       syncState = "up_to_date";
     }, 850);
+  }
+
+  async function openWorkspacePicker() {
+    try {
+      await workspace.pick();
+      pageError = null;
+    } catch (error) {
+      setFailure("Failed to open workspace", error);
+    }
   }
 
   function openSettingsPlaceholder() {
@@ -271,11 +205,31 @@
 
   const commandActions = $derived.by<CommandAction[]>(() => [
     {
+      id: "open-workspace",
+      label: "Open workspace",
+      subtitle: "Pick a local workspace folder",
+      shortcut: "Ctrl/Cmd+O",
+      run: () => {
+        void openWorkspacePicker();
+      },
+    },
+    {
+      id: "new-board",
+      label: "Create board",
+      subtitle: "Create and activate a new board",
+      shortcut: "Ctrl/Cmd+B",
+      run: () => {
+        void createBoard();
+      },
+    },
+    {
       id: "new-ticket",
       label: "Create ticket",
-      subtitle: "Add a new todo ticket in current project",
+      subtitle: "Add a new todo ticket in the active board",
       shortcut: "Ctrl/Cmd+N",
-      run: createTicket,
+      run: () => {
+        void createTicket();
+      },
     },
     {
       id: "sync",
@@ -314,6 +268,40 @@
   ]);
 
   $effect(() => {
+    void workspace.init().catch((error) => {
+      setFailure("workspace.init failed", error);
+    });
+  });
+
+  $effect(() => {
+    if (workspace.status === "ready" || workspace.status === "no_workspace") {
+      void boards.load().catch((error) => {
+        setFailure("boards.load failed", error);
+      });
+    }
+  });
+
+  $effect(() => {
+    if (workspace.status === "ready" || workspace.status === "no_workspace") {
+      void tickets.load().catch((error) => {
+        setFailure("tickets.load failed", error);
+      });
+    }
+  });
+
+  $effect(() => {
+    if (!selectedTicketId) return;
+
+    const stillExists = tickets.tickets.some(
+      (ticket) => ticket.id === selectedTicketId,
+    );
+    if (!stillExists) {
+      selectedTicketId = null;
+      detailOpen = false;
+    }
+  });
+
+  $effect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const isMeta = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
@@ -325,7 +313,17 @@
 
       if (isMeta && key === "n") {
         event.preventDefault();
-        createTicket();
+        void createTicket();
+      }
+
+      if (isMeta && key === "o") {
+        event.preventDefault();
+        void openWorkspacePicker();
+      }
+
+      if (isMeta && key === "b") {
+        event.preventDefault();
+        void createBoard();
       }
 
       if (isMeta && key === "s") {
@@ -345,13 +343,15 @@
 
   $effect(() => {
     setToolbarState({
-      projectName: activeProject?.name ?? "Project",
+      projectName: activeBoard?.name ?? workspace.meta?.name ?? "Workspace",
       pendingChanges,
       syncState,
       onOpenPalette: () => {
         commandPaletteOpen = true;
       },
-      onCreateTicket: createTicket,
+      onCreateTicket: () => {
+        void createTicket();
+      },
       onManualSync: manualSync,
     });
 
@@ -361,64 +361,90 @@
   });
 </script>
 
-<div class="grid h-full min-h-0 grid-cols-[18rem_1fr]">
-  <Sidebar
-    {projects}
-    {activeProjectId}
-    {syncState}
-    onSelectProject={selectProject}
-    onOpenPalette={() => {
-      commandPaletteOpen = true;
-    }}
-    onOpenSettings={openSettingsPlaceholder}
-    onCreateTicket={createTicket}
-  />
-
-  <div class="flex min-w-0 min-h-0 flex-col">
-    <main class="min-h-0 flex-1 p-3">
-      <div class="grid h-full min-h-0 grid-cols-3 gap-3">
-        <KanbanColumn
-          title="Todo"
-          status="todo"
-          tickets={todoTickets}
-          {selectedTicketId}
-          onSelectTicket={openTicket}
-          onDragTicketStart={() => {
-            // drag state is handled through dataTransfer for drop targets
-          }}
-          onDropTicket={moveTicket}
-          onQuickMoveTicket={quickMoveTicket}
-        />
-        <KanbanColumn
-          title="In Progress"
-          status="in_progress"
-          tickets={inProgressTickets}
-          {selectedTicketId}
-          onSelectTicket={openTicket}
-          onDragTicketStart={() => {
-            // drag state is handled through dataTransfer for drop targets
-          }}
-          onDropTicket={moveTicket}
-          onQuickMoveTicket={quickMoveTicket}
-        />
-        <KanbanColumn
-          title="Done"
-          status="done"
-          tickets={doneTickets}
-          {selectedTicketId}
-          onSelectTicket={openTicket}
-          onDragTicketStart={() => {
-            // drag state is handled through dataTransfer for drop targets
-          }}
-          onDropTicket={moveTicket}
-          onQuickMoveTicket={quickMoveTicket}
-        />
-      </div>
-    </main>
-
-    <SyncStatusBar {syncState} {pendingChanges} onManualSync={manualSync} />
+{#if workspace.status === "loading" || workspace.status === "idle"}
+  <div class="flex h-full items-center justify-center p-8">
+    <div
+      class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+    >
+      <h1 class="font-display text-lg font-semibold">Initializing Workspace</h1>
+      <p class="text-sm text-muted-foreground">
+        Restoring your last workspace. If this takes too long, open one
+        manually.
+      </p>
+      <Button onclick={() => void openWorkspacePicker()}>Open Workspace</Button>
+    </div>
   </div>
-</div>
+{:else if workspace.status === "no_workspace" || workspace.status === "error"}
+  <div class="flex h-full items-center justify-center p-8">
+    <div
+      class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+    >
+      <h1 class="font-display text-lg font-semibold">Open a Workspace</h1>
+      <p class="text-sm text-muted-foreground">
+        Pick a local folder to start managing boards and tickets.
+      </p>
+      <Button onclick={() => void openWorkspacePicker()}>Open Workspace</Button>
+      {#if workspace.error}
+        <p class="text-xs text-red-300">{workspace.error}</p>
+      {/if}
+      {#if pageError}
+        <p class="text-xs text-red-300">{pageError}</p>
+      {/if}
+    </div>
+  </div>
+{:else if boards.boards.length === 0}
+  <div class="flex h-full items-center justify-center p-8">
+    <div
+      class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+    >
+      <h1 class="font-display text-lg font-semibold">No Boards Yet</h1>
+      <p class="text-sm text-muted-foreground">
+        Create your first board to start adding tickets.
+      </p>
+      <Button onclick={() => void createBoard()}>Create First Board</Button>
+      {#if pageError}
+        <p class="text-xs text-red-300">{pageError}</p>
+      {/if}
+    </div>
+  </div>
+{:else}
+  <div class="h-full">
+    {#if pageError}
+      <div class="px-3 pt-3">
+        <p
+          class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-red-300"
+        >
+          {pageError}
+        </p>
+      </div>
+    {/if}
+
+    <KanbanWorkspaceView
+      boards={boards.boards}
+      activeBoardId={activeBoard?.id ?? null}
+      {syncState}
+      {todoTickets}
+      {inProgressTickets}
+      {doneTickets}
+      {selectedTicketId}
+      {pendingChanges}
+      onSelectBoard={selectBoard}
+      onOpenPalette={() => {
+        commandPaletteOpen = true;
+      }}
+      onOpenSettings={openSettingsPlaceholder}
+      onCreateTicket={() => {
+        void createTicket();
+      }}
+      onSelectTicket={openTicket}
+      onDropTicket={(ticketId, status) => {
+        void moveTicket(ticketId, status);
+      }}
+      onQuickMoveTicket={quickMoveTicket}
+      onManualSync={manualSync}
+    />
+  </div>
+{/if}
 
 <TicketDetailPanel
   bind:open={detailOpen}
