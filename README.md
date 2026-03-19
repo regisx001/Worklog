@@ -3,6 +3,7 @@
 [![CI](https://github.com/regisx001/Worklog/actions/workflows/ci.yml/badge.svg)](https://github.com/regisx001/Worklog/actions/workflows/ci.yml)
 [![Publish](https://github.com/regisx001/Worklog/actions/workflows/release.yml/badge.svg)](https://github.com/regisx001/Worklog/actions/workflows/release.yml)
 
+<img width="1280" height="820" alt="Screenshot From 2026-03-19 22-42-27" src="https://github.com/user-attachments/assets/abf39646-7d81-44f2-8f5b-e37385838f1f" />
 Worklog is a local-first desktop project manager for small development teams.
 It is built for fast, keyboard-first planning with a Kanban workflow and zero cloud dependency for core usage.
 
