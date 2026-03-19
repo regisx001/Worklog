@@ -66,4 +66,4 @@ jobs:
           workspaces: src-tauri
 
       - name: Build Tauri binary (no bundle)
-        run: bun run tauri build -- --bundles none
+        run: bun tauri build --no-bundle
