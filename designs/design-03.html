@@ -85,11 +85,15 @@
             font-size: 13px;
             overflow: hidden;
             height: 100vh;
-            min-width: 900px;
+            min-width: 320px;
             /* Disable text selection everywhere for native feel */
             user-select: none;
             -webkit-user-select: none;
             -webkit-font-smoothing: antialiased;
+        }
+
+        #app {
+            height: 100dvh;
         }
 
         /* Re-enable selection only where appropriate */
@@ -208,79 +212,162 @@
 
         /* ── FLOATING TICKET CARD ────────────────────────────── */
         .ticket-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-top-width: 2px;
-            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(20, 20, 23, 0.95), rgba(16, 16, 18, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
             padding: 14px 16px;
             margin-bottom: 10px;
-            cursor: default;
+            cursor: pointer;
             transition: all 150ms var(--ease-expo);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.26);
+            animation: cardIn 220ms var(--ease-expo) both;
+            position: relative;
+            transform-origin: center;
         }
 
         .ticket-card:hover {
-            background: var(--bg-raised);
-            border-color: var(--border-default);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.16);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
         }
 
         .ticket-card.selected {
-            background: rgba(29, 185, 84, 0.05);
-            border-color: rgba(29, 185, 84, 0.3);
-            border-top-color: var(--accent-grove) !important;
-            box-shadow: 0 0 0 1px rgba(29, 185, 84, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+            background: linear-gradient(180deg, rgba(27, 30, 32, 0.96), rgba(18, 20, 21, 0.92));
+            border-color: rgba(29, 185, 84, 0.5);
+            box-shadow: 0 0 0 1px rgba(29, 185, 84, 0.3), 0 16px 30px rgba(0, 0, 0, 0.32);
         }
 
-        /* Stripe colors */
-        .stripe-green {
-            border-top-color: var(--label-green-text);
+        .ticket-card.dragging {
+            opacity: 0.5;
+            transform: rotate(1.1deg) scale(1.02);
+            border-color: rgba(29, 185, 84, 0.5);
+            box-shadow: 0 20px 36px rgba(0, 0, 0, 0.38);
+            cursor: grabbing;
         }
 
-        .stripe-blue {
-            border-top-color: var(--label-blue-text);
+        body.is-dragging-ticket .ticket-card:not(.dragging) {
+            opacity: 0.7;
         }
 
-        .stripe-yellow {
-            border-top-color: var(--label-yellow-text);
+        .ticket-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
-        .stripe-red {
-            border-top-color: var(--label-red-text);
+        .ticket-meta-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
         }
 
-        .stripe-purple {
-            border-top-color: var(--label-purple-text);
+        .drag-grip {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -1px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            opacity: 0.65;
         }
 
-        .stripe-orange {
-            border-top-color: var(--label-orange-text);
+        .ticket-card:hover .drag-grip {
+            opacity: 1;
         }
 
-        .stripe-pink {
-            border-top-color: var(--label-pink-text);
+        .kanban-dropzone {
+            position: relative;
+            border-radius: 12px;
+            transition: background 150ms ease, box-shadow 150ms ease;
         }
 
-        .stripe-none {
-            border-top-color: var(--border-subtle);
+        .kanban-dropzone.drag-over {
+            background: linear-gradient(180deg, rgba(29, 185, 84, 0.15), rgba(29, 185, 84, 0.04));
+            box-shadow: inset 0 0 0 1px rgba(29, 185, 84, 0.3);
+        }
+
+        .kanban-dropzone.drag-over::after {
+            content: 'Drop ticket here';
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 14px;
+            padding: 8px 10px;
+            text-align: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--accent-loud);
+            border: 1px dashed rgba(29, 185, 84, 0.35);
+            border-radius: 10px;
+            background: rgba(9, 9, 11, 0.55);
+            pointer-events: none;
         }
 
         .ticket-id {
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-tertiary);
-            margin-bottom: 6px;
+            margin-bottom: 0;
+        }
+
+        .ticket-status-pill {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 999px;
+            border: 1px solid transparent;
+        }
+
+        .ticket-status-pill.status-todo {
+            color: #9CA3AF;
+            background: rgba(156, 163, 175, 0.12);
+            border-color: rgba(156, 163, 175, 0.22);
+        }
+
+        .ticket-status-pill.status-in_progress {
+            color: #74f0a2;
+            background: rgba(29, 185, 84, 0.14);
+            border-color: rgba(29, 185, 84, 0.32);
+        }
+
+        .ticket-status-pill.status-done {
+            color: #93c5fd;
+            background: rgba(88, 166, 255, 0.12);
+            border-color: rgba(88, 166, 255, 0.3);
         }
 
         .ticket-title {
             font-family: 'Inter', sans-serif;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-primary);
             line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            line-clamp: 2;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .ticket-desc-preview {
+            color: #8b8b94;
+            font-size: 12px;
+            line-height: 1.45;
             margin-bottom: 12px;
+            display: -webkit-box;
+            line-clamp: 2;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .ticket-labels {
@@ -289,13 +376,21 @@
             gap: 6px;
         }
 
+        .ticket-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
         /* ── PANELS ──────────────────────────────────────────── */
         #sidebar {
             width: 248px;
             min-width: 248px;
-            background: var(--bg-sidebar);
+            background: linear-gradient(180deg, rgba(16, 16, 18, 0.92), rgba(12, 12, 14, 0.95));
             backdrop-filter: var(--blur-lg);
             border-right: 1px solid var(--border-subtle);
+            box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
             display: flex;
             flex-direction: column;
             transition: width 250ms var(--ease-expo), min-width 250ms var(--ease-expo);
@@ -312,6 +407,7 @@
             transition: opacity 150ms ease;
             overflow-y: auto;
             flex: 1;
+            padding: 12px 0 14px;
         }
 
         #sidebar.collapsed #sidebar-inner {
@@ -319,35 +415,135 @@
             pointer-events: none;
         }
 
+        .sidebar-workspace {
+            margin: 0 12px 14px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            background: linear-gradient(165deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+        }
+
+        .sidebar-workspace-label {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+        }
+
+        .sidebar-workspace-name {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-workspace-meta {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .sidebar-section-title {
+            padding: 0 16px;
+            margin-bottom: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            margin: 12px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+        }
+
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            height: 34px;
-            padding: 0 12px;
-            border-radius: 6px;
+            justify-content: space-between;
+            height: 38px;
+            padding: 0 10px 0 12px;
+            border-radius: 10px;
             margin: 2px 12px;
             font-family: 'Inter', sans-serif;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 500;
             color: var(--text-secondary);
-            cursor: default;
+            cursor: pointer;
             border: none;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.015);
             text-align: left;
             outline: none;
-            transition: all 100ms ease;
+            transition: all 140ms ease;
             width: calc(100% - 24px);
+            position: relative;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            border-radius: 999px;
+            background: transparent;
+            transition: background 120ms ease;
+        }
+
+        .nav-item-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .nav-item-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .nav-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            min-width: 20px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
         }
 
         .nav-item:hover {
-            background: var(--bg-raised);
+            background: rgba(255, 255, 255, 0.07);
             color: var(--text-primary);
         }
 
         .nav-item.active {
-            background: rgba(29, 185, 84, 0.1);
-            color: var(--accent-loud);
+            background: rgba(29, 185, 84, 0.15);
+            color: #9bf7bc;
+            box-shadow: 0 0 0 1px rgba(29, 185, 84, 0.22);
+        }
+
+        .nav-item.active::before {
+            background: var(--accent-grove);
+        }
+
+        .nav-item.active .nav-count {
+            color: #bbf7d0;
+            background: rgba(29, 185, 84, 0.15);
+            border-color: rgba(29, 185, 84, 0.35);
         }
 
         /* ── KANBAN BOARD ────────────────────────────────────── */
@@ -365,6 +561,21 @@
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--border-subtle);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0));
+            opacity: 0;
+            animation: colIn 280ms var(--ease-expo) both;
+        }
+
+        .kanban-col:nth-child(1) {
+            animation-delay: 40ms;
+        }
+
+        .kanban-col:nth-child(2) {
+            animation-delay: 90ms;
+        }
+
+        .kanban-col:nth-child(3) {
+            animation-delay: 140ms;
         }
 
         .kanban-col:last-child {
@@ -403,7 +614,7 @@
         #detail-panel {
             width: 380px;
             min-width: 380px;
-            background: var(--bg-panel);
+            background: linear-gradient(180deg, rgba(22, 22, 24, 0.94), rgba(16, 16, 18, 0.96));
             backdrop-filter: var(--blur-xl);
             border-left: 1px solid var(--border-strong);
             overflow-y: auto;
@@ -415,6 +626,74 @@
 
         #detail-panel.open {
             transform: translateX(0);
+        }
+
+        #detail-scrim,
+        #sidebar-scrim {
+            display: none;
+        }
+
+        .detail-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .detail-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .detail-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .detail-subtitle {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .detail-card-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        .detail-shell .field-input {
+            background: rgba(0, 0, 0, 0.32);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .detail-shell .field-input:focus {
+            border-color: var(--accent-grove);
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
         }
 
         /* ── FORMS & INPUTS ──────────────────────────────────── */
@@ -460,7 +739,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 12px;
             font-weight: 600;
-            cursor: default;
+            cursor: pointer;
             transition: all 100ms ease;
             box-shadow: 0 2px 8px rgba(29, 185, 84, 0.25);
         }
@@ -485,7 +764,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 12px;
             font-weight: 600;
-            cursor: default;
+            cursor: pointer;
             transition: all 100ms ease;
         }
 
@@ -501,7 +780,7 @@
             padding: 6px;
             border-radius: 6px;
             color: var(--text-tertiary);
-            cursor: default;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -567,7 +846,7 @@
             gap: 12px;
             padding: 12px 20px;
             color: var(--text-secondary);
-            cursor: default;
+            cursor: pointer;
             border-left: 3px solid transparent;
         }
 
@@ -682,6 +961,154 @@
                 opacity: 1;
             }
         }
+
+        @keyframes colIn {
+            from {
+                transform: translateY(8px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes cardIn {
+            from {
+                transform: translateY(6px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            #cmd-box {
+                width: min(92vw, 600px);
+            }
+
+            #detail-panel {
+                width: 340px;
+                min-width: 340px;
+            }
+        }
+
+        @media (max-width: 960px) {
+            body {
+                overflow: auto;
+            }
+
+            .titlebar {
+                padding: 0 10px;
+            }
+
+            #sidebar {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                width: 230px;
+                min-width: 230px;
+                transform: translateX(0);
+                transition: transform 250ms var(--ease-expo);
+                box-shadow: 10px 0 28px rgba(0, 0, 0, 0.35);
+                z-index: 40;
+            }
+
+            #sidebar.collapsed {
+                width: 230px;
+                min-width: 230px;
+                transform: translateX(-100%);
+            }
+
+            #sidebar.collapsed #sidebar-inner {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .sidebar-workspace {
+                margin-top: 4px;
+            }
+
+            #sidebar-scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 35;
+                display: block;
+                background: rgba(0, 0, 0, 0.45);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 180ms ease;
+            }
+
+            #sidebar-scrim.open {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            #kanban-board {
+                scroll-snap-type: x mandatory;
+            }
+
+            .kanban-col {
+                min-width: 86vw;
+                max-width: 86vw;
+                scroll-snap-align: start;
+            }
+
+            #detail-panel {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                width: min(92vw, 380px);
+                min-width: 0;
+                z-index: 45;
+            }
+
+            #detail-scrim {
+                position: absolute;
+                inset: 0;
+                z-index: 42;
+                display: block;
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 180ms ease;
+            }
+
+            #detail-scrim.open {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            #status-bar {
+                overflow-x: auto;
+                font-size: 10px;
+            }
+
+            .status-segment {
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0ms !important;
+                transition-duration: 0ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
 
@@ -704,7 +1131,8 @@
             </div>
 
             <div style="display:flex; align-items:center; gap:8px; -webkit-app-region: no-drag;">
-                <button class="btn-icon" id="sidebar-toggle-btn" title="Toggle Sidebar (Ctrl+B)">
+                <button class="btn-icon" id="sidebar-toggle-btn" title="Toggle Sidebar (Ctrl+B)" type="button"
+                    aria-label="Toggle sidebar">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
                         stroke-width="1.5">
                         <rect x="1" y="1" width="14" height="14" rx="2" />
@@ -719,16 +1147,17 @@
             </div>
 
             <div style="display:flex; align-items:center; gap:12px; -webkit-app-region: no-drag;">
-                <button class="btn-ghost" id="cmd-trigger-btn"
+                <button class="btn-ghost" id="cmd-trigger-btn" type="button" aria-label="Open command palette"
                     style="padding:4px 10px; font-size:11px; display:flex; gap:6px; align-items:center;">
                     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
                         stroke-width="1.5">
                         <circle cx="6.5" cy="6.5" r="5" />
                         <path d="M12 12l2.5 2.5" />
                     </svg>
-                    <span style="color:var(--text-tertiary);">Ctrl K</span>
+                    <span style="color:var(--text-tertiary);">Ctrl+K</span>
                 </button>
-                <button class="btn-primary" id="new-ticket-btn" style="padding:4px 12px; font-size:11px;">+
+                <button class="btn-primary" id="new-ticket-btn" type="button"
+                    style="padding:4px 12px; font-size:11px;">+
                     Ticket</button>
             </div>
         </header>
@@ -737,52 +1166,64 @@
         <div class="flex flex-1 overflow-hidden">
 
             <!-- SIDEBAR -->
-            <nav id="sidebar">
+            <nav id="sidebar" aria-label="Workspace navigation">
                 <div id="sidebar-inner" class="py-4">
-                    <div
-                        class="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-['Plus_Jakarta_Sans']">
-                        Projects</div>
-                    <button class="nav-item active" data-board="api-platform">
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                            stroke-width="1.5">
-                            <rect x="1" y="1" width="6" height="14" rx="1.5" />
-                            <rect x="9" y="1" width="6" height="9" rx="1.5" />
-                        </svg>
-                        api-platform
+                    <div class="sidebar-workspace">
+                        <div class="sidebar-workspace-label">Workspace</div>
+                        <div class="sidebar-workspace-name">Worklog Desktop</div>
+                        <div class="sidebar-workspace-meta">6 tickets • local-first repo</div>
+                    </div>
+
+                    <div class="sidebar-section-title">Projects</div>
+                    <button class="nav-item active" data-board="api-platform" type="button">
+                        <span class="nav-item-main">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <rect x="1" y="1" width="6" height="14" rx="1.5" />
+                                <rect x="9" y="1" width="6" height="9" rx="1.5" />
+                            </svg>
+                            <span class="nav-item-text">api-platform</span>
+                        </span>
+                        <span class="nav-count">4</span>
                     </button>
-                    <button class="nav-item" data-board="auth-service">
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                            stroke-width="1.5">
-                            <rect x="1" y="1" width="6" height="14" rx="1.5" />
-                            <rect x="9" y="1" width="6" height="9" rx="1.5" />
-                        </svg>
-                        auth-service
+                    <button class="nav-item" data-board="auth-service" type="button">
+                        <span class="nav-item-main">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <rect x="1" y="1" width="6" height="14" rx="1.5" />
+                                <rect x="9" y="1" width="6" height="9" rx="1.5" />
+                            </svg>
+                            <span class="nav-item-text">auth-service</span>
+                        </span>
+                        <span class="nav-count">2</span>
                     </button>
 
-                    <div class="h-px bg-white/5 mx-4 my-4"></div>
+                    <div class="sidebar-divider"></div>
 
-                    <div
-                        class="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-['Plus_Jakarta_Sans']">
-                        Boards</div>
-                    <button class="nav-item" data-board="sprint-23">
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                            stroke-width="1.5">
-                            <path d="M2 4h12M2 8h8M2 12h5" />
-                        </svg>
-                        sprint-23
+                    <div class="sidebar-section-title">Boards</div>
+                    <button class="nav-item" data-board="sprint-23" type="button">
+                        <span class="nav-item-main">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M2 4h12M2 8h8M2 12h5" />
+                            </svg>
+                            <span class="nav-item-text">sprint-23</span>
+                        </span>
+                        <span class="nav-count">3</span>
                     </button>
-                    <button class="nav-item" data-board="backlog">
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                            stroke-width="1.5">
-                            <path d="M2 4h12M2 8h8M2 12h5" />
-                        </svg>
-                        backlog
+                    <button class="nav-item" data-board="backlog" type="button">
+                        <span class="nav-item-main">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M2 4h12M2 8h8M2 12h5" />
+                            </svg>
+                            <span class="nav-item-text">backlog</span>
+                        </span>
+                        <span class="nav-count">9</span>
                     </button>
 
-                    <div class="h-px bg-white/5 mx-4 my-4"></div>
-                    <div
-                        class="px-4 pb-3 text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-['Plus_Jakarta_Sans']">
-                        Labels</div>
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-section-title">Labels</div>
                     <div class="px-4 flex flex-wrap gap-2">
                         <span class="chip chip-green">backend</span>
                         <span class="chip chip-blue">infra</span>
@@ -794,27 +1235,31 @@
                 </div>
             </nav>
 
+            <div id="sidebar-scrim" aria-hidden="true"></div>
+
             <!-- BOARD -->
             <main id="kanban-main" class="flex flex-1 overflow-hidden">
                 <div id="kanban-board" class="flex-1 flex overflow-x-auto">
                     <div class="kanban-col" id="col-todo">
                         <div class="col-header"><span>To Do</span><span class="col-count" id="count-todo">0</span></div>
-                        <div class="flex-1 overflow-y-auto p-3" id="body-todo"></div>
+                        <div class="flex-1 overflow-y-auto p-3 kanban-dropzone" id="body-todo" data-status="todo"></div>
                     </div>
                     <div class="kanban-col" id="col-inprogress">
                         <div class="col-header"><span style="color:var(--accent-grove);">●</span><span>In
                                 Progress</span><span class="col-count" id="count-inprogress">0</span></div>
-                        <div class="flex-1 overflow-y-auto p-3" id="body-inprogress"></div>
+                        <div class="flex-1 overflow-y-auto p-3 kanban-dropzone" id="body-inprogress"
+                            data-status="in_progress"></div>
                     </div>
                     <div class="kanban-col" id="col-done">
                         <div class="col-header"><span style="color:var(--status-done);">✓</span><span>Done</span><span
                                 class="col-count" id="count-done">0</span></div>
-                        <div class="flex-1 overflow-y-auto p-3" id="body-done"></div>
+                        <div class="flex-1 overflow-y-auto p-3 kanban-dropzone" id="body-done" data-status="done"></div>
                     </div>
                 </div>
             </main>
 
             <!-- DETAIL PANEL -->
+            <div id="detail-scrim" aria-hidden="true"></div>
             <aside id="detail-panel">
                 <div id="detail-content" class="p-6"></div>
             </aside>
@@ -831,15 +1276,15 @@
             <div class="status-segment">↓ <span id="topull-count">0</span></div>
             <div class="flex-1"></div>
             <button
-                class="status-segment border-l border-white/10 hover:bg-white/5 transition-colors cursor-default text-[#1DB954]"
-                id="sync-btn">⟳ Sync</button>
+                class="status-segment border-l border-white/10 hover:bg-white/5 transition-colors cursor-pointer text-[#1DB954]"
+                id="sync-btn" type="button">⟳ Sync</button>
         </footer>
     </div>
 
     <!-- ─────────────────────────────────────────────────────────
      OVERLAYS (Command Palette, Forms, Dialogs)
 ──────────────────────────────────────────────────────────── -->
-    <div id="cmd-overlay">
+    <div id="cmd-overlay" aria-hidden="true">
         <div id="cmd-box">
             <input type="text" id="cmd-input-field" placeholder="Search or type a command..." autocomplete="off"
                 spellcheck="false" />
@@ -847,7 +1292,7 @@
         </div>
     </div>
 
-    <div id="new-ticket-overlay" class="dialog-overlay">
+    <div id="new-ticket-overlay" class="dialog-overlay" aria-hidden="true">
         <div id="new-ticket-box" class="dialog-box">
             <h2 class="text-lg font-bold font-['Plus_Jakarta_Sans'] mb-5 text-white">New Ticket</h2>
             <div class="mb-4">
@@ -865,25 +1310,25 @@
                 <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Status</label>
                 <select class="field-input" id="nt-status">
                     <option value="todo">To Do</option>
-                    <option value="inprogress">In Progress</option>
+                    <option value="in_progress">In Progress</option>
                     <option value="done">Done</option>
                 </select>
             </div>
             <div class="flex justify-end gap-2 mt-6">
-                <button class="btn-ghost" id="nt-cancel">Cancel</button>
-                <button class="btn-primary" id="nt-create">Create Ticket</button>
+                <button class="btn-ghost" id="nt-cancel" type="button">Cancel</button>
+                <button class="btn-primary" id="nt-create" type="button">Create Ticket</button>
             </div>
         </div>
     </div>
 
-    <div id="confirm-overlay" class="dialog-overlay">
+    <div id="confirm-overlay" class="dialog-overlay" aria-hidden="true">
         <div id="confirm-box" class="dialog-box w-[380px]">
             <h3 class="text-base font-bold text-white mb-2">Delete Ticket?</h3>
             <p id="confirm-msg" class="text-sm text-zinc-400 mb-6">This action cannot be undone.</p>
             <div class="flex justify-end gap-2">
-                <button class="btn-ghost" id="confirm-cancel">Cancel</button>
+                <button class="btn-ghost" id="confirm-cancel" type="button">Cancel</button>
                 <button class="btn-ghost text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500"
-                    id="confirm-ok">Delete</button>
+                    id="confirm-ok" type="button">Delete</button>
             </div>
         </div>
     </div>
@@ -897,26 +1342,97 @@
         let ticketCounter = 88;
         let selectedTicketId = null;
         let isDirty = true;
-        let confirmCallback = null;
+        let cmdIdx = 0;
+        let visibleCommands = [];
+        let activeBoard = 'api-platform';
+        let isMobileLayout = window.matchMedia('(max-width: 960px)').matches;
+        let draggedTicketId = null;
+        let recentlyDroppedTicketId = null;
+
+        const STATUS_DOM_KEY = {
+            todo: 'todo',
+            in_progress: 'inprogress',
+            done: 'done'
+        };
+
+        const STATUS_ORDER = ['todo', 'in_progress', 'done'];
 
         let tickets = [
             { id: 'TKT-088', title: 'Implement token refresh endpoint', desc: 'Fixes expired JWT sessions.', status: 'todo', labels: [{ name: 'backend', color: 'green' }, { name: 'p1', color: 'yellow' }] },
             { id: 'TKT-089', title: 'Rate limiting middleware for /api/*', desc: 'Target: 200 req/min per IP.', status: 'todo', labels: [{ name: 'backend', color: 'green' }, { name: 'perf', color: 'orange' }] },
-            { id: 'TKT-090', title: 'Migrate CI pipeline to GitHub Actions', desc: 'Matrix builds for Python 3.10+', status: 'inprogress', labels: [{ name: 'infra', color: 'blue' }] },
-            { id: 'TKT-091', title: 'Fine-tune classification model', desc: 'Min target: 0.92 F1.', status: 'inprogress', labels: [{ name: 'ai/ml', color: 'purple' }, { name: 'p1', color: 'yellow' }] },
-            { id: 'TKT-092', title: 'Fix CORS headers on OPTIONS', desc: 'Chrome blocks preflight.', status: 'inprogress', labels: [{ name: 'bug', color: 'red' }] },
+            { id: 'TKT-090', title: 'Migrate CI pipeline to GitHub Actions', desc: 'Matrix builds for Python 3.10+', status: 'in_progress', labels: [{ name: 'infra', color: 'blue' }] },
+            { id: 'TKT-091', title: 'Fine-tune classification model', desc: 'Min target: 0.92 F1.', status: 'in_progress', labels: [{ name: 'ai/ml', color: 'purple' }, { name: 'p1', color: 'yellow' }] },
+            { id: 'TKT-092', title: 'Fix CORS headers on OPTIONS', desc: 'Chrome blocks preflight.', status: 'in_progress', labels: [{ name: 'bug', color: 'red' }] },
             { id: 'TKT-093', title: 'Postgres index on user_sessions', desc: 'Reduces runtime 4s→40ms.', status: 'done', labels: [{ name: 'backend', color: 'green' }, { name: 'perf', color: 'orange' }] }
         ];
 
-        function stripeClass(labels) { return (!labels || labels.length === 0) ? 'stripe-none' : `stripe-${labels[0].color}`; }
         function renderChip(label) { return `<span class="chip chip-${label.color}">${label.name}</span>`; }
-        function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function escHtml(s = '') { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function isMobileView() { return window.matchMedia('(max-width: 960px)').matches; }
+        function statusLabel(status) {
+            if (status === 'in_progress') return 'In Progress';
+            if (status === 'done') return 'Done';
+            return 'To Do';
+        }
 
         function toast(msg) {
             const el = document.createElement('div');
             el.className = 'toast'; el.innerHTML = `<span>${msg}</span>`;
             document.getElementById('toast-area').appendChild(el);
             setTimeout(() => el.remove(), 3000);
+        }
+
+        function setSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            const scrim = document.getElementById('sidebar-scrim');
+            sidebar.classList.toggle('collapsed', !open);
+            if (isMobileView()) {
+                scrim.classList.toggle('open', open);
+            } else {
+                scrim.classList.remove('open');
+            }
+        }
+
+        function setDetailPanel(open) {
+            const panel = document.getElementById('detail-panel');
+            const scrim = document.getElementById('detail-scrim');
+            panel.classList.toggle('open', open);
+            if (isMobileView()) {
+                scrim.classList.toggle('open', open);
+            } else {
+                scrim.classList.remove('open');
+            }
+        }
+
+        function setActiveBoard(boardName) {
+            activeBoard = boardName;
+            document.getElementById('active-board-name').textContent = boardName;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.board === boardName);
+            });
+        }
+
+        function closeNewTicketModal() {
+            document.getElementById('new-ticket-overlay').classList.remove('open');
+        }
+
+        function openNewTicketModal() {
+            document.getElementById('nt-title').value = '';
+            document.getElementById('nt-desc').value = '';
+            document.getElementById('nt-status').value = 'todo';
+            document.getElementById('new-ticket-overlay').classList.add('open');
+            document.getElementById('nt-title').focus();
+        }
+
+        function closeCmd() {
+            document.getElementById('cmd-overlay').classList.remove('open');
+        }
+
+        function setCmdActive(index) {
+            cmdIdx = index;
+            document.querySelectorAll('#cmd-list .cmd-item[data-idx]').forEach(item => {
+                item.classList.toggle('active', Number(item.dataset.idx) === cmdIdx);
+            });
         }
 
         function markDirty() {
@@ -931,28 +1447,117 @@
             document.getElementById('dirty-label').textContent = '✓ Synced';
         }
 
+        function resetDragVisuals() {
+            document.body.classList.remove('is-dragging-ticket');
+            document.querySelectorAll('.kanban-dropzone.drag-over').forEach(zone => zone.classList.remove('drag-over'));
+            document.querySelectorAll('.ticket-card.dragging').forEach(card => card.classList.remove('dragging'));
+        }
+
+        function moveTicketToStatus(ticketId, newStatus) {
+            const ticket = tickets.find(item => item.id === ticketId);
+            if (!ticket || ticket.status === newStatus) {
+                return;
+            }
+
+            ticket.status = newStatus;
+            recentlyDroppedTicketId = ticketId;
+            setTimeout(() => {
+                recentlyDroppedTicketId = null;
+            }, 180);
+
+            markDirty();
+            renderBoard();
+            toast(`${ticket.id} moved to ${statusLabel(newStatus)}`);
+        }
+
+        function bindDropZones() {
+            document.querySelectorAll('.kanban-dropzone').forEach(zone => {
+                zone.addEventListener('dragover', e => {
+                    if (!draggedTicketId) return;
+                    e.preventDefault();
+                    zone.classList.add('drag-over');
+                });
+
+                zone.addEventListener('dragenter', e => {
+                    if (!draggedTicketId) return;
+                    e.preventDefault();
+                    zone.classList.add('drag-over');
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-over');
+                });
+
+                zone.addEventListener('drop', e => {
+                    if (!draggedTicketId) return;
+                    e.preventDefault();
+                    const targetStatus = zone.dataset.status;
+                    moveTicketToStatus(draggedTicketId, targetStatus);
+                    draggedTicketId = null;
+                    resetDragVisuals();
+                });
+            });
+        }
+
         function renderBoard() {
-            const cols = { todo: [], inprogress: [], done: [] };
+            const cols = { todo: [], in_progress: [], done: [] };
             tickets.forEach(t => cols[t.status] && cols[t.status].push(t));
 
-            ['todo', 'inprogress', 'done'].forEach(status => {
-                const body = document.getElementById(`body-${status}`);
-                document.getElementById(`count-${status}`).textContent = cols[status].length;
+            STATUS_ORDER.forEach(status => {
+                const domKey = STATUS_DOM_KEY[status];
+                const body = document.getElementById(`body-${domKey}`);
+                document.getElementById(`count-${domKey}`).textContent = cols[status].length;
 
                 if (cols[status].length === 0) {
                     body.innerHTML = `<div class="text-center p-8 text-zinc-500 text-xs">Empty column</div>`; return;
                 }
 
                 body.innerHTML = cols[status].map(t => `
-      <div class="ticket-card ${stripeClass(t.labels)} ${t.id === selectedTicketId ? 'selected' : ''}" data-id="${t.id}" tabindex="0">
-        <div class="ticket-id">${t.id}</div>
-        <div class="ticket-title selectable">${escHtml(t.title)}</div>
-        <div class="ticket-labels">${t.labels.map(l => renderChip(l)).join('')}</div>
+            <div class="ticket-card ${t.id === selectedTicketId ? 'selected' : ''}" data-id="${t.id}" tabindex="0" role="button" aria-selected="${t.id === selectedTicketId}" draggable="true">
+                <div class="ticket-meta-row">
+                    <div class="ticket-meta-left">
+                        <div class="ticket-id">${t.id}</div>
+                        <span class="ticket-status-pill status-${t.status}">${statusLabel(t.status)}</span>
+                    </div>
+                    <span class="drag-grip" aria-hidden="true">::</span>
+                </div>
+                <div class="ticket-title selectable">${escHtml(t.title)}</div>
+                <div class="ticket-desc-preview selectable">${escHtml(t.desc || 'No description yet.')}</div>
+                <div class="ticket-footer">
+                    <div class="ticket-labels">${t.labels.length ? t.labels.map(l => renderChip(l)).join('') : '<span class="chip chip-gray">no-label</span>'}</div>
+                </div>
       </div>`).join('');
 
                 body.querySelectorAll('.ticket-card').forEach(el => {
-                    el.addEventListener('click', () => { selectedTicketId = el.dataset.id; renderBoard(); openDetailPanel(); });
-                    el.addEventListener('keydown', e => { if (e.key === 'Enter') { selectedTicketId = el.dataset.id; renderBoard(); openDetailPanel(); } });
+                    el.addEventListener('click', () => {
+                        if (recentlyDroppedTicketId === el.dataset.id) return;
+                        selectedTicketId = el.dataset.id;
+                        renderBoard();
+                        openDetailPanel();
+                    });
+
+                    el.addEventListener('keydown', e => {
+                        if (e.key === 'Enter') {
+                            selectedTicketId = el.dataset.id;
+                            renderBoard();
+                            openDetailPanel();
+                        }
+                    });
+
+                    el.addEventListener('dragstart', e => {
+                        draggedTicketId = el.dataset.id;
+                        el.classList.add('dragging');
+                        document.body.classList.add('is-dragging-ticket');
+                        if (e.dataTransfer) {
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', draggedTicketId);
+                        }
+                    });
+
+                    el.addEventListener('dragend', () => {
+                        draggedTicketId = null;
+                        resetDragVisuals();
+                    });
                 });
             });
         }
@@ -960,34 +1565,42 @@
         function openDetailPanel() {
             const t = tickets.find(x => x.id === selectedTicketId);
             if (!t) return;
-            const panel = document.getElementById('detail-panel');
-            panel.classList.add('open');
+            setDetailPanel(true);
 
             document.getElementById('detail-content').innerHTML = `
-    <div class="flex justify-between items-center mb-6">
-      <div class="ticket-id mb-0">${t.id}</div>
-      <button class="btn-icon" id="close-detail-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+<div class="detail-shell">
+    <div class="detail-top">
+        <div class="detail-meta">
+            <div class="ticket-id mb-0">${t.id}</div>
+            <div class="detail-title">Content Modification</div>
+            <div class="detail-subtitle">Update ticket details and workflow status</div>
+        </div>
+        <button class="btn-icon" id="close-detail-btn" type="button" aria-label="Close details"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
     </div>
-    <div class="mb-5">
-      <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Title</label>
-      <input type="text" class="field-input font-medium text-white selectable" id="dt-title" value="${escHtml(t.title)}" />
+
+    <div class="detail-card">
+        <div class="detail-card-title">Title</div>
+        <input type="text" class="field-input font-medium text-white selectable" id="dt-title" value="${escHtml(t.title)}" />
     </div>
-    <div class="mb-5">
-      <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Status</label>
-      <select class="field-input" id="dt-status">
-        <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
-        <option value="inprogress" ${t.status === 'inprogress' ? 'selected' : ''}>In Progress</option>
-        <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
-      </select>
+
+    <div class="detail-card">
+        <div class="detail-card-title">Status</div>
+        <select class="field-input" id="dt-status">
+            <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
+            <option value="in_progress" ${t.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+            <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
+        </select>
     </div>
-    <div class="mb-6">
-      <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Description</label>
-      <textarea class="field-input h-32 resize-none selectable" id="dt-desc">${escHtml(t.desc || '')}</textarea>
+
+    <div class="detail-card">
+        <div class="detail-card-title">Description</div>
+        <textarea class="field-input h-36 resize-none selectable" id="dt-desc">${escHtml(t.desc || '')}</textarea>
     </div>
-    <div class="flex gap-2 w-full mt-8">
-      <button class="btn-primary flex-1" id="dt-save">Save changes</button>
+
+    <div class="detail-actions">
+        <button class="btn-primary flex-1" id="dt-save" type="button">Save Changes</button>
     </div>
-  `;
+</div>`;
 
             document.getElementById('close-detail-btn').addEventListener('click', closeDetailPanel);
             document.getElementById('dt-save').addEventListener('click', () => {
@@ -999,84 +1612,199 @@
         }
 
         function closeDetailPanel() {
-            document.getElementById('detail-panel').classList.remove('open');
+            setDetailPanel(false);
             selectedTicketId = null; renderBoard();
         }
 
         /* Modals */
-        document.getElementById('new-ticket-btn').addEventListener('click', () => {
-            document.getElementById('nt-title').value = '';
-            document.getElementById('nt-desc').value = '';
-            document.getElementById('new-ticket-overlay').classList.add('open');
-            document.getElementById('nt-title').focus();
-        });
-        document.getElementById('nt-cancel').addEventListener('click', () => document.getElementById('new-ticket-overlay').classList.remove('open'));
+        document.getElementById('new-ticket-btn').addEventListener('click', openNewTicketModal);
+        document.getElementById('nt-cancel').addEventListener('click', closeNewTicketModal);
         document.getElementById('nt-create').addEventListener('click', () => {
             const title = document.getElementById('nt-title').value.trim();
             if (!title) return;
             ticketCounter++;
             tickets.push({ id: `TKT-${String(ticketCounter).padStart(3, '0')}`, title, desc: document.getElementById('nt-desc').value, status: document.getElementById('nt-status').value, labels: [] });
-            document.getElementById('new-ticket-overlay').classList.remove('open');
+            closeNewTicketModal();
             markDirty(); renderBoard(); toast('Ticket created');
+        });
+        document.getElementById('new-ticket-overlay').addEventListener('click', e => {
+            if (e.target.id === 'new-ticket-overlay') closeNewTicketModal();
         });
 
         /* Sidebar Toggle */
-        document.getElementById('sidebar-toggle-btn').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+        document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            setSidebar(sidebar.classList.contains('collapsed'));
+        });
+        document.getElementById('sidebar-scrim').addEventListener('click', () => setSidebar(false));
+        document.getElementById('detail-scrim').addEventListener('click', closeDetailPanel);
+
+        document.addEventListener('drop', e => {
+            e.preventDefault();
+            draggedTicketId = null;
+            resetDragVisuals();
+        });
+
+        document.addEventListener('dragover', e => {
+            if (draggedTicketId) {
+                e.preventDefault();
+            }
+        });
+
+        /* Board Selection */
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                setActiveBoard(item.dataset.board);
+                if (isMobileView()) setSidebar(false);
+            });
+            item.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setActiveBoard(item.dataset.board);
+                    if (isMobileView()) setSidebar(false);
+                }
+            });
+        });
 
         /* Command Palette */
         const COMMANDS = [
-            { icon: '➕', label: 'New ticket', action: () => document.getElementById('new-ticket-btn').click() },
+            { icon: '+', label: 'New ticket', action: () => document.getElementById('new-ticket-btn').click() },
             { icon: 'B', label: 'Toggle sidebar', action: () => document.getElementById('sidebar-toggle-btn').click() },
             { icon: '⟳', label: 'Sync changes', action: () => document.getElementById('sync-btn').click() },
         ];
-        let cmdIdx = 0;
 
         function openCmd() {
             document.getElementById('cmd-overlay').classList.add('open');
             document.getElementById('cmd-input-field').value = '';
-            cmdIdx = 0; renderCmdList(COMMANDS);
+            visibleCommands = COMMANDS;
+            cmdIdx = 0;
+            renderCmdList(visibleCommands);
             document.getElementById('cmd-input-field').focus();
         }
 
         function renderCmdList(list) {
-            document.getElementById('cmd-list').innerHTML = list.map((c, i) => `
+            const listEl = document.getElementById('cmd-list');
+            if (list.length === 0) {
+                listEl.innerHTML = '<div class="cmd-item">No commands found</div>';
+                return;
+            }
+
+            listEl.innerHTML = list.map((c, i) => `
     <div class="cmd-item ${i === cmdIdx ? 'active' : ''}" data-idx="${i}">
       <span class="w-6 text-center">${c.icon}</span><span class="font-medium">${c.label}</span>
     </div>`).join('');
+
+            listEl.querySelectorAll('.cmd-item[data-idx]').forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    setCmdActive(Number(item.dataset.idx));
+                });
+                item.addEventListener('click', () => {
+                    cmdIdx = Number(item.dataset.idx);
+                    closeCmd();
+                    list[cmdIdx].action();
+                });
+            });
         }
 
         document.getElementById('cmd-input-field').addEventListener('input', e => {
             const q = e.target.value.toLowerCase();
-            const f = COMMANDS.filter(c => c.label.toLowerCase().includes(q));
-            cmdIdx = 0; renderCmdList(f);
+            visibleCommands = COMMANDS.filter(c => c.label.toLowerCase().includes(q));
+            cmdIdx = 0;
+            renderCmdList(visibleCommands);
         });
 
         document.getElementById('cmd-input-field').addEventListener('keydown', e => {
-            const f = COMMANDS.filter(c => c.label.toLowerCase().includes(document.getElementById('cmd-input-field').value.toLowerCase()));
-            if (e.key === 'ArrowDown') { e.preventDefault(); cmdIdx = Math.min(cmdIdx + 1, f.length - 1); renderCmdList(f); }
-            if (e.key === 'ArrowUp') { e.preventDefault(); cmdIdx = Math.max(cmdIdx - 1, 0); renderCmdList(f); }
-            if (e.key === 'Enter' && f[cmdIdx]) { document.getElementById('cmd-overlay').classList.remove('open'); f[cmdIdx].action(); }
-            if (e.key === 'Escape') document.getElementById('cmd-overlay').classList.remove('open');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                cmdIdx = Math.min(cmdIdx + 1, Math.max(visibleCommands.length - 1, 0));
+                setCmdActive(cmdIdx);
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                cmdIdx = Math.max(cmdIdx - 1, 0);
+                setCmdActive(cmdIdx);
+            }
+            if (e.key === 'Enter' && visibleCommands[cmdIdx]) {
+                closeCmd();
+                visibleCommands[cmdIdx].action();
+            }
+            if (e.key === 'Escape') closeCmd();
         });
 
         document.getElementById('cmd-trigger-btn').addEventListener('click', openCmd);
+        document.getElementById('cmd-overlay').addEventListener('click', e => {
+            if (e.target.id === 'cmd-overlay') closeCmd();
+        });
+
         document.addEventListener('keydown', e => {
-            if (e.ctrlKey && e.key === 'k') { e.preventDefault(); openCmd(); }
-            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); document.getElementById('sidebar-toggle-btn').click(); }
-            if (e.key === 'Escape') closeDetailPanel();
+            const key = e.key.toLowerCase();
+            if ((e.ctrlKey || e.metaKey) && key === 'k') {
+                e.preventDefault();
+                openCmd();
+                return;
+            }
+            if ((e.ctrlKey || e.metaKey) && key === 'b') {
+                e.preventDefault();
+                document.getElementById('sidebar-toggle-btn').click();
+                return;
+            }
+            if (e.key === 'Escape') {
+                if (document.getElementById('cmd-overlay').classList.contains('open')) {
+                    closeCmd();
+                    return;
+                }
+                if (document.getElementById('new-ticket-overlay').classList.contains('open')) {
+                    closeNewTicketModal();
+                    return;
+                }
+                if (document.getElementById('detail-panel').classList.contains('open')) {
+                    closeDetailPanel();
+                }
+            }
+        });
+
+        document.getElementById('nt-title').addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('nt-create').click();
+            }
         });
 
         /* Sync */
         document.getElementById('sync-btn').addEventListener('click', () => {
             const btn = document.getElementById('sync-btn');
+            if (btn.dataset.syncing === 'true') return;
+            btn.dataset.syncing = 'true';
             btn.textContent = '⟳ Syncing...';
             setTimeout(() => {
-                btn.textContent = '⟳ Sync'; document.getElementById('unpushed-count').textContent = '0';
+                btn.textContent = '⟳ Sync';
+                btn.dataset.syncing = 'false';
+                document.getElementById('unpushed-count').textContent = '0';
                 markClean(); toast('✓ Synced with remote');
             }, 1000);
         });
 
+        /* Responsive behavior */
+        window.addEventListener('resize', () => {
+            const nowMobile = isMobileView();
+            if (nowMobile !== isMobileLayout) {
+                isMobileLayout = nowMobile;
+                if (nowMobile) {
+                    setSidebar(false);
+                    setDetailPanel(false);
+                } else {
+                    setSidebar(true);
+                    setDetailPanel(false);
+                }
+            }
+        });
+
         /* Init */
+        setActiveBoard(activeBoard);
+        if (isMobileLayout) {
+            setSidebar(false);
+        }
+        bindDropZones();
         renderBoard();
     </script>
 </body>
