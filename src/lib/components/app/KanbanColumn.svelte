@@ -13,6 +13,8 @@
         onDragTicketStart: (ticketId: string) => void;
         onDropTicket: (ticketId: string, status: TicketStatus) => void;
         onQuickMoveTicket: (ticketId: string) => void;
+        onMoveTicketToStatus: (ticketId: string, status: TicketStatus) => void;
+        onDeleteTicket: (ticketId: string) => void;
     }
 
     let {
@@ -24,6 +26,8 @@
         onDragTicketStart,
         onDropTicket,
         onQuickMoveTicket,
+        onMoveTicketToStatus,
+        onDeleteTicket,
     }: KanbanColumnProps = $props();
 
     let isDropTarget = $state(false);
@@ -121,6 +125,8 @@
                         onSelect={onSelectTicket}
                         onDragStart={onDragTicketStart}
                         onQuickMove={onQuickMoveTicket}
+                        onMoveToStatus={onMoveTicketToStatus}
+                        onDelete={onDeleteTicket}
                     />
                 {/each}
             {/if}

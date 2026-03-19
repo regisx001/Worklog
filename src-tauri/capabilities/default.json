@@ -13,6 +13,37 @@
     "core:window:allow-unmaximize",
     "core:window:allow-is-maximized",
     "core:window:allow-start-dragging",
-    "opener:default"
+    "opener:default",
+    "sql:allow-execute",
+    "sql:allow-select",
+    "sql:allow-load",
+    "sql:allow-close",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-save",
+    "dialog:allow-open",
+    "fs:default",
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [
+        {
+          "path": "$DOCUMENT/.worklog"
+        },
+        {
+          "path": "$DOCUMENT/**/*"
+        }
+      ]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        {
+          "path": "$DOCUMENT/.worklog"
+        },
+        {
+          "path": "$DOCUMENT/**/*"
+        }
+      ]
+    }
   ]
 }

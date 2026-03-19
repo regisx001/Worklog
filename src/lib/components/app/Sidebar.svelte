@@ -7,27 +7,40 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import { Separator } from "$lib/components/ui/separator/index.js";
     import {
+        ContextMenu,
+        ContextMenuContent,
+        ContextMenuItem,
+        ContextMenuSeparator,
+        ContextMenuTrigger,
+    } from "$lib/components/ui/context-menu/index.js";
+    import {
         Tooltip,
         TooltipContent,
         TooltipTrigger,
     } from "$lib/components/ui/tooltip/index.js";
-    import type { Project, SyncState } from "./types.js";
+    import type { Board, SyncState } from "./types.js";
 
     interface SidebarProps {
-        projects: Project[];
-        activeProjectId: string;
+        boards: Board[];
+        activeBoardId: string | null;
         syncState: SyncState;
-        onSelectProject: (projectId: string) => void;
+        onCreateBoard: () => void;
+        onSelectBoard: (boardId: string) => void;
+        onCreateTicketForBoard: (boardId: string) => void;
+        onDeleteBoard: (boardId: string) => void;
         onOpenPalette: () => void;
         onOpenSettings: () => void;
         onCreateTicket: () => void;
     }
 
     let {
-        projects,
-        activeProjectId,
+        boards,
+        activeBoardId,
         syncState,
-        onSelectProject,
+        onCreateBoard,
+        onSelectBoard,
+        onCreateTicketForBoard,
+        onDeleteBoard,
         onOpenPalette,
         onOpenSettings,
         onCreateTicket,
@@ -47,29 +60,31 @@
 </script>
 
 <aside
+    oncontextmenu={() => {
+        return false;
+    }}
     class="bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col border-r border-sidebar-border"
 >
     <header class="flex items-center justify-between px-3 py-2.5">
         <div
             class="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
         >
-            <span>Projects</span>
-            <Badge variant="outline" class="h-5 px-1.5">{projects.length}</Badge
-            >
+            <span>Boards</span>
+            <Badge variant="outline" class="h-5 px-1.5">{boards.length}</Badge>
         </div>
         <Tooltip>
             <TooltipTrigger>
                 <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Create ticket"
-                    onclick={onCreateTicket}
+                    aria-label="Create board"
+                    onclick={onCreateBoard}
                 >
                     <PlusIcon />
                 </Button>
             </TooltipTrigger>
             <TooltipContent sideOffset={8}
-                >Create ticket (Ctrl/Cmd+N)</TooltipContent
+                >Create board (Ctrl/Cmd+B)</TooltipContent
             >
         </Tooltip>
     </header>
@@ -78,34 +93,75 @@
 
     <nav class="min-h-0 flex-1 overflow-y-auto p-2">
         <ul class="space-y-1">
-            {#each projects as project (project.id)}
+            {#if boards.length === 0}
                 <li>
-                    <button
-                        type="button"
-                        onclick={() => onSelectProject(project.id)}
-                        class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
-                        class:bg-sidebar-accent={project.id === activeProjectId}
-                        aria-current={project.id === activeProjectId
-                            ? "page"
-                            : undefined}
+                    <p
+                        class="rounded-md border border-dashed border-border px-2.5 py-4 text-center text-xs text-muted-foreground"
                     >
-                        <div class="min-w-0">
-                            <p class="truncate font-medium">{project.name}</p>
-                            <p class="mt-0.5 text-[11px] text-muted-foreground">
-                                Synced {project.lastSyncedAt}
-                            </p>
-                        </div>
-                        <Badge
-                            variant={project.localChanges > 0
-                                ? "secondary"
-                                : "outline"}
-                            class="shrink-0"
-                        >
-                            {project.localChanges}
-                        </Badge>
-                    </button>
+                        No boards available
+                    </p>
                 </li>
-            {/each}
+            {:else}
+                {#each boards as board (board.id)}
+                    <li>
+                        <ContextMenu>
+                            <ContextMenuTrigger class="block">
+                                <button
+                                    type="button"
+                                    onclick={() => onSelectBoard(board.id)}
+                                    class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full min-w-0 items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
+                                    class:bg-sidebar-accent={board.id ===
+                                        activeBoardId}
+                                    aria-current={board.id === activeBoardId
+                                        ? "page"
+                                        : undefined}
+                                >
+                                    <div class="min-w-0">
+                                        <p class="truncate font-medium">
+                                            {board.name}
+                                        </p>
+                                        <p
+                                            class="mt-0.5 truncate text-[11px] text-muted-foreground"
+                                        >
+                                            {board.description ||
+                                                "No description"}
+                                        </p>
+                                    </div>
+                                    <Badge variant="outline" class="shrink-0">
+                                        {board.id.slice(-4).toUpperCase()}
+                                    </Badge>
+                                </button>
+                            </ContextMenuTrigger>
+
+                            <ContextMenuContent>
+                                <ContextMenuItem
+                                    onclick={() => {
+                                        onSelectBoard(board.id);
+                                    }}
+                                >
+                                    Open board
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    onclick={() => {
+                                        onCreateTicketForBoard(board.id);
+                                    }}
+                                >
+                                    Create ticket
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem
+                                    variant="destructive"
+                                    onclick={() => {
+                                        onDeleteBoard(board.id);
+                                    }}
+                                >
+                                    Delete board
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
+                    </li>
+                {/each}
+            {/if}
         </ul>
     </nav>
 

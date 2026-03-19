@@ -1,15 +1,23 @@
 <script lang="ts">
 	import "./layout.css";
 	import AppToolbar from "$lib/components/app/Toolbar/AppToolbar.svelte";
-	import { toolbarState } from "$lib/hooks/toolbar.js";
-	import { fromStore } from "svelte/store";
+	import { toolbarState } from "$lib/hooks/toolbar.svelte.js";
 
 	const { children } = $props();
-	const toolbar = fromStore(toolbarState);
 
 	$effect(() => {
 		document.documentElement.classList.add("dark");
-		return () => document.documentElement.classList.remove("dark");
+		const handleContextmenu = (event: MouseEvent) => {
+			event.preventDefault();
+		};
+
+		document.addEventListener("contextmenu", handleContextmenu);
+
+		// Cleanup the event listener when the component is destroyed
+		return () => {
+			document.documentElement.classList.remove("dark");
+			document.removeEventListener("contextmenu", handleContextmenu);
+		};
 	});
 </script>
 
@@ -17,12 +25,12 @@
 	class="dark flex h-dvh flex-col overflow-hidden bg-background text-foreground"
 >
 	<AppToolbar
-		projectName={toolbar.current.projectName}
-		pendingChanges={toolbar.current.pendingChanges}
-		syncState={toolbar.current.syncState}
-		onOpenPalette={toolbar.current.onOpenPalette}
-		onCreateTicket={toolbar.current.onCreateTicket}
-		onManualSync={toolbar.current.onManualSync}
+		projectName={toolbarState.projectName}
+		pendingChanges={toolbarState.pendingChanges}
+		syncState={toolbarState.syncState}
+		onOpenPalette={toolbarState.onOpenPalette}
+		onCreateTicket={toolbarState.onCreateTicket}
+		onManualSync={toolbarState.onManualSync}
 	/>
 
 	<div class="min-h-0 flex-1">

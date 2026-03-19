@@ -1,157 +1,98 @@
 <script lang="ts">
-  import { resetToolbarState, setToolbarState } from "$lib/hooks/toolbar.js";
-  import KanbanColumn from "$lib/components/app/KanbanColumn.svelte";
-  import Sidebar from "$lib/components/app/Sidebar.svelte";
-  import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
-  import SyncStatusBar from "$lib/components/app/SyncStatusBar.svelte";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import KanbanWorkspaceView from "$lib/components/app/KanbanWorkspaceView.svelte";
   import CommandPalette from "$lib/components/app/CommandPalette.svelte";
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+  } from "$lib/components/ui/dialog/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Textarea } from "$lib/components/ui/textarea/index.js";
+  import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
+  import { useBoards } from "$lib/hooks/boards.svelte";
+  import { useTickets } from "$lib/hooks/tickets.svelte";
+  import {
+    resetToolbarState,
+    setToolbarState,
+  } from "$lib/hooks/toolbar.svelte.js";
+  import { useWorkspace } from "$lib/hooks/workspace.svelte";
   import type {
     CommandAction,
-    Project,
+    Comment,
     SyncState,
-    Ticket,
     TicketStatus,
+    UpdateTicketInput,
   } from "$lib/components/app/types.js";
 
-  let projects = $state<Project[]>([
-    {
-      id: "core",
-      name: "Core Compiler",
-      localChanges: 2,
-      lastSyncedAt: "2m ago",
-    },
-    {
-      id: "desktop",
-      name: "Desktop Shell",
-      localChanges: 0,
-      lastSyncedAt: "8m ago",
-    },
-    {
-      id: "devx",
-      name: "Developer UX",
-      localChanges: 1,
-      lastSyncedAt: "12m ago",
-    },
-  ]);
+  const workspace = useWorkspace();
+  const boards = useBoards(() => workspace.path);
+  const tickets = useTickets(
+    () => workspace.path,
+    () => boards.active?.id ?? null,
+  );
 
-  let tickets = $state<Ticket[]>([
-    {
-      id: "TK-101",
-      projectId: "core",
-      title: "Persist board state between restarts",
-      description:
-        "- Save board data in local storage\n- Restore selected ticket on load",
-      status: "todo",
-      label: "enhancement",
-      assignee: "Regis Xavier",
-      comments: [
-        {
-          id: "c-1",
-          author: "Mia",
-          body: "Prefer filesystem snapshot over localStorage.",
-          createdAt: "09:12",
-        },
-      ],
-    },
-    {
-      id: "TK-102",
-      projectId: "core",
-      title: "Keyboard reorder in kanban columns",
-      description: "Enable moving a focused card with shortcuts.",
-      status: "in-progress",
-      label: "feature",
-      assignee: "Ivy Chen",
-      comments: [],
-    },
-    {
-      id: "TK-103",
-      projectId: "core",
-      title: "Add markdown preview in detail panel",
-      description: "Render plain markdown-like line breaks instantly.",
-      status: "done",
-      label: "ui",
-      assignee: "Noah Park",
-      comments: [
-        {
-          id: "c-2",
-          author: "Noah",
-          body: "Shipped with escaped HTML output.",
-          createdAt: "Yesterday",
-        },
-      ],
-    },
-    {
-      id: "TK-104",
-      projectId: "desktop",
-      title: "Attach native notifications for due dates",
-      description: "Hook Tauri notification API.",
-      status: "todo",
-      label: "desktop",
-      comments: [],
-    },
-    {
-      id: "TK-105",
-      projectId: "devx",
-      title: "Command palette action indexing",
-      description: "Support fuzzy filter across labels and ids.",
-      status: "in-progress",
-      label: "perf",
-      comments: [],
-    },
-  ]);
-
-  let activeProjectId = $state("core");
   let selectedTicketId = $state<string | null>(null);
   let detailOpen = $state(false);
   let commandPaletteOpen = $state(false);
-  let syncState = $state<SyncState>("pending_changes");
+  let createBoardDialogOpen = $state(false);
+  let creatingBoard = $state(false);
+  let boardName = $state("");
+  let boardDescription = $state("");
+  let boardFormError = $state<string | null>(null);
+  let syncState = $state<SyncState>("up_to_date");
+  let localPendingChanges = $state(0);
+  let pageError = $state<string | null>(null);
 
-  const activeProject = $derived.by(() => {
-    return (
-      projects.find((project) => project.id === activeProjectId) ?? projects[0]
-    );
-  });
-
-  const visibleTickets = $derived.by(() => {
-    return tickets.filter((ticket) => ticket.projectId === activeProjectId);
-  });
+  const activeBoard = $derived.by(() => boards.active);
 
   const todoTickets = $derived.by(() =>
-    visibleTickets.filter((ticket) => ticket.status === "todo"),
+    tickets.tickets.filter((ticket) => ticket.status === "todo"),
   );
   const inProgressTickets = $derived.by(() =>
-    visibleTickets.filter((ticket) => ticket.status === "in-progress"),
+    tickets.tickets.filter((ticket) => ticket.status === "in_progress"),
   );
   const doneTickets = $derived.by(() =>
-    visibleTickets.filter((ticket) => ticket.status === "done"),
+    tickets.tickets.filter((ticket) => ticket.status === "done"),
   );
 
   const selectedTicket = $derived.by(() => {
     if (!selectedTicketId) return null;
-    return tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
-  });
-
-  const pendingChanges = $derived.by(() => {
-    return projects.reduce((sum, project) => sum + project.localChanges, 0);
-  });
-
-  function markProjectDirty(projectId: string) {
-    projects = projects.map((project) =>
-      project.id === projectId
-        ? {
-            ...project,
-            localChanges: project.localChanges + 1,
-            lastSyncedAt: "now",
-          }
-        : project,
+    return (
+      tickets.tickets.find((ticket) => ticket.id === selectedTicketId) ?? null
     );
-    syncState = "pending_changes";
+  });
+
+  const pendingChanges = $derived.by(() => localPendingChanges);
+
+  function setFailure(context: string, error: unknown) {
+    const detail = error instanceof Error ? error.message : String(error);
+    pageError = `${context}: ${detail}`;
+    console.error(context, error);
   }
 
-  function selectProject(projectId: string) {
-    activeProjectId = projectId;
+  function markDirty() {
+    localPendingChanges += 1;
+    if (syncState !== "syncing") {
+      syncState = "pending_changes";
+    }
+  }
+
+  async function selectBoard(boardId: string) {
+    const nextBoard = boards.boards.find((board) => board.id === boardId);
+    if (!nextBoard) return;
+
+    boards.setActive(nextBoard);
     selectedTicketId = null;
     detailOpen = false;
+
+    try {
+      await tickets.load();
+    } catch (error) {
+      setFailure("Failed to load board tickets", error);
+    }
   }
 
   function openTicket(ticketId: string) {
@@ -159,82 +100,189 @@
     detailOpen = true;
   }
 
-  function moveTicket(ticketId: string, nextStatus: TicketStatus) {
-    const ticket = tickets.find((entry) => entry.id === ticketId);
+  async function moveTicket(ticketId: string, nextStatus: TicketStatus) {
+    const ticket = tickets.tickets.find((entry) => entry.id === ticketId);
     if (!ticket || ticket.status === nextStatus) return;
 
-    tickets = tickets.map((entry) =>
-      entry.id === ticketId ? { ...entry, status: nextStatus } : entry,
-    );
-    markProjectDirty(ticket.projectId);
+    try {
+      await tickets.update(ticketId, { status: nextStatus });
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to move ticket", error);
+    }
+  }
+
+  async function moveTicketToStatus(ticketId: string, status: TicketStatus) {
+    await moveTicket(ticketId, status);
   }
 
   function quickMoveTicket(ticketId: string) {
-    const ticket = tickets.find((entry) => entry.id === ticketId);
+    const ticket = tickets.tickets.find((entry) => entry.id === ticketId);
     if (!ticket) return;
 
     const cycle: Record<TicketStatus, TicketStatus> = {
-      todo: "in-progress",
-      "in-progress": "done",
+      todo: "in_progress",
+      in_progress: "done",
       done: "todo",
     };
 
-    moveTicket(ticketId, cycle[ticket.status]);
+    void moveTicket(ticketId, cycle[ticket.status]);
   }
 
-  function createTicket() {
-    const serial = tickets.length + 101;
-    const id = `TK-${serial}`;
-    const nextTicket: Ticket = {
-      id,
-      projectId: activeProjectId,
-      title: "New ticket",
-      description: "Describe the task clearly and keep it actionable.",
-      status: "todo",
-      label: "feature",
-      comments: [],
+  async function createTicket() {
+    if (!activeBoard) {
+      pageError = "No active board selected.";
+      return;
+    }
+
+    try {
+      const nextTicket = await tickets.create({
+        board_id: activeBoard.id,
+        title: "New ticket",
+        description: "Describe the task clearly and keep it actionable.",
+        labels: ["feature"],
+      });
+
+      selectedTicketId = nextTicket.id;
+      detailOpen = true;
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to create ticket", error);
+    }
+  }
+
+  async function updateTicket(ticketId: string, updates: UpdateTicketInput) {
+    try {
+      await tickets.update(ticketId, updates);
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to update ticket", error);
+    }
+  }
+
+  async function addComment(ticketId: string, body: string) {
+    const target = tickets.tickets.find((ticket) => ticket.id === ticketId);
+    if (!target || !body.trim()) return;
+
+    const comment: Comment = {
+      author: "You",
+      body: body.trim(),
+      timestamp: new Date().toISOString(),
     };
 
-    tickets = [nextTicket, ...tickets];
-    selectedTicketId = id;
-    detailOpen = true;
-    markProjectDirty(activeProjectId);
+    try {
+      await tickets.update(ticketId, {
+        comments: [...target.comments, comment],
+      });
+      markDirty();
+    } catch (error) {
+      setFailure("Failed to add comment", error);
+    }
   }
 
-  function updateTicket(
-    ticketId: string,
-    updates: Partial<
-      Pick<Ticket, "title" | "description" | "status" | "label">
-    >,
-  ) {
-    const target = tickets.find((ticket) => ticket.id === ticketId);
-    if (!target) return;
-    tickets = tickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, ...updates } : ticket,
+  function openCreateBoardDialog() {
+    boardFormError = null;
+    createBoardDialogOpen = true;
+  }
+
+  async function submitBoardCreation() {
+    if (!workspace.path) {
+      boardFormError = "Open a workspace first.";
+      return;
+    }
+
+    const nextName = boardName.trim();
+    const nextDescription = boardDescription.trim();
+
+    if (!nextName) {
+      boardFormError = "Board name is required.";
+      return;
+    }
+
+    creatingBoard = true;
+    boardFormError = null;
+
+    try {
+      await boards.create({
+        name: nextName,
+        description: nextDescription,
+      });
+      await tickets.load();
+      syncState = "pending_changes";
+
+      createBoardDialogOpen = false;
+      boardName = "";
+      boardDescription = "";
+    } catch (error) {
+      setFailure("Failed to create board", error);
+      boardFormError =
+        error instanceof Error ? error.message : "Failed to create board.";
+    } finally {
+      creatingBoard = false;
+    }
+  }
+
+  async function createTicketForBoard(boardId: string) {
+    const targetBoard = boards.boards.find((board) => board.id === boardId);
+    if (!targetBoard) return;
+
+    boards.setActive(targetBoard);
+    selectedTicketId = null;
+    detailOpen = false;
+
+    try {
+      await tickets.load();
+      await createTicket();
+    } catch (error) {
+      setFailure("Failed to create ticket for board", error);
+    }
+  }
+
+  async function deleteBoard(boardId: string) {
+    const targetBoard = boards.boards.find((board) => board.id === boardId);
+    if (!targetBoard) return;
+
+    const confirmed = window.confirm(
+      `Delete board \"${targetBoard.name}\" and all its tickets?`,
     );
-    markProjectDirty(target.projectId);
+    if (!confirmed) return;
+
+    try {
+      await boards.remove(boardId);
+      await tickets.load();
+      syncState = "pending_changes";
+
+      if (selectedTicket?.board_id === boardId) {
+        selectedTicketId = null;
+        detailOpen = false;
+      }
+    } catch (error) {
+      setFailure("Failed to delete board", error);
+    }
   }
 
-  function addComment(ticketId: string, body: string) {
-    const target = tickets.find((ticket) => ticket.id === ticketId);
-    if (!target) return;
+  async function deleteTicket(ticketId: string) {
+    const targetTicket = tickets.tickets.find(
+      (ticket) => ticket.id === ticketId,
+    );
+    if (!targetTicket) return;
 
-    tickets = tickets.map((ticket) => {
-      if (ticket.id !== ticketId) return ticket;
-      return {
-        ...ticket,
-        comments: [
-          ...ticket.comments,
-          {
-            id: crypto.randomUUID(),
-            author: "You",
-            body,
-            createdAt: "Just now",
-          },
-        ],
-      };
-    });
-    markProjectDirty(target.projectId);
+    const confirmed = window.confirm(
+      `Delete ticket \"${targetTicket.title}\"?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await tickets.remove(ticketId);
+      markDirty();
+
+      if (selectedTicketId === ticketId) {
+        selectedTicketId = null;
+        detailOpen = false;
+      }
+    } catch (error) {
+      setFailure("Failed to delete ticket", error);
+    }
   }
 
   function manualSync() {
@@ -242,13 +290,18 @@
     syncState = "syncing";
 
     window.setTimeout(() => {
-      projects = projects.map((project) => ({
-        ...project,
-        localChanges: 0,
-        lastSyncedAt: "now",
-      }));
+      localPendingChanges = 0;
       syncState = "up_to_date";
     }, 850);
+  }
+
+  async function openWorkspacePicker() {
+    try {
+      await workspace.pick();
+      pageError = null;
+    } catch (error) {
+      setFailure("Failed to open workspace", error);
+    }
   }
 
   function openSettingsPlaceholder() {
@@ -257,11 +310,31 @@
 
   const commandActions = $derived.by<CommandAction[]>(() => [
     {
+      id: "open-workspace",
+      label: "Open workspace",
+      subtitle: "Pick a local workspace folder",
+      shortcut: "Ctrl/Cmd+O",
+      run: () => {
+        void openWorkspacePicker();
+      },
+    },
+    {
+      id: "new-board",
+      label: "Create board",
+      subtitle: "Open form and create a new board",
+      shortcut: "Ctrl/Cmd+B",
+      run: () => {
+        openCreateBoardDialog();
+      },
+    },
+    {
       id: "new-ticket",
       label: "Create ticket",
-      subtitle: "Add a new todo ticket in current project",
+      subtitle: "Add a new todo ticket in the active board",
       shortcut: "Ctrl/Cmd+N",
-      run: createTicket,
+      run: () => {
+        void createTicket();
+      },
     },
     {
       id: "sync",
@@ -280,7 +353,7 @@
       },
     },
     {
-      id: "focus-in-progress",
+      id: "focus-in_progress",
       label: "Focus In Progress column",
       subtitle: "Select first ticket in In Progress",
       shortcut: "2",
@@ -300,6 +373,40 @@
   ]);
 
   $effect(() => {
+    void workspace.init().catch((error) => {
+      setFailure("workspace.init failed", error);
+    });
+  });
+
+  $effect(() => {
+    if (workspace.status === "ready" || workspace.status === "no_workspace") {
+      void boards.load().catch((error) => {
+        setFailure("boards.load failed", error);
+      });
+    }
+  });
+
+  $effect(() => {
+    if (workspace.status === "ready" || workspace.status === "no_workspace") {
+      void tickets.load().catch((error) => {
+        setFailure("tickets.load failed", error);
+      });
+    }
+  });
+
+  $effect(() => {
+    if (!selectedTicketId) return;
+
+    const stillExists = tickets.tickets.some(
+      (ticket) => ticket.id === selectedTicketId,
+    );
+    if (!stillExists) {
+      selectedTicketId = null;
+      detailOpen = false;
+    }
+  });
+
+  $effect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const isMeta = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
@@ -311,7 +418,17 @@
 
       if (isMeta && key === "n") {
         event.preventDefault();
-        createTicket();
+        void createTicket();
+      }
+
+      if (isMeta && key === "o") {
+        event.preventDefault();
+        void openWorkspacePicker();
+      }
+
+      if (isMeta && key === "b") {
+        event.preventDefault();
+        openCreateBoardDialog();
       }
 
       if (isMeta && key === "s") {
@@ -331,13 +448,15 @@
 
   $effect(() => {
     setToolbarState({
-      projectName: activeProject?.name ?? "Project",
+      projectName: activeBoard?.name ?? workspace.meta?.name ?? "Workspace",
       pendingChanges,
       syncState,
       onOpenPalette: () => {
         commandPaletteOpen = true;
       },
-      onCreateTicket: createTicket,
+      onCreateTicket: () => {
+        void createTicket();
+      },
       onManualSync: manualSync,
     });
 
@@ -347,64 +466,167 @@
   });
 </script>
 
-<div class="grid h-full min-h-0 grid-cols-[18rem_1fr]">
-  <Sidebar
-    {projects}
-    {activeProjectId}
-    {syncState}
-    onSelectProject={selectProject}
-    onOpenPalette={() => {
-      commandPaletteOpen = true;
-    }}
-    onOpenSettings={openSettingsPlaceholder}
-    onCreateTicket={createTicket}
-  />
+{#if workspace.status === "loading" || workspace.status === "idle"}
+  <div class="flex h-full items-center justify-center p-8">
+    <div
+      class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+    >
+      <h1 class="font-display text-lg font-semibold">Initializing Workspace</h1>
+      <p class="text-sm text-muted-foreground">
+        Restoring your last workspace. If this takes too long, open one
+        manually.
+      </p>
+      <Button onclick={() => void openWorkspacePicker()}>Open Workspace</Button>
+    </div>
+  </div>
+{:else if workspace.status === "no_workspace" || workspace.status === "error"}
+  <div class="flex h-full items-center justify-center p-8">
+    <div
+      class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+    >
+      <h1 class="font-display text-lg font-semibold">Open a Workspace</h1>
+      <p class="text-sm text-muted-foreground">
+        Pick a local folder to start managing boards and tickets.
+      </p>
+      <Button onclick={() => void openWorkspacePicker()}>Open Workspace</Button>
+      {#if workspace.error}
+        <p class="text-xs text-red-300">{workspace.error}</p>
+      {/if}
+      {#if pageError}
+        <p class="text-xs text-red-300">{pageError}</p>
+      {/if}
+    </div>
+  </div>
+{:else if boards.boards.length === 0}
+  <div class="flex h-full items-center justify-center p-8">
+    <div
+      class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+    >
+      <h1 class="font-display text-lg font-semibold">No Boards Yet</h1>
+      <p class="text-sm text-muted-foreground">
+        Create your first board to start adding tickets.
+      </p>
+      <Button onclick={openCreateBoardDialog}>Create First Board</Button>
+      {#if pageError}
+        <p class="text-xs text-red-300">{pageError}</p>
+      {/if}
+    </div>
+  </div>
+{:else}
+  <div class="h-full">
+    {#if pageError}
+      <div class="px-3 pt-3">
+        <p
+          class="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-red-300"
+        >
+          {pageError}
+        </p>
+      </div>
+    {/if}
 
-  <div class="flex min-w-0 min-h-0 flex-col">
-    <main class="min-h-0 flex-1 p-3">
-      <div class="grid h-full min-h-0 grid-cols-3 gap-3">
-        <KanbanColumn
-          title="Todo"
-          status="todo"
-          tickets={todoTickets}
-          {selectedTicketId}
-          onSelectTicket={openTicket}
-          onDragTicketStart={() => {
-            // drag state is handled through dataTransfer for drop targets
-          }}
-          onDropTicket={moveTicket}
-          onQuickMoveTicket={quickMoveTicket}
-        />
-        <KanbanColumn
-          title="In Progress"
-          status="in-progress"
-          tickets={inProgressTickets}
-          {selectedTicketId}
-          onSelectTicket={openTicket}
-          onDragTicketStart={() => {
-            // drag state is handled through dataTransfer for drop targets
-          }}
-          onDropTicket={moveTicket}
-          onQuickMoveTicket={quickMoveTicket}
-        />
-        <KanbanColumn
-          title="Done"
-          status="done"
-          tickets={doneTickets}
-          {selectedTicketId}
-          onSelectTicket={openTicket}
-          onDragTicketStart={() => {
-            // drag state is handled through dataTransfer for drop targets
-          }}
-          onDropTicket={moveTicket}
-          onQuickMoveTicket={quickMoveTicket}
+    <KanbanWorkspaceView
+      boards={boards.boards}
+      activeBoardId={activeBoard?.id ?? null}
+      {syncState}
+      {todoTickets}
+      {inProgressTickets}
+      {doneTickets}
+      {selectedTicketId}
+      {pendingChanges}
+      onCreateBoard={openCreateBoardDialog}
+      onSelectBoard={selectBoard}
+      onCreateTicketForBoard={createTicketForBoard}
+      onDeleteBoard={deleteBoard}
+      onOpenPalette={() => {
+        commandPaletteOpen = true;
+      }}
+      onOpenSettings={openSettingsPlaceholder}
+      onCreateTicket={() => {
+        void createTicket();
+      }}
+      onSelectTicket={openTicket}
+      onDropTicket={(ticketId, status) => {
+        void moveTicket(ticketId, status);
+      }}
+      onQuickMoveTicket={quickMoveTicket}
+      onMoveTicketToStatus={(ticketId, status) => {
+        void moveTicketToStatus(ticketId, status);
+      }}
+      onDeleteTicket={(ticketId) => {
+        void deleteTicket(ticketId);
+      }}
+      onManualSync={manualSync}
+    />
+  </div>
+{/if}
+
+<Dialog bind:open={createBoardDialogOpen}>
+  <DialogContent class="max-w-lg border border-border bg-card p-0">
+    <DialogHeader class="px-4 pt-4 pb-2">
+      <DialogTitle class="text-sm">Create Board</DialogTitle>
+      <DialogDescription class="text-xs text-muted-foreground">
+        Add board details, then create it in the current workspace.
+      </DialogDescription>
+    </DialogHeader>
+
+    <form
+      class="space-y-3 px-4 pb-4"
+      onsubmit={(event) => {
+        event.preventDefault();
+        void submitBoardCreation();
+      }}
+    >
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-muted-foreground"
+          for="board-name"
+        >
+          Board Name
+        </label>
+        <Input
+          id="board-name"
+          bind:value={boardName}
+          placeholder="Backend API"
+          autocomplete="off"
         />
       </div>
-    </main>
 
-    <SyncStatusBar {syncState} {pendingChanges} onManualSync={manualSync} />
-  </div>
-</div>
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-muted-foreground"
+          for="board-description"
+        >
+          Description
+        </label>
+        <Textarea
+          id="board-description"
+          bind:value={boardDescription}
+          class="min-h-24"
+          placeholder="What this board is for..."
+        />
+      </div>
+
+      {#if boardFormError}
+        <p class="text-xs text-red-300">{boardFormError}</p>
+      {/if}
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => {
+            createBoardDialogOpen = false;
+          }}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={creatingBoard}>
+          {creatingBoard ? "Creating..." : "Create Board"}
+        </Button>
+      </div>
+    </form>
+  </DialogContent>
+</Dialog>
 
 <TicketDetailPanel
   bind:open={detailOpen}
