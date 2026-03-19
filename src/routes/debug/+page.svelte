@@ -189,11 +189,7 @@
           disabled={seeding || !workspace.path}
           size="sm"
         >
-          {seeding
-            ? "Seeding..."
-            : seeded
-              ? "Seeded"
-              : "Seed Database"}
+          {seeding ? "Seeding..." : seeded ? "Seeded" : "Seed Database"}
         </Button>
         <Button onclick={testCreateBoard} variant="outline" size="sm">
           Create Board
@@ -268,7 +264,8 @@
                   </div>
                   <div class="flex items-center gap-1.5">
                     {#if boards.active?.id === board.id}
-                      <Badge variant="outline" class="text-[10px]">Active</Badge>
+                      <Badge variant="outline" class="text-[10px]">Active</Badge
+                      >
                     {:else}
                       <Button
                         onclick={() => boards.setActive(board)}
@@ -307,7 +304,9 @@
 
       <div class="grid gap-2">
         {#if tickets.tickets.length === 0}
-          <p class="text-xs text-muted-foreground">No tickets in active board.</p>
+          <p class="text-xs text-muted-foreground">
+            No tickets in active board.
+          </p>
         {:else}
           {#each tickets.tickets as ticket}
             <article
@@ -321,8 +320,9 @@
                     [{ticket.id}] {ticket.title}
                   </p>
                   <p class="mt-1 text-[11px] text-muted-foreground">
-                    status: {ticket.status} · labels: {ticket.labels.join(", ") ||
-                      "none"}
+                    status: {ticket.status} · labels: {ticket.labels.join(
+                      ", ",
+                    ) || "none"}
                   </p>
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -354,8 +354,7 @@
       <h2 class="text-sm font-semibold tracking-wide">Raw State Dump</h2>
       <Separator class="my-3" />
       <pre
-        class="no-scrollbar max-h-112 overflow-auto rounded-lg border border-border/80 bg-black/25 p-3 font-mono text-[11px] text-slate-200"
-      >{rawDump}</pre>
+        class="no-scrollbar max-h-112 overflow-auto rounded-lg border border-border/80 bg-black/25 p-3 font-mono text-[11px] text-slate-200">{rawDump}</pre>
     </section>
   </div>
 </div>
