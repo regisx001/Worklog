@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Worklog — Desktop Native</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind for layout utility -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* ── NATIVE DESKTOP TOKENS ───────────────────────────── */
+        :root {
+            /* Deep Zinc / Ambient App Shell */
+            --bg-base: #09090b;
+            --bg-panel: rgba(24, 24, 27, 0.65);
+            --bg-sidebar: rgba(18, 18, 20, 0.75);
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-raised: rgba(255, 255, 255, 0.06);
+
+            /* Subtle ring borders */
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-default: rgba(255, 255, 255, 0.12);
+            --border-strong: rgba(255, 255, 255, 0.2);
+
+            /* Typography */
+            --text-primary: #FAFAFA;
+            --text-secondary: #A1A1AA;
+            --text-tertiary: #71717A;
+
+            /* Spotify Green Accents */
+            --accent-grove: #1DB954;
+            --accent-loud: #1ED760;
+
+            /* Status */
+            --status-done: #3FB950;
+            --status-warn: #D29922;
+            --status-err: #F85149;
+            --status-info: #58A6FF;
+
+            /* Translucent Modern Labels */
+            --label-green-bg: rgba(63, 185, 80, 0.15);
+            --label-green-text: #56D364;
+            --label-blue-bg: rgba(88, 166, 255, 0.15);
+            --label-blue-text: #79C0FF;
+            --label-yellow-bg: rgba(210, 153, 34, 0.15);
+            --label-yellow-text: #E3B341;
+            --label-red-bg: rgba(248, 81, 73, 0.15);
+            --label-red-text: #FF7B72;
+            --label-purple-bg: rgba(188, 140, 255, 0.15);
+            --label-purple-text: #D2A8FF;
+            --label-orange-bg: rgba(240, 136, 62, 0.15);
+            --label-orange-text: #FFA657;
+            --label-pink-bg: rgba(247, 120, 186, 0.15);
+            --label-pink-text: #FF9BCE;
+            --label-gray-bg: rgba(139, 148, 158, 0.15);
+            --label-gray-text: #8B949E;
+
+            --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --blur-md: blur(16px);
+            --blur-lg: blur(24px);
+            --blur-xl: blur(40px);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        /* Desktop Application Shell Rules */
+        body {
+            margin: 0;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 13px;
+            overflow: hidden;
+            height: 100vh;
+            min-width: 900px;
+            /* Disable text selection everywhere for native feel */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Re-enable selection only where appropriate */
+        input,
+        textarea,
+        .selectable {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Native-style Overlay Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        /* Native Mac Focus Ring */
+        :focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent-grove);
+            border-radius: 6px;
+        }
+
+        /* ── TITLEBAR ────────────────────────────────────────── */
+        .titlebar {
+            height: 40px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(9, 9, 11, 0.6);
+            backdrop-filter: var(--blur-md);
+            -webkit-app-region: drag;
+            /* Electron/Tauri drag handle */
+            z-index: 1000;
+            flex-shrink: 0;
+        }
+
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        /* ── PILL LABELS ─────────────────────────────────────── */
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+
+        .chip-green {
+            background: var(--label-green-bg);
+            color: var(--label-green-text);
+        }
+
+        .chip-blue {
+            background: var(--label-blue-bg);
+            color: var(--label-blue-text);
+        }
+
+        .chip-yellow {
+            background: var(--label-yellow-bg);
+            color: var(--label-yellow-text);
+        }
+
+        .chip-red {
+            background: var(--label-red-bg);
+            color: var(--label-red-text);
+        }
+
+        .chip-purple {
+            background: var(--label-purple-bg);
+            color: var(--label-purple-text);
+        }
+
+        .chip-orange {
+            background: var(--label-orange-bg);
+            color: var(--label-orange-text);
+        }
+
+        .chip-pink {
+            background: var(--label-pink-bg);
+            color: var(--label-pink-text);
+        }
+
+        .chip-gray {
+            background: var(--label-gray-bg);
+            color: var(--label-gray-text);
+        }
+
+        /* ── FLOATING TICKET CARD ────────────────────────────── */
+        .ticket-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-top-width: 2px;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            cursor: default;
+            transition: all 150ms var(--ease-expo);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .ticket-card:hover {
+            background: var(--bg-raised);
+            border-color: var(--border-default);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .ticket-card.selected {
+            background: rgba(29, 185, 84, 0.05);
+            border-color: rgba(29, 185, 84, 0.3);
+            border-top-color: var(--accent-grove) !important;
+            box-shadow: 0 0 0 1px rgba(29, 185, 84, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Stripe colors */
+        .stripe-green {
+            border-top-color: var(--label-green-text);
+        }
+
+        .stripe-blue {
+            border-top-color: var(--label-blue-text);
+        }
+
+        .stripe-yellow {
+            border-top-color: var(--label-yellow-text);
+        }
+
+        .stripe-red {
+            border-top-color: var(--label-red-text);
+        }
+
+        .stripe-purple {
+            border-top-color: var(--label-purple-text);
+        }
+
+        .stripe-orange {
+            border-top-color: var(--label-orange-text);
+        }
+
+        .stripe-pink {
+            border-top-color: var(--label-pink-text);
+        }
+
+        .stripe-none {
+            border-top-color: var(--border-subtle);
+        }
+
+        .ticket-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            margin-bottom: 6px;
+        }
+
+        .ticket-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .ticket-labels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        /* ── PANELS ──────────────────────────────────────────── */
+        #sidebar {
+            width: 248px;
+            min-width: 248px;
+            background: var(--bg-sidebar);
+            backdrop-filter: var(--blur-lg);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            transition: width 250ms var(--ease-expo), min-width 250ms var(--ease-expo);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        #sidebar.collapsed {
+            width: 56px;
+            min-width: 56px;
+        }
+
+        #sidebar-inner {
+            transition: opacity 150ms ease;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        #sidebar.collapsed #sidebar-inner {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 34px;
+            padding: 0 12px;
+            border-radius: 6px;
+            margin: 2px 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: default;
+            border: none;
+            background: transparent;
+            text-align: left;
+            outline: none;
+            transition: all 100ms ease;
+            width: calc(100% - 24px);
+        }
+
+        .nav-item:hover {
+            background: var(--bg-raised);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(29, 185, 84, 0.1);
+            color: var(--accent-loud);
+        }
+
+        /* ── KANBAN BOARD ────────────────────────────────────── */
+        #kanban-board {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .kanban-col {
+            flex: 1;
+            min-width: 260px;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .kanban-col:last-child {
+            border-right: none;
+        }
+
+        .col-header {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(9, 9, 11, 0.4);
+            backdrop-filter: var(--blur-md);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .col-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            background: var(--bg-card);
+            padding: 2px 6px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* ── SLIDE-IN DETAIL PANEL ───────────────────────────── */
+        #detail-panel {
+            width: 380px;
+            min-width: 380px;
+            background: var(--bg-panel);
+            backdrop-filter: var(--blur-xl);
+            border-left: 1px solid var(--border-strong);
+            overflow-y: auto;
+            z-index: 20;
+            transform: translateX(100%);
+            transition: transform 300ms var(--ease-expo);
+            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+        }
+
+        #detail-panel.open {
+            transform: translateX(0);
+        }
+
+        /* ── FORMS & INPUTS ──────────────────────────────────── */
+        .field-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            transition: all 150ms ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+            outline: none;
+        }
+
+        .field-input:focus {
+            border-color: var(--accent-grove);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2), inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        select.field-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        select.field-input option {
+            background: var(--bg-base);
+            color: var(--text-primary);
+        }
+
+        /* ── BUTTONS ─────────────────────────────────────────── */
+        .btn-primary {
+            background: var(--accent-grove);
+            color: #000;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: default;
+            transition: all 100ms ease;
+            box-shadow: 0 2px 8px rgba(29, 185, 84, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-loud);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(29, 185, 84, 0.2);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+            padding: 5px 14px;
+            border-radius: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: default;
+            transition: all 100ms ease;
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-raised);
+            color: var(--text-primary);
+            border-color: var(--border-default);
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            padding: 6px;
+            border-radius: 6px;
+            color: var(--text-tertiary);
+            cursor: default;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 100ms ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-raised);
+            color: var(--text-primary);
+        }
+
+        /* ── COMMAND PALETTE (Ctrl+K) ────────────────────────── */
+        #cmd-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 150ms ease;
+        }
+
+        #cmd-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #cmd-box {
+            width: 600px;
+            background: rgba(24, 24, 27, 0.85);
+            backdrop-filter: var(--blur-xl);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            transform: scale(0.97) translateY(8px);
+            transition: all 200ms var(--ease-expo);
+        }
+
+        #cmd-overlay.open #cmd-box {
+            transform: scale(1) translateY(0);
+        }
+
+        #cmd-input-field {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 16px 20px;
+            font-size: 16px;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .cmd-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            cursor: default;
+            border-left: 3px solid transparent;
+        }
+
+        .cmd-item.active {
+            background: var(--bg-raised);
+            color: var(--text-primary);
+            border-left-color: var(--accent-grove);
+        }
+
+        /* ── STATUS BAR ──────────────────────────────────────── */
+        #status-bar {
+            height: 28px;
+            min-height: 28px;
+            background: rgba(18, 18, 20, 0.85);
+            backdrop-filter: var(--blur-lg);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            z-index: 50;
+            flex-shrink: 0;
+        }
+
+        .status-segment {
+            padding: 0 12px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .status-dot.dirty {
+            background: var(--status-warn);
+            box-shadow: 0 0 6px var(--status-warn);
+        }
+
+        .status-dot.clean {
+            background: var(--accent-grove);
+            box-shadow: 0 0 6px var(--accent-grove);
+        }
+
+        /* ── MISC OVERLAYS ───────────────────────────────────── */
+        .dialog-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1500;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 150ms ease;
+        }
+
+        .dialog-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .dialog-box {
+            width: 480px;
+            background: var(--bg-panel);
+            backdrop-filter: var(--blur-xl);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            padding: 24px;
+            transform: translateY(10px);
+            transition: transform 300ms var(--ease-expo);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+        }
+
+        .dialog-overlay.open .dialog-box {
+            transform: translateY(0);
+        }
+
+        .toast {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border-strong);
+            background: rgba(24, 24, 27, 0.9);
+            backdrop-filter: var(--blur-lg);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            animation: toastIn 300ms var(--ease-expo) both;
+            pointer-events: all;
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app" class="flex flex-col h-screen overflow-hidden relative">
+        <!-- Ambient Glassmorphism Mesh Background -->
+        <div class="fixed inset-0 pointer-events-none -z-10 bg-[#09090b]">
+            <div class="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-green-500/5 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[100px]">
+            </div>
+        </div>
+
+        <!-- Fake macOS Titlebar -->
+        <header class="titlebar" aria-label="Window Controls">
+            <div style="display: flex; gap: 8px; margin-right: 20px; -webkit-app-region: no-drag;">
+                <div class="mac-btn" style="background: #ED6A5E;"></div>
+                <div class="mac-btn" style="background: #F4BF4F;"></div>
+                <div class="mac-btn" style="background: #61C554;"></div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; -webkit-app-region: no-drag;">
+                <button class="btn-icon" id="sidebar-toggle-btn" title="Toggle Sidebar (Ctrl+B)">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <rect x="1" y="1" width="14" height="14" rx="2" />
+                        <path d="M5 1v14" />
+                    </svg>
+                </button>
+            </div>
+
+            <div style="flex:1; display:flex; justify-content:center; align-items:center;">
+                <span
+                    style="font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; color:var(--text-secondary); letter-spacing:0.06em;">WORKLOG</span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; -webkit-app-region: no-drag;">
+                <button class="btn-ghost" id="cmd-trigger-btn"
+                    style="padding:4px 10px; font-size:11px; display:flex; gap:6px; align-items:center;">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                        stroke-width="1.5">
+                        <circle cx="6.5" cy="6.5" r="5" />
+                        <path d="M12 12l2.5 2.5" />
+                    </svg>
+                    <span style="color:var(--text-tertiary);">Ctrl K</span>
+                </button>
+                <button class="btn-primary" id="new-ticket-btn" style="padding:4px 12px; font-size:11px;">+
+                    Ticket</button>
+            </div>
+        </header>
+
+        <!-- Main Work Area -->
+        <div class="flex flex-1 overflow-hidden">
+
+            <!-- SIDEBAR -->
+            <nav id="sidebar">
+                <div id="sidebar-inner" class="py-4">
+                    <div
+                        class="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-['Plus_Jakarta_Sans']">
+                        Projects</div>
+                    <button class="nav-item active" data-board="api-platform">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <rect x="1" y="1" width="6" height="14" rx="1.5" />
+                            <rect x="9" y="1" width="6" height="9" rx="1.5" />
+                        </svg>
+                        api-platform
+                    </button>
+                    <button class="nav-item" data-board="auth-service">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <rect x="1" y="1" width="6" height="14" rx="1.5" />
+                            <rect x="9" y="1" width="6" height="9" rx="1.5" />
+                        </svg>
+                        auth-service
+                    </button>
+
+                    <div class="h-px bg-white/5 mx-4 my-4"></div>
+
+                    <div
+                        class="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-['Plus_Jakarta_Sans']">
+                        Boards</div>
+                    <button class="nav-item" data-board="sprint-23">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M2 4h12M2 8h8M2 12h5" />
+                        </svg>
+                        sprint-23
+                    </button>
+                    <button class="nav-item" data-board="backlog">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M2 4h12M2 8h8M2 12h5" />
+                        </svg>
+                        backlog
+                    </button>
+
+                    <div class="h-px bg-white/5 mx-4 my-4"></div>
+                    <div
+                        class="px-4 pb-3 text-[10px] font-bold uppercase tracking-widest text-zinc-500 font-['Plus_Jakarta_Sans']">
+                        Labels</div>
+                    <div class="px-4 flex flex-wrap gap-2">
+                        <span class="chip chip-green">backend</span>
+                        <span class="chip chip-blue">infra</span>
+                        <span class="chip chip-red">bug</span>
+                        <span class="chip chip-purple">ai/ml</span>
+                        <span class="chip chip-yellow">p1</span>
+                        <span class="chip chip-orange">perf</span>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- BOARD -->
+            <main id="kanban-main" class="flex flex-1 overflow-hidden">
+                <div id="kanban-board" class="flex-1 flex overflow-x-auto">
+                    <div class="kanban-col" id="col-todo">
+                        <div class="col-header"><span>To Do</span><span class="col-count" id="count-todo">0</span></div>
+                        <div class="flex-1 overflow-y-auto p-3" id="body-todo"></div>
+                    </div>
+                    <div class="kanban-col" id="col-inprogress">
+                        <div class="col-header"><span style="color:var(--accent-grove);">●</span><span>In
+                                Progress</span><span class="col-count" id="count-inprogress">0</span></div>
+                        <div class="flex-1 overflow-y-auto p-3" id="body-inprogress"></div>
+                    </div>
+                    <div class="kanban-col" id="col-done">
+                        <div class="col-header"><span style="color:var(--status-done);">✓</span><span>Done</span><span
+                                class="col-count" id="count-done">0</span></div>
+                        <div class="flex-1 overflow-y-auto p-3" id="body-done"></div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- DETAIL PANEL -->
+            <aside id="detail-panel">
+                <div id="detail-content" class="p-6"></div>
+            </aside>
+
+        </div>
+
+        <!-- STATUS BAR -->
+        <footer id="status-bar">
+            <div class="status-segment"><span id="active-board-name"
+                    class="font-semibold text-white">api-platform</span></div>
+            <div class="status-segment gap-2"><span class="status-dot dirty" id="dirty-dot"></span><span
+                    id="dirty-label">● Unsaved</span></div>
+            <div class="status-segment">↑ <span id="unpushed-count">2</span></div>
+            <div class="status-segment">↓ <span id="topull-count">0</span></div>
+            <div class="flex-1"></div>
+            <button
+                class="status-segment border-l border-white/10 hover:bg-white/5 transition-colors cursor-default text-[#1DB954]"
+                id="sync-btn">⟳ Sync</button>
+        </footer>
+    </div>
+
+    <!-- ─────────────────────────────────────────────────────────
+     OVERLAYS (Command Palette, Forms, Dialogs)
+──────────────────────────────────────────────────────────── -->
+    <div id="cmd-overlay">
+        <div id="cmd-box">
+            <input type="text" id="cmd-input-field" placeholder="Search or type a command..." autocomplete="off"
+                spellcheck="false" />
+            <div id="cmd-list" class="max-h-[300px] overflow-y-auto py-2"></div>
+        </div>
+    </div>
+
+    <div id="new-ticket-overlay" class="dialog-overlay">
+        <div id="new-ticket-box" class="dialog-box">
+            <h2 class="text-lg font-bold font-['Plus_Jakarta_Sans'] mb-5 text-white">New Ticket</h2>
+            <div class="mb-4">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Title</label>
+                <input type="text" class="field-input" id="nt-title" placeholder="What needs to be done?"
+                    autocomplete="off" />
+            </div>
+            <div class="mb-4">
+                <label
+                    class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Description</label>
+                <textarea class="field-input h-24 resize-none" id="nt-desc"
+                    placeholder="Markdown supported..."></textarea>
+            </div>
+            <div class="mb-5">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Status</label>
+                <select class="field-input" id="nt-status">
+                    <option value="todo">To Do</option>
+                    <option value="inprogress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button class="btn-ghost" id="nt-cancel">Cancel</button>
+                <button class="btn-primary" id="nt-create">Create Ticket</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-overlay" class="dialog-overlay">
+        <div id="confirm-box" class="dialog-box w-[380px]">
+            <h3 class="text-base font-bold text-white mb-2">Delete Ticket?</h3>
+            <p id="confirm-msg" class="text-sm text-zinc-400 mb-6">This action cannot be undone.</p>
+            <div class="flex justify-end gap-2">
+                <button class="btn-ghost" id="confirm-cancel">Cancel</button>
+                <button class="btn-ghost text-red-400 border-red-500/30 hover:bg-red-500/10 hover:border-red-500"
+                    id="confirm-ok">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-area" class="fixed bottom-12 right-6 z-[3000] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ─────────────────────────────────────────────────────────
+     LOGIC
+──────────────────────────────────────────────────────────── -->
+    <script>
+        let ticketCounter = 88;
+        let selectedTicketId = null;
+        let isDirty = true;
+        let confirmCallback = null;
+
+        let tickets = [
+            { id: 'TKT-088', title: 'Implement token refresh endpoint', desc: 'Fixes expired JWT sessions.', status: 'todo', labels: [{ name: 'backend', color: 'green' }, { name: 'p1', color: 'yellow' }] },
+            { id: 'TKT-089', title: 'Rate limiting middleware for /api/*', desc: 'Target: 200 req/min per IP.', status: 'todo', labels: [{ name: 'backend', color: 'green' }, { name: 'perf', color: 'orange' }] },
+            { id: 'TKT-090', title: 'Migrate CI pipeline to GitHub Actions', desc: 'Matrix builds for Python 3.10+', status: 'inprogress', labels: [{ name: 'infra', color: 'blue' }] },
+            { id: 'TKT-091', title: 'Fine-tune classification model', desc: 'Min target: 0.92 F1.', status: 'inprogress', labels: [{ name: 'ai/ml', color: 'purple' }, { name: 'p1', color: 'yellow' }] },
+            { id: 'TKT-092', title: 'Fix CORS headers on OPTIONS', desc: 'Chrome blocks preflight.', status: 'inprogress', labels: [{ name: 'bug', color: 'red' }] },
+            { id: 'TKT-093', title: 'Postgres index on user_sessions', desc: 'Reduces runtime 4s→40ms.', status: 'done', labels: [{ name: 'backend', color: 'green' }, { name: 'perf', color: 'orange' }] }
+        ];
+
+        function stripeClass(labels) { return (!labels || labels.length === 0) ? 'stripe-none' : `stripe-${labels[0].color}`; }
+        function renderChip(label) { return `<span class="chip chip-${label.color}">${label.name}</span>`; }
+        function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        function toast(msg) {
+            const el = document.createElement('div');
+            el.className = 'toast'; el.innerHTML = `<span>${msg}</span>`;
+            document.getElementById('toast-area').appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        function markDirty() {
+            isDirty = true;
+            document.getElementById('dirty-dot').className = 'status-dot dirty';
+            document.getElementById('dirty-label').textContent = '● Unsaved';
+        }
+
+        function markClean() {
+            isDirty = false;
+            document.getElementById('dirty-dot').className = 'status-dot clean';
+            document.getElementById('dirty-label').textContent = '✓ Synced';
+        }
+
+        function renderBoard() {
+            const cols = { todo: [], inprogress: [], done: [] };
+            tickets.forEach(t => cols[t.status] && cols[t.status].push(t));
+
+            ['todo', 'inprogress', 'done'].forEach(status => {
+                const body = document.getElementById(`body-${status}`);
+                document.getElementById(`count-${status}`).textContent = cols[status].length;
+
+                if (cols[status].length === 0) {
+                    body.innerHTML = `<div class="text-center p-8 text-zinc-500 text-xs">Empty column</div>`; return;
+                }
+
+                body.innerHTML = cols[status].map(t => `
+      <div class="ticket-card ${stripeClass(t.labels)} ${t.id === selectedTicketId ? 'selected' : ''}" data-id="${t.id}" tabindex="0">
+        <div class="ticket-id">${t.id}</div>
+        <div class="ticket-title selectable">${escHtml(t.title)}</div>
+        <div class="ticket-labels">${t.labels.map(l => renderChip(l)).join('')}</div>
+      </div>`).join('');
+
+                body.querySelectorAll('.ticket-card').forEach(el => {
+                    el.addEventListener('click', () => { selectedTicketId = el.dataset.id; renderBoard(); openDetailPanel(); });
+                    el.addEventListener('keydown', e => { if (e.key === 'Enter') { selectedTicketId = el.dataset.id; renderBoard(); openDetailPanel(); } });
+                });
+            });
+        }
+
+        function openDetailPanel() {
+            const t = tickets.find(x => x.id === selectedTicketId);
+            if (!t) return;
+            const panel = document.getElementById('detail-panel');
+            panel.classList.add('open');
+
+            document.getElementById('detail-content').innerHTML = `
+    <div class="flex justify-between items-center mb-6">
+      <div class="ticket-id mb-0">${t.id}</div>
+      <button class="btn-icon" id="close-detail-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+    </div>
+    <div class="mb-5">
+      <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Title</label>
+      <input type="text" class="field-input font-medium text-white selectable" id="dt-title" value="${escHtml(t.title)}" />
+    </div>
+    <div class="mb-5">
+      <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Status</label>
+      <select class="field-input" id="dt-status">
+        <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>To Do</option>
+        <option value="inprogress" ${t.status === 'inprogress' ? 'selected' : ''}>In Progress</option>
+        <option value="done" ${t.status === 'done' ? 'selected' : ''}>Done</option>
+      </select>
+    </div>
+    <div class="mb-6">
+      <label class="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Description</label>
+      <textarea class="field-input h-32 resize-none selectable" id="dt-desc">${escHtml(t.desc || '')}</textarea>
+    </div>
+    <div class="flex gap-2 w-full mt-8">
+      <button class="btn-primary flex-1" id="dt-save">Save changes</button>
+    </div>
+  `;
+
+            document.getElementById('close-detail-btn').addEventListener('click', closeDetailPanel);
+            document.getElementById('dt-save').addEventListener('click', () => {
+                t.title = document.getElementById('dt-title').value;
+                t.desc = document.getElementById('dt-desc').value;
+                t.status = document.getElementById('dt-status').value;
+                markDirty(); renderBoard(); closeDetailPanel(); toast('Saved successfully');
+            });
+        }
+
+        function closeDetailPanel() {
+            document.getElementById('detail-panel').classList.remove('open');
+            selectedTicketId = null; renderBoard();
+        }
+
+        /* Modals */
+        document.getElementById('new-ticket-btn').addEventListener('click', () => {
+            document.getElementById('nt-title').value = '';
+            document.getElementById('nt-desc').value = '';
+            document.getElementById('new-ticket-overlay').classList.add('open');
+            document.getElementById('nt-title').focus();
+        });
+        document.getElementById('nt-cancel').addEventListener('click', () => document.getElementById('new-ticket-overlay').classList.remove('open'));
+        document.getElementById('nt-create').addEventListener('click', () => {
+            const title = document.getElementById('nt-title').value.trim();
+            if (!title) return;
+            ticketCounter++;
+            tickets.push({ id: `TKT-${String(ticketCounter).padStart(3, '0')}`, title, desc: document.getElementById('nt-desc').value, status: document.getElementById('nt-status').value, labels: [] });
+            document.getElementById('new-ticket-overlay').classList.remove('open');
+            markDirty(); renderBoard(); toast('Ticket created');
+        });
+
+        /* Sidebar Toggle */
+        document.getElementById('sidebar-toggle-btn').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+
+        /* Command Palette */
+        const COMMANDS = [
+            { icon: '➕', label: 'New ticket', action: () => document.getElementById('new-ticket-btn').click() },
+            { icon: 'B', label: 'Toggle sidebar', action: () => document.getElementById('sidebar-toggle-btn').click() },
+            { icon: '⟳', label: 'Sync changes', action: () => document.getElementById('sync-btn').click() },
+        ];
+        let cmdIdx = 0;
+
+        function openCmd() {
+            document.getElementById('cmd-overlay').classList.add('open');
+            document.getElementById('cmd-input-field').value = '';
+            cmdIdx = 0; renderCmdList(COMMANDS);
+            document.getElementById('cmd-input-field').focus();
+        }
+
+        function renderCmdList(list) {
+            document.getElementById('cmd-list').innerHTML = list.map((c, i) => `
+    <div class="cmd-item ${i === cmdIdx ? 'active' : ''}" data-idx="${i}">
+      <span class="w-6 text-center">${c.icon}</span><span class="font-medium">${c.label}</span>
+    </div>`).join('');
+        }
+
+        document.getElementById('cmd-input-field').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            const f = COMMANDS.filter(c => c.label.toLowerCase().includes(q));
+            cmdIdx = 0; renderCmdList(f);
+        });
+
+        document.getElementById('cmd-input-field').addEventListener('keydown', e => {
+            const f = COMMANDS.filter(c => c.label.toLowerCase().includes(document.getElementById('cmd-input-field').value.toLowerCase()));
+            if (e.key === 'ArrowDown') { e.preventDefault(); cmdIdx = Math.min(cmdIdx + 1, f.length - 1); renderCmdList(f); }
+            if (e.key === 'ArrowUp') { e.preventDefault(); cmdIdx = Math.max(cmdIdx - 1, 0); renderCmdList(f); }
+            if (e.key === 'Enter' && f[cmdIdx]) { document.getElementById('cmd-overlay').classList.remove('open'); f[cmdIdx].action(); }
+            if (e.key === 'Escape') document.getElementById('cmd-overlay').classList.remove('open');
+        });
+
+        document.getElementById('cmd-trigger-btn').addEventListener('click', openCmd);
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.key === 'k') { e.preventDefault(); openCmd(); }
+            if (e.ctrlKey && e.key === 'b') { e.preventDefault(); document.getElementById('sidebar-toggle-btn').click(); }
+            if (e.key === 'Escape') closeDetailPanel();
+        });
+
+        /* Sync */
+        document.getElementById('sync-btn').addEventListener('click', () => {
+            const btn = document.getElementById('sync-btn');
+            btn.textContent = '⟳ Syncing...';
+            setTimeout(() => {
+                btn.textContent = '⟳ Sync'; document.getElementById('unpushed-count').textContent = '0';
+                markClean(); toast('✓ Synced with remote');
+            }, 1000);
+        });
+
+        /* Init */
+        renderBoard();
+    </script>
+</body>
+
+</html>
