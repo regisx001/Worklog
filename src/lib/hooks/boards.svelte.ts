@@ -5,9 +5,21 @@ let _boards = $state<Board[]>([]);
 let _active = $state<Board | null>(null);
 let _loading = $state(false);
 
-export function useBoards(workspacePath: string) {
+export function useBoards(getWorkspacePath: () => string | null) {
+    function requireWorkspacePath(): string {
+        const path = getWorkspacePath();
+        if (!path) throw new Error('No workspace selected');
+        return path;
+    }
 
     async function load() {
+        const workspacePath = getWorkspacePath();
+        if (!workspacePath) {
+            _boards = [];
+            _active = null;
+            return;
+        }
+
         _loading = true;
         const db = await getDb(workspacePath);
         _boards = await BoardRepo.listBoards(db);
@@ -19,6 +31,7 @@ export function useBoards(workspacePath: string) {
     }
 
     async function create(input: CreateBoardInput) {
+        const workspacePath = requireWorkspacePath();
         const db = await getDb(workspacePath);
         const board = await BoardRepo.createBoard(db, input);
         _boards = [..._boards, board];
@@ -27,6 +40,7 @@ export function useBoards(workspacePath: string) {
     }
 
     async function remove(id: string) {
+        const workspacePath = requireWorkspacePath();
         const db = await getDb(workspacePath);
         await BoardRepo.deleteBoard(db, id);
         _boards = _boards.filter(b => b.id !== id);

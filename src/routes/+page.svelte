@@ -1,160 +1,429 @@
 <script lang="ts">
-  import { useWorkspace } from "$lib/hooks/workspace.svelte";
-  import { useBoards } from "$lib/hooks/boards.svelte";
-  import { useTickets } from "$lib/hooks/tickets.svelte";
+  import {
+    resetToolbarState,
+    setToolbarState,
+  } from "$lib/hooks/toolbar.svelte.js";
+  import KanbanColumn from "$lib/components/app/KanbanColumn.svelte";
+  import Sidebar from "$lib/components/app/Sidebar.svelte";
+  import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
+  import SyncStatusBar from "$lib/components/app/SyncStatusBar.svelte";
+  import CommandPalette from "$lib/components/app/CommandPalette.svelte";
+  import type {
+    CommandAction,
+    Project,
+    SyncState,
+    Ticket,
+    TicketStatus,
+  } from "$lib/components/app/types.js";
 
-  const workspace = useWorkspace();
-  const boards = useBoards(workspace.path ?? "");
-  const tickets = useTickets(workspace.path ?? "", boards.active?.id ?? "");
+  let projects = $state<Project[]>([
+    {
+      id: "core",
+      name: "Core Compiler",
+      localChanges: 2,
+      lastSyncedAt: "2m ago",
+    },
+    {
+      id: "desktop",
+      name: "Desktop Shell",
+      localChanges: 0,
+      lastSyncedAt: "8m ago",
+    },
+    {
+      id: "devx",
+      name: "Developer UX",
+      localChanges: 1,
+      lastSyncedAt: "12m ago",
+    },
+  ]);
 
-  // ─── test actions ───────────────────────────────
-  async function testCreateBoard() {
-    await boards.create({
-      name: "Test Board",
-      description: "Created from debug page",
-    });
-  }
+  let tickets = $state<Ticket[]>([
+    {
+      id: "TK-101",
+      board_id: "core",
+      title: "Persist board state between restarts",
+      description:
+        "- Save board data in local storage\n- Restore selected ticket on load",
+      status: "todo",
+      labels: ["enhancement"],
+      comments: [
+        {
+          author: "Mia",
+          body: "Prefer filesystem snapshot over localStorage.",
+          timestamp: "09:12",
+        },
+      ],
+      created_at: "2026-03-18T09:12:00Z",
+      updated_at: "2026-03-18T09:12:00Z",
+    },
+    {
+      id: "TK-102",
+      board_id: "core",
+      title: "Keyboard reorder in kanban columns",
+      description: "Enable moving a focused card with shortcuts.",
+      status: "in_progress",
+      labels: ["feature"],
+      comments: [],
+      created_at: "2026-03-18T10:04:00Z",
+      updated_at: "2026-03-18T10:04:00Z",
+    },
+    {
+      id: "TK-103",
+      board_id: "core",
+      title: "Add markdown preview in detail panel",
+      description: "Render plain markdown-like line breaks instantly.",
+      status: "done",
+      labels: ["ui"],
+      comments: [
+        {
+          author: "Noah",
+          body: "Shipped with escaped HTML output.",
+          timestamp: "Yesterday",
+        },
+      ],
+      created_at: "2026-03-17T16:20:00Z",
+      updated_at: "2026-03-17T16:20:00Z",
+    },
+    {
+      id: "TK-104",
+      board_id: "desktop",
+      title: "Attach native notifications for due dates",
+      description: "Hook Tauri notification API.",
+      status: "todo",
+      labels: ["desktop"],
+      comments: [],
+      created_at: "2026-03-18T13:05:00Z",
+      updated_at: "2026-03-18T13:05:00Z",
+    },
+    {
+      id: "TK-105",
+      board_id: "devx",
+      title: "Command palette action indexing",
+      description: "Support fuzzy filter across labels and ids.",
+      status: "in_progress",
+      labels: ["perf"],
+      comments: [],
+      created_at: "2026-03-18T14:30:00Z",
+      updated_at: "2026-03-18T14:30:00Z",
+    },
+  ]);
 
-  async function testCreateTicket() {
-    if (!boards.active) return alert("No active board");
-    await tickets.create({
-      board_id: boards.active.id,
-      title: "Test Ticket " + Date.now(),
-      description: "Debug ticket",
-      labels: ["test"],
-    });
-  }
+  let activeProjectId = $state("core");
+  let selectedTicketId = $state<string | null>(null);
+  let detailOpen = $state(false);
+  let commandPaletteOpen = $state(false);
+  let syncState = $state<SyncState>("pending_changes");
 
-  async function testUpdateTicket(id: string) {
-    await tickets.update(id, { status: "in_progress" });
-  }
-
-  async function testDeleteTicket(id: string) {
-    await tickets.remove(id);
-  }
-
-  // ─── boot ───────────────────────────────────────
-  $effect(() => {
-    void workspace.init().catch((error) => {
-      console.error("workspace.init failed", error);
-    });
+  const activeProject = $derived.by(() => {
+    return (
+      projects.find((project) => project.id === activeProjectId) ?? projects[0]
+    );
   });
 
+  const visibleTickets = $derived.by(() => {
+    return tickets.filter((ticket) => ticket.board_id === activeProjectId);
+  });
+
+  const todoTickets = $derived.by(() =>
+    visibleTickets.filter((ticket) => ticket.status === "todo"),
+  );
+  const inProgressTickets = $derived.by(() =>
+    visibleTickets.filter((ticket) => ticket.status === "in_progress"),
+  );
+  const doneTickets = $derived.by(() =>
+    visibleTickets.filter((ticket) => ticket.status === "done"),
+  );
+
+  const selectedTicket = $derived.by(() => {
+    if (!selectedTicketId) return null;
+    return tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
+  });
+
+  const pendingChanges = $derived.by(() => {
+    return projects.reduce((sum, project) => sum + project.localChanges, 0);
+  });
+
+  function markProjectDirty(projectId: string) {
+    projects = projects.map((project) =>
+      project.id === projectId
+        ? {
+            ...project,
+            localChanges: project.localChanges + 1,
+            lastSyncedAt: "now",
+          }
+        : project,
+    );
+    syncState = "pending_changes";
+  }
+
+  function selectProject(projectId: string) {
+    activeProjectId = projectId;
+    selectedTicketId = null;
+    detailOpen = false;
+  }
+
+  function openTicket(ticketId: string) {
+    selectedTicketId = ticketId;
+    detailOpen = true;
+  }
+
+  function moveTicket(ticketId: string, nextStatus: TicketStatus) {
+    const ticket = tickets.find((entry) => entry.id === ticketId);
+    if (!ticket || ticket.status === nextStatus) return;
+
+    tickets = tickets.map((entry) =>
+      entry.id === ticketId
+        ? { ...entry, status: nextStatus, updated_at: new Date().toISOString() }
+        : entry,
+    );
+    markProjectDirty(ticket.board_id);
+  }
+
+  function quickMoveTicket(ticketId: string) {
+    const ticket = tickets.find((entry) => entry.id === ticketId);
+    if (!ticket) return;
+
+    const cycle: Record<TicketStatus, TicketStatus> = {
+      todo: "in_progress",
+      in_progress: "done",
+      done: "todo",
+    };
+
+    moveTicket(ticketId, cycle[ticket.status]);
+  }
+
+  function createTicket() {
+    const serial = tickets.length + 101;
+    const id = `TK-${serial}`;
+    const nextTicket: Ticket = {
+      id,
+      board_id: activeProjectId,
+      title: "New ticket",
+      description: "Describe the task clearly and keep it actionable.",
+      status: "todo",
+      labels: ["feature"],
+      comments: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    tickets = [nextTicket, ...tickets];
+    selectedTicketId = id;
+    detailOpen = true;
+    markProjectDirty(activeProjectId);
+  }
+
+  function updateTicket(
+    ticketId: string,
+    updates: Partial<
+      Pick<Ticket, "title" | "description" | "status" | "labels">
+    >,
+  ) {
+    const target = tickets.find((ticket) => ticket.id === ticketId);
+    if (!target) return;
+    tickets = tickets.map((ticket) =>
+      ticket.id === ticketId
+        ? { ...ticket, ...updates, updated_at: new Date().toISOString() }
+        : ticket,
+    );
+    markProjectDirty(target.board_id);
+  }
+
+  function addComment(ticketId: string, body: string) {
+    const target = tickets.find((ticket) => ticket.id === ticketId);
+    if (!target) return;
+
+    tickets = tickets.map((ticket) => {
+      if (ticket.id !== ticketId) return ticket;
+      return {
+        ...ticket,
+        comments: [
+          ...ticket.comments,
+          {
+            author: "You",
+            body,
+            timestamp: "Just now",
+          },
+        ],
+        updated_at: new Date().toISOString(),
+      };
+    });
+    markProjectDirty(target.board_id);
+  }
+
+  function manualSync() {
+    if (syncState === "syncing") return;
+    syncState = "syncing";
+
+    window.setTimeout(() => {
+      projects = projects.map((project) => ({
+        ...project,
+        localChanges: 0,
+        lastSyncedAt: "now",
+      }));
+      syncState = "up_to_date";
+    }, 850);
+  }
+
+  function openSettingsPlaceholder() {
+    commandPaletteOpen = true;
+  }
+
+  const commandActions = $derived.by<CommandAction[]>(() => [
+    {
+      id: "new-ticket",
+      label: "Create ticket",
+      subtitle: "Add a new todo ticket in current project",
+      shortcut: "Ctrl/Cmd+N",
+      run: createTicket,
+    },
+    {
+      id: "sync",
+      label: "Sync now",
+      subtitle: "Flush local changes to remote Git branch",
+      shortcut: "Ctrl/Cmd+S",
+      run: manualSync,
+    },
+    {
+      id: "focus-todo",
+      label: "Focus Todo column",
+      subtitle: "Select first ticket in Todo",
+      shortcut: "1",
+      run: () => {
+        if (todoTickets[0]) openTicket(todoTickets[0].id);
+      },
+    },
+    {
+      id: "focus-in_progress",
+      label: "Focus In Progress column",
+      subtitle: "Select first ticket in In Progress",
+      shortcut: "2",
+      run: () => {
+        if (inProgressTickets[0]) openTicket(inProgressTickets[0].id);
+      },
+    },
+    {
+      id: "focus-done",
+      label: "Focus Done column",
+      subtitle: "Select first ticket in Done",
+      shortcut: "3",
+      run: () => {
+        if (doneTickets[0]) openTicket(doneTickets[0].id);
+      },
+    },
+  ]);
+
   $effect(() => {
-    if (workspace.status === "ready") {
-      void boards.load().catch((error) => {
-        console.error("boards.load failed", error);
-      });
+    function onKeyDown(event: KeyboardEvent) {
+      const isMeta = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+
+      if (isMeta && key === "k") {
+        event.preventDefault();
+        commandPaletteOpen = true;
+      }
+
+      if (isMeta && key === "n") {
+        event.preventDefault();
+        createTicket();
+      }
+
+      if (isMeta && key === "s") {
+        event.preventDefault();
+        manualSync();
+      }
+
+      if (!event.metaKey && !event.ctrlKey && key === "escape" && detailOpen) {
+        event.preventDefault();
+        detailOpen = false;
+      }
     }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   });
 
   $effect(() => {
-    if (boards.active) {
-      void tickets.load().catch((error) => {
-        console.error("tickets.load failed", error);
-      });
-    }
+    setToolbarState({
+      projectName: activeProject?.name ?? "Project",
+      pendingChanges,
+      syncState,
+      onOpenPalette: () => {
+        commandPaletteOpen = true;
+      },
+      onCreateTicket: createTicket,
+      onManualSync: manualSync,
+    });
+
+    return () => {
+      resetToolbarState();
+    };
   });
-
-  import { seedDatabase } from "$lib/db/seed";
-  import { getDb } from "$lib/db";
-
-  let seeding = $state(false);
-  let seeded = $state(false);
-
-  async function runSeed() {
-    if (!workspace.path) return alert("Open a workspace first");
-    seeding = true;
-    const db = await getDb(workspace.path);
-    await seedDatabase(db);
-    await boards.load(); // refresh after seed
-    seeding = false;
-    seeded = true;
-  }
 </script>
 
-<button onclick={runSeed} disabled={seeding || seeded}>
-  {seeding ? "Seeding..." : seeded ? "✅ Seeded" : "🌱 Seed Database"}
-</button>
+<div class="grid h-full min-h-0 grid-cols-[18rem_1fr]">
+  <Sidebar
+    {projects}
+    {activeProjectId}
+    {syncState}
+    onSelectProject={selectProject}
+    onOpenPalette={() => {
+      commandPaletteOpen = true;
+    }}
+    onOpenSettings={openSettingsPlaceholder}
+    onCreateTicket={createTicket}
+  />
 
-<!-- ── STATUS ─────────────────────────────────── -->
-<section>
-  <h2>Workspace</h2>
-  <p>Status: <strong>{workspace.status}</strong></p>
-  <p>Path: <code>{workspace.path ?? "—"}</code></p>
-  <p>Meta: <code>{JSON.stringify(workspace.meta, null, 2)}</code></p>
+  <div class="flex min-w-0 min-h-0 flex-col">
+    <main class="min-h-0 flex-1 p-3">
+      <div class="grid h-full min-h-0 grid-cols-3 gap-3">
+        <KanbanColumn
+          title="Todo"
+          status="todo"
+          tickets={todoTickets}
+          {selectedTicketId}
+          onSelectTicket={openTicket}
+          onDragTicketStart={() => {
+            // drag state is handled through dataTransfer for drop targets
+          }}
+          onDropTicket={moveTicket}
+          onQuickMoveTicket={quickMoveTicket}
+        />
+        <KanbanColumn
+          title="In Progress"
+          status="in_progress"
+          tickets={inProgressTickets}
+          {selectedTicketId}
+          onSelectTicket={openTicket}
+          onDragTicketStart={() => {
+            // drag state is handled through dataTransfer for drop targets
+          }}
+          onDropTicket={moveTicket}
+          onQuickMoveTicket={quickMoveTicket}
+        />
+        <KanbanColumn
+          title="Done"
+          status="done"
+          tickets={doneTickets}
+          {selectedTicketId}
+          onSelectTicket={openTicket}
+          onDragTicketStart={() => {
+            // drag state is handled through dataTransfer for drop targets
+          }}
+          onDropTicket={moveTicket}
+          onQuickMoveTicket={quickMoveTicket}
+        />
+      </div>
+    </main>
 
-  {#if workspace.status === "no_workspace" || workspace.status === "error"}
-    <button onclick={() => workspace.pick()}>Open Folder</button>
-  {/if}
+    <SyncStatusBar {syncState} {pendingChanges} onManualSync={manualSync} />
+  </div>
+</div>
 
-  {#if workspace.error}
-    <p style="color:red">Error: {workspace.error}</p>
-  {/if}
-</section>
-
-<hr />
-
-<!-- ── BOARDS ─────────────────────────────────── -->
-<section>
-  <h2>Boards ({boards.boards.length})</h2>
-  <button onclick={testCreateBoard}>+ Create Board</button>
-
-  {#each boards.boards as board}
-    <div style="border:1px solid #444; padding:8px; margin:4px">
-      <strong>{board.name}</strong> — <code>{board.id}</code>
-      {#if boards.active?.id === board.id}
-        <span style="color:green"> ← active</span>
-      {:else}
-        <button onclick={() => boards.setActive(board)}>Set Active</button>
-      {/if}
-      <button onclick={() => boards.remove(board.id)}>Delete</button>
-    </div>
-  {/each}
-</section>
-
-<hr />
-
-<!-- ── TICKETS ────────────────────────────────── -->
-<section>
-  <h2>
-    Tickets ({tickets.tickets.length}) — Board: {boards.active?.name ?? "none"}
-  </h2>
-  <button onclick={testCreateTicket} disabled={!boards.active}
-    >+ Create Ticket</button
-  >
-
-  {#each tickets.tickets as ticket}
-    <div style="border:1px solid #444; padding:8px; margin:4px">
-      <strong>[{ticket.id}]</strong>
-      {ticket.title}
-      <br />
-      Status: <code>{ticket.status}</code>
-      Labels: <code>{JSON.stringify(ticket.labels)}</code>
-      <br />
-      <button onclick={() => testUpdateTicket(ticket.id)}>→ in_progress</button>
-      <button onclick={() => testDeleteTicket(ticket.id)}>Delete</button>
-    </div>
-  {/each}
-</section>
-
-<hr />
-
-<!-- ── RAW JSON DUMP ──────────────────────────── -->
-<section>
-  <h2>Raw State Dump</h2>
-  <pre>{JSON.stringify(
-      {
-        workspace: {
-          status: workspace.status,
-          path: workspace.path,
-          meta: workspace.meta,
-        },
-        boards: boards.boards,
-        activeBoard: boards.active,
-        tickets: tickets.tickets,
-      },
-      null,
-      2,
-    )}</pre>
-</section>
+<TicketDetailPanel
+  bind:open={detailOpen}
+  ticket={selectedTicket}
+  onUpdateTicket={updateTicket}
+  onAddComment={addComment}
+/>
+<CommandPalette bind:open={commandPaletteOpen} actions={commandActions} />
