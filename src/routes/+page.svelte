@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { resetToolbarState, setToolbarState } from "$lib/hooks/toolbar.js";
+  import {
+    resetToolbarState,
+    setToolbarState,
+  } from "$lib/hooks/toolbar.svelte.js";
   import KanbanColumn from "$lib/components/app/KanbanColumn.svelte";
   import Sidebar from "$lib/components/app/Sidebar.svelte";
   import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";

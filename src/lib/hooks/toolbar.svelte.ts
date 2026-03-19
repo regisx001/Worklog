@@ -1,4 +1,3 @@
-import { writable } from "svelte/store";
 import type { SyncState } from "$lib/components/app/types.js";
 
 export interface ToolbarState {
@@ -10,7 +9,7 @@ export interface ToolbarState {
     onManualSync: () => void;
 }
 
-const noop = () => { };
+const noop = () => {};
 
 const initialToolbarState: ToolbarState = {
     projectName: "Project",
@@ -21,12 +20,12 @@ const initialToolbarState: ToolbarState = {
     onManualSync: noop,
 };
 
-export const toolbarState = writable<ToolbarState>(initialToolbarState);
+export const toolbarState = $state<ToolbarState>({ ...initialToolbarState });
 
 export function setToolbarState(next: Partial<ToolbarState>) {
-    toolbarState.update((current) => ({ ...current, ...next }));
+    Object.assign(toolbarState, next);
 }
 
 export function resetToolbarState() {
-    toolbarState.set(initialToolbarState);
+    Object.assign(toolbarState, initialToolbarState);
 }
