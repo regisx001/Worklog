@@ -1,4 +1,4 @@
-export type TicketStatus = "todo" | "in-progress" | "done";
+export type TicketStatus = "todo" | "in_progress" | "done";
 
 export type SyncState = "up_to_date" | "pending_changes" | "syncing";
 

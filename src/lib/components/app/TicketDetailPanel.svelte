@@ -83,7 +83,7 @@
 
     const statusOptions: Array<{ value: TicketStatus; label: string }> = [
         { value: "todo", label: "Todo" },
-        { value: "in-progress", label: "In Progress" },
+        { value: "in_progress", label: "In Progress" },
         { value: "done", label: "Done" },
     ];
 </script>

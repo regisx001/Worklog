@@ -1,40 +1,24 @@
-export type TicketStatus = "todo" | "in_progress" | "done";
-export type SyncMode = "local" | "git";
+import type Database from '@tauri-apps/plugin-sql';
+import type { WorkspaceMeta } from '$lib/components/app/types';
 
-export interface WorkspaceMeta {
-    name: string;
-    schema_version: number;
-    sync_mode: SyncMode;
-    created_at: string;
+export async function initWorkspace(db: Database, name: string): Promise<void> {
+    await db.execute(
+        `INSERT OR IGNORE INTO workspace_meta (id, name, schema_version, sync_mode, created_at)
+     VALUES (1, ?, 1, 'local', ?)`,
+        [name, new Date().toISOString()]
+    );
 }
 
-export interface Board {
-    id: string;
-    name: string;
-    description: string;
-    created_at: string;
-    updated_at: string;
+export async function getWorkspaceMeta(db: Database): Promise<WorkspaceMeta | null> {
+    const rows = await db.select<WorkspaceMeta[]>(
+        `SELECT name, schema_version, sync_mode, created_at FROM workspace_meta WHERE id = 1`
+    );
+    return rows[0] ?? null;
 }
 
-export interface Comment {
-    author: string;
-    body: string;
-    timestamp: string;
+export async function updateWorkspaceName(db: Database, name: string): Promise<void> {
+    await db.execute(
+        `UPDATE workspace_meta SET name = ? WHERE id = 1`,
+        [name]
+    );
 }
-
-export interface Ticket {
-    id: string;
-    board_id: string;
-    title: string;
-    description: string;
-    status: TicketStatus;
-    labels: string[];
-    comments: Comment[];
-    created_at: string;
-    updated_at: string;
-}
-
-// Input types — no id, no timestamps (generated internally)
-export type CreateBoardInput = Pick<Board, "name" | "description">;
-export type CreateTicketInput = Pick<Ticket, "board_id" | "title" | "description" | "labels">;
-export type UpdateTicketInput = Partial<Pick<Ticket, "title" | "description" | "status" | "labels" | "comments">>;

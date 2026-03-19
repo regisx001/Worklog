@@ -1,0 +1,49 @@
+import type { Board, CreateBoardInput } from '$lib/components/app/types';
+import { getDb, BoardRepo } from '$lib/db';
+
+let _boards = $state<Board[]>([]);
+let _active = $state<Board | null>(null);
+let _loading = $state(false);
+
+export function useBoards(workspacePath: string) {
+
+    async function load() {
+        _loading = true;
+        const db = await getDb(workspacePath);
+        _boards = await BoardRepo.listBoards(db);
+        // Auto-select first board if none active
+        if (!_active && _boards.length > 0) {
+            _active = _boards[0];
+        }
+        _loading = false;
+    }
+
+    async function create(input: CreateBoardInput) {
+        const db = await getDb(workspacePath);
+        const board = await BoardRepo.createBoard(db, input);
+        _boards = [..._boards, board];
+        _active = board; // auto-activate newly created board
+        return board;
+    }
+
+    async function remove(id: string) {
+        const db = await getDb(workspacePath);
+        await BoardRepo.deleteBoard(db, id);
+        _boards = _boards.filter(b => b.id !== id);
+        // If deleted board was active, fall back to first remaining
+        if (_active?.id === id) {
+            _active = _boards[0] ?? null;
+        }
+    }
+
+    function setActive(board: Board) {
+        _active = board;
+    }
+
+    return {
+        get boards() { return _boards },
+        get active() { return _active },
+        get loading() { return _loading },
+        load, create, remove, setActive
+    };
+}

@@ -1,4 +1,4 @@
 export { getDb, closeDb } from './connection';
-export * from './repositories/workspace.repo';
-export * from './repositories/board.repo';
-export * from './repositories/ticket.repo';
+export * as WorkspaceRepo from './repositories/workspace.repo';
+export * as BoardRepo from './repositories/board.repo';
+export * as TicketRepo from './repositories/ticket.repo';
