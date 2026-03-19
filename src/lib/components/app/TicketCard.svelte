@@ -1,6 +1,4 @@
 <script lang="ts">
-    import UserIcon from "@lucide/svelte/icons/user";
-    import { Avatar, AvatarFallback } from "$lib/components/ui/avatar/index.js";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import {
         Card,
@@ -27,11 +25,7 @@
         onQuickMove,
     }: TicketCardProps = $props();
 
-    const assigneeInitials = $derived.by(() => {
-        if (!ticket.assignee) return "?";
-        const [first = "", second = ""] = ticket.assignee.split(" ");
-        return `${first.charAt(0)}${second.charAt(0)}`.toUpperCase();
-    });
+    const primaryLabel = $derived.by(() => ticket.labels[0] ?? "general");
 
     const cardClass = $derived.by(() =>
         cn(
@@ -77,7 +71,7 @@
                 <Badge
                     variant="outline"
                     class="shrink-0 text-[10px] uppercase tracking-wide"
-                    >{ticket.label}</Badge
+                    >{primaryLabel}</Badge
                 >
             </div>
         </CardHeader>
@@ -90,22 +84,6 @@
                 <span>{ticket.comments.length} comments</span>
             </div>
             <div class="flex items-center gap-1.5">
-                {#if ticket.assignee}
-                    <Avatar
-                        size="sm"
-                        aria-label={ticket.assignee}
-                        title={ticket.assignee}
-                    >
-                        <AvatarFallback>{assigneeInitials}</AvatarFallback>
-                    </Avatar>
-                {:else}
-                    <Avatar size="sm">
-                        <AvatarFallback>
-                            <UserIcon class="size-3.5" />
-                        </AvatarFallback>
-                    </Avatar>
-                {/if}
-
                 <Badge
                     variant="outline"
                     class="text-[10px]"

@@ -19,7 +19,7 @@
         onUpdateTicket: (
             ticketId: string,
             updates: Partial<
-                Pick<Ticket, "title" | "description" | "status" | "label">
+                Pick<Ticket, "title" | "description" | "status" | "labels">
             >,
         ) => void;
         onAddComment: (ticketId: string, body: string) => void;
@@ -42,7 +42,7 @@
         if (!ticket) return;
         draftTitle = ticket.title;
         draftDescription = ticket.description;
-        draftLabel = ticket.label;
+        draftLabel = ticket.labels[0] ?? "";
         draftStatus = ticket.status;
         newComment = "";
     });
@@ -63,7 +63,7 @@
         onUpdateTicket(ticket.id, {
             title: draftTitle.trim() || ticket.title,
             description: draftDescription.trim(),
-            label: draftLabel.trim() || "general",
+            labels: [draftLabel.trim() || "general"],
             status: draftStatus,
         });
     }
@@ -102,7 +102,7 @@
                             >{ticket.id}</SheetTitle
                         >
                         <Badge variant="outline" class="uppercase"
-                            >{ticket.label}</Badge
+                            >{ticket.labels[0] ?? "general"}</Badge
                         >
                     </div>
                     <SheetDescription class="text-xs text-muted-foreground">
@@ -198,7 +198,7 @@
                                     No comments yet
                                 </p>
                             {:else}
-                                {#each ticket.comments as comment (comment.id)}
+                                {#each ticket.comments as comment, index (`${comment.author}-${comment.timestamp}-${index}`)}
                                     <div
                                         class="rounded-none border border-border/80 px-2.5 py-2"
                                     >
@@ -206,7 +206,7 @@
                                             class="mb-1 flex items-center justify-between text-[11px] text-muted-foreground"
                                         >
                                             <span>{comment.author}</span>
-                                            <span>{comment.createdAt}</span>
+                                            <span>{comment.timestamp}</span>
                                         </div>
                                         <p class="text-xs leading-relaxed">
                                             {comment.body}

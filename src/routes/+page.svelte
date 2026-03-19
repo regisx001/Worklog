@@ -37,66 +37,71 @@
   let tickets = $state<Ticket[]>([
     {
       id: "TK-101",
-      projectId: "core",
+      board_id: "core",
       title: "Persist board state between restarts",
       description:
         "- Save board data in local storage\n- Restore selected ticket on load",
       status: "todo",
-      label: "enhancement",
-      assignee: "Regis Xavier",
+      labels: ["enhancement"],
       comments: [
         {
-          id: "c-1",
           author: "Mia",
           body: "Prefer filesystem snapshot over localStorage.",
-          createdAt: "09:12",
+          timestamp: "09:12",
         },
       ],
+      created_at: "2026-03-18T09:12:00Z",
+      updated_at: "2026-03-18T09:12:00Z",
     },
     {
       id: "TK-102",
-      projectId: "core",
+      board_id: "core",
       title: "Keyboard reorder in kanban columns",
       description: "Enable moving a focused card with shortcuts.",
       status: "in-progress",
-      label: "feature",
-      assignee: "Ivy Chen",
+      labels: ["feature"],
       comments: [],
+      created_at: "2026-03-18T10:04:00Z",
+      updated_at: "2026-03-18T10:04:00Z",
     },
     {
       id: "TK-103",
-      projectId: "core",
+      board_id: "core",
       title: "Add markdown preview in detail panel",
       description: "Render plain markdown-like line breaks instantly.",
       status: "done",
-      label: "ui",
-      assignee: "Noah Park",
+      labels: ["ui"],
       comments: [
         {
-          id: "c-2",
           author: "Noah",
           body: "Shipped with escaped HTML output.",
-          createdAt: "Yesterday",
+          timestamp: "Yesterday",
         },
       ],
+      created_at: "2026-03-17T16:20:00Z",
+      updated_at: "2026-03-17T16:20:00Z",
     },
     {
       id: "TK-104",
-      projectId: "desktop",
+      board_id: "desktop",
       title: "Attach native notifications for due dates",
       description: "Hook Tauri notification API.",
       status: "todo",
-      label: "desktop",
+      labels: ["desktop"],
       comments: [],
+      created_at: "2026-03-18T13:05:00Z",
+      updated_at: "2026-03-18T13:05:00Z",
     },
     {
       id: "TK-105",
-      projectId: "devx",
+      board_id: "devx",
       title: "Command palette action indexing",
       description: "Support fuzzy filter across labels and ids.",
       status: "in-progress",
-      label: "perf",
+      labels: ["perf"],
       comments: [],
+      created_at: "2026-03-18T14:30:00Z",
+      updated_at: "2026-03-18T14:30:00Z",
     },
   ]);
 
@@ -113,7 +118,7 @@
   });
 
   const visibleTickets = $derived.by(() => {
-    return tickets.filter((ticket) => ticket.projectId === activeProjectId);
+    return tickets.filter((ticket) => ticket.board_id === activeProjectId);
   });
 
   const todoTickets = $derived.by(() =>
@@ -164,9 +169,11 @@
     if (!ticket || ticket.status === nextStatus) return;
 
     tickets = tickets.map((entry) =>
-      entry.id === ticketId ? { ...entry, status: nextStatus } : entry,
+      entry.id === ticketId
+        ? { ...entry, status: nextStatus, updated_at: new Date().toISOString() }
+        : entry,
     );
-    markProjectDirty(ticket.projectId);
+    markProjectDirty(ticket.board_id);
   }
 
   function quickMoveTicket(ticketId: string) {
@@ -187,12 +194,14 @@
     const id = `TK-${serial}`;
     const nextTicket: Ticket = {
       id,
-      projectId: activeProjectId,
+      board_id: activeProjectId,
       title: "New ticket",
       description: "Describe the task clearly and keep it actionable.",
       status: "todo",
-      label: "feature",
+      labels: ["feature"],
       comments: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     tickets = [nextTicket, ...tickets];
@@ -204,15 +213,17 @@
   function updateTicket(
     ticketId: string,
     updates: Partial<
-      Pick<Ticket, "title" | "description" | "status" | "label">
+      Pick<Ticket, "title" | "description" | "status" | "labels">
     >,
   ) {
     const target = tickets.find((ticket) => ticket.id === ticketId);
     if (!target) return;
     tickets = tickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, ...updates } : ticket,
+      ticket.id === ticketId
+        ? { ...ticket, ...updates, updated_at: new Date().toISOString() }
+        : ticket,
     );
-    markProjectDirty(target.projectId);
+    markProjectDirty(target.board_id);
   }
 
   function addComment(ticketId: string, body: string) {
@@ -226,15 +237,15 @@
         comments: [
           ...ticket.comments,
           {
-            id: crypto.randomUUID(),
             author: "You",
             body,
-            createdAt: "Just now",
+            timestamp: "Just now",
           },
         ],
+        updated_at: new Date().toISOString(),
       };
     });
-    markProjectDirty(target.projectId);
+    markProjectDirty(target.board_id);
   }
 
   function manualSync() {
