@@ -7,7 +7,17 @@
 
 	$effect(() => {
 		document.documentElement.classList.add("dark");
-		return () => document.documentElement.classList.remove("dark");
+		const handleContextmenu = (event: MouseEvent) => {
+			event.preventDefault();
+		};
+
+		document.addEventListener("contextmenu", handleContextmenu);
+
+		// Cleanup the event listener when the component is destroyed
+		return () => {
+			document.documentElement.classList.remove("dark");
+			document.removeEventListener("contextmenu", handleContextmenu);
+		};
 	});
 </script>
 

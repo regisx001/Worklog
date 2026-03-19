@@ -2,6 +2,15 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import KanbanWorkspaceView from "$lib/components/app/KanbanWorkspaceView.svelte";
   import CommandPalette from "$lib/components/app/CommandPalette.svelte";
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+  } from "$lib/components/ui/dialog/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Textarea } from "$lib/components/ui/textarea/index.js";
   import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
   import { useBoards } from "$lib/hooks/boards.svelte";
   import { useTickets } from "$lib/hooks/tickets.svelte";
@@ -28,6 +37,11 @@
   let selectedTicketId = $state<string | null>(null);
   let detailOpen = $state(false);
   let commandPaletteOpen = $state(false);
+  let createBoardDialogOpen = $state(false);
+  let creatingBoard = $state(false);
+  let boardName = $state("");
+  let boardDescription = $state("");
+  let boardFormError = $state<string | null>(null);
   let syncState = $state<SyncState>("up_to_date");
   let localPendingChanges = $state(0);
   let pageError = $state<string | null>(null);
@@ -98,6 +112,10 @@
     }
   }
 
+  async function moveTicketToStatus(ticketId: string, status: TicketStatus) {
+    await moveTicket(ticketId, status);
+  }
+
   function quickMoveTicket(ticketId: string) {
     const ticket = tickets.tickets.find((entry) => entry.id === ticketId);
     if (!ticket) return;
@@ -162,21 +180,108 @@
     }
   }
 
-  async function createBoard() {
+  function openCreateBoardDialog() {
+    boardFormError = null;
+    createBoardDialogOpen = true;
+  }
+
+  async function submitBoardCreation() {
     if (!workspace.path) {
-      pageError = "Open a workspace first.";
+      boardFormError = "Open a workspace first.";
       return;
     }
 
+    const nextName = boardName.trim();
+    const nextDescription = boardDescription.trim();
+
+    if (!nextName) {
+      boardFormError = "Board name is required.";
+      return;
+    }
+
+    creatingBoard = true;
+    boardFormError = null;
+
     try {
       await boards.create({
-        name: `Board ${boards.boards.length + 1}`,
-        description: "Created from the main page",
+        name: nextName,
+        description: nextDescription,
       });
       await tickets.load();
       syncState = "pending_changes";
+
+      createBoardDialogOpen = false;
+      boardName = "";
+      boardDescription = "";
     } catch (error) {
       setFailure("Failed to create board", error);
+      boardFormError =
+        error instanceof Error ? error.message : "Failed to create board.";
+    } finally {
+      creatingBoard = false;
+    }
+  }
+
+  async function createTicketForBoard(boardId: string) {
+    const targetBoard = boards.boards.find((board) => board.id === boardId);
+    if (!targetBoard) return;
+
+    boards.setActive(targetBoard);
+    selectedTicketId = null;
+    detailOpen = false;
+
+    try {
+      await tickets.load();
+      await createTicket();
+    } catch (error) {
+      setFailure("Failed to create ticket for board", error);
+    }
+  }
+
+  async function deleteBoard(boardId: string) {
+    const targetBoard = boards.boards.find((board) => board.id === boardId);
+    if (!targetBoard) return;
+
+    const confirmed = window.confirm(
+      `Delete board \"${targetBoard.name}\" and all its tickets?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await boards.remove(boardId);
+      await tickets.load();
+      syncState = "pending_changes";
+
+      if (selectedTicket?.board_id === boardId) {
+        selectedTicketId = null;
+        detailOpen = false;
+      }
+    } catch (error) {
+      setFailure("Failed to delete board", error);
+    }
+  }
+
+  async function deleteTicket(ticketId: string) {
+    const targetTicket = tickets.tickets.find(
+      (ticket) => ticket.id === ticketId,
+    );
+    if (!targetTicket) return;
+
+    const confirmed = window.confirm(
+      `Delete ticket \"${targetTicket.title}\"?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await tickets.remove(ticketId);
+      markDirty();
+
+      if (selectedTicketId === ticketId) {
+        selectedTicketId = null;
+        detailOpen = false;
+      }
+    } catch (error) {
+      setFailure("Failed to delete ticket", error);
     }
   }
 
@@ -216,10 +321,10 @@
     {
       id: "new-board",
       label: "Create board",
-      subtitle: "Create and activate a new board",
+      subtitle: "Open form and create a new board",
       shortcut: "Ctrl/Cmd+B",
       run: () => {
-        void createBoard();
+        openCreateBoardDialog();
       },
     },
     {
@@ -323,7 +428,7 @@
 
       if (isMeta && key === "b") {
         event.preventDefault();
-        void createBoard();
+        openCreateBoardDialog();
       }
 
       if (isMeta && key === "s") {
@@ -401,7 +506,7 @@
       <p class="text-sm text-muted-foreground">
         Create your first board to start adding tickets.
       </p>
-      <Button onclick={() => void createBoard()}>Create First Board</Button>
+      <Button onclick={openCreateBoardDialog}>Create First Board</Button>
       {#if pageError}
         <p class="text-xs text-red-300">{pageError}</p>
       {/if}
@@ -428,7 +533,10 @@
       {doneTickets}
       {selectedTicketId}
       {pendingChanges}
+      onCreateBoard={openCreateBoardDialog}
       onSelectBoard={selectBoard}
+      onCreateTicketForBoard={createTicketForBoard}
+      onDeleteBoard={deleteBoard}
       onOpenPalette={() => {
         commandPaletteOpen = true;
       }}
@@ -441,10 +549,84 @@
         void moveTicket(ticketId, status);
       }}
       onQuickMoveTicket={quickMoveTicket}
+      onMoveTicketToStatus={(ticketId, status) => {
+        void moveTicketToStatus(ticketId, status);
+      }}
+      onDeleteTicket={(ticketId) => {
+        void deleteTicket(ticketId);
+      }}
       onManualSync={manualSync}
     />
   </div>
 {/if}
+
+<Dialog bind:open={createBoardDialogOpen}>
+  <DialogContent class="max-w-lg border border-border bg-card p-0">
+    <DialogHeader class="px-4 pt-4 pb-2">
+      <DialogTitle class="text-sm">Create Board</DialogTitle>
+      <DialogDescription class="text-xs text-muted-foreground">
+        Add board details, then create it in the current workspace.
+      </DialogDescription>
+    </DialogHeader>
+
+    <form
+      class="space-y-3 px-4 pb-4"
+      onsubmit={(event) => {
+        event.preventDefault();
+        void submitBoardCreation();
+      }}
+    >
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-muted-foreground"
+          for="board-name"
+        >
+          Board Name
+        </label>
+        <Input
+          id="board-name"
+          bind:value={boardName}
+          placeholder="Backend API"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="space-y-1.5">
+        <label
+          class="text-xs font-medium text-muted-foreground"
+          for="board-description"
+        >
+          Description
+        </label>
+        <Textarea
+          id="board-description"
+          bind:value={boardDescription}
+          class="min-h-24"
+          placeholder="What this board is for..."
+        />
+      </div>
+
+      {#if boardFormError}
+        <p class="text-xs text-red-300">{boardFormError}</p>
+      {/if}
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => {
+            createBoardDialogOpen = false;
+          }}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={creatingBoard}>
+          {creatingBoard ? "Creating..." : "Create Board"}
+        </Button>
+      </div>
+    </form>
+  </DialogContent>
+</Dialog>
 
 <TicketDetailPanel
   bind:open={detailOpen}

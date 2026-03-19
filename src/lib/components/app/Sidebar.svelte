@@ -7,6 +7,13 @@
     import { Button } from "$lib/components/ui/button/index.js";
     import { Separator } from "$lib/components/ui/separator/index.js";
     import {
+        ContextMenu,
+        ContextMenuContent,
+        ContextMenuItem,
+        ContextMenuSeparator,
+        ContextMenuTrigger,
+    } from "$lib/components/ui/context-menu/index.js";
+    import {
         Tooltip,
         TooltipContent,
         TooltipTrigger,
@@ -17,7 +24,10 @@
         boards: Board[];
         activeBoardId: string | null;
         syncState: SyncState;
+        onCreateBoard: () => void;
         onSelectBoard: (boardId: string) => void;
+        onCreateTicketForBoard: (boardId: string) => void;
+        onDeleteBoard: (boardId: string) => void;
         onOpenPalette: () => void;
         onOpenSettings: () => void;
         onCreateTicket: () => void;
@@ -27,7 +37,10 @@
         boards,
         activeBoardId,
         syncState,
+        onCreateBoard,
         onSelectBoard,
+        onCreateTicketForBoard,
+        onDeleteBoard,
         onOpenPalette,
         onOpenSettings,
         onCreateTicket,
@@ -47,6 +60,9 @@
 </script>
 
 <aside
+    oncontextmenu={() => {
+        return false;
+    }}
     class="bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col border-r border-sidebar-border"
 >
     <header class="flex items-center justify-between px-3 py-2.5">
@@ -61,14 +77,14 @@
                 <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label="Create ticket"
-                    onclick={onCreateTicket}
+                    aria-label="Create board"
+                    onclick={onCreateBoard}
                 >
                     <PlusIcon />
                 </Button>
             </TooltipTrigger>
             <TooltipContent sideOffset={8}
-                >Create ticket (Ctrl/Cmd+N)</TooltipContent
+                >Create board (Ctrl/Cmd+B)</TooltipContent
             >
         </Tooltip>
     </header>
@@ -88,27 +104,61 @@
             {:else}
                 {#each boards as board (board.id)}
                     <li>
-                        <button
-                            type="button"
-                            onclick={() => onSelectBoard(board.id)}
-                            class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
-                            class:bg-sidebar-accent={board.id === activeBoardId}
-                            aria-current={board.id === activeBoardId
-                                ? "page"
-                                : undefined}
-                        >
-                            <div class="min-w-0">
-                                <p class="truncate font-medium">{board.name}</p>
-                                <p
-                                    class="mt-0.5 text-[11px] text-muted-foreground"
+                        <ContextMenu>
+                            <ContextMenuTrigger class="block">
+                                <button
+                                    type="button"
+                                    onclick={() => onSelectBoard(board.id)}
+                                    class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full min-w-0 items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
+                                    class:bg-sidebar-accent={board.id ===
+                                        activeBoardId}
+                                    aria-current={board.id === activeBoardId
+                                        ? "page"
+                                        : undefined}
                                 >
-                                    {board.description || "No description"}
-                                </p>
-                            </div>
-                            <Badge variant="outline" class="shrink-0">
-                                {board.id.slice(-4).toUpperCase()}
-                            </Badge>
-                        </button>
+                                    <div class="min-w-0">
+                                        <p class="truncate font-medium">
+                                            {board.name}
+                                        </p>
+                                        <p
+                                            class="mt-0.5 truncate text-[11px] text-muted-foreground"
+                                        >
+                                            {board.description ||
+                                                "No description"}
+                                        </p>
+                                    </div>
+                                    <Badge variant="outline" class="shrink-0">
+                                        {board.id.slice(-4).toUpperCase()}
+                                    </Badge>
+                                </button>
+                            </ContextMenuTrigger>
+
+                            <ContextMenuContent>
+                                <ContextMenuItem
+                                    onclick={() => {
+                                        onSelectBoard(board.id);
+                                    }}
+                                >
+                                    Open board
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    onclick={() => {
+                                        onCreateTicketForBoard(board.id);
+                                    }}
+                                >
+                                    Create ticket
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
+                                <ContextMenuItem
+                                    variant="destructive"
+                                    onclick={() => {
+                                        onDeleteBoard(board.id);
+                                    }}
+                                >
+                                    Delete board
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </ContextMenu>
                     </li>
                 {/each}
             {/if}

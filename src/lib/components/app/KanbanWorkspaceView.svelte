@@ -18,13 +18,18 @@
         doneTickets: Ticket[];
         selectedTicketId: string | null;
         pendingChanges: number;
+        onCreateBoard: () => void;
         onSelectBoard: (boardId: string) => void;
+        onCreateTicketForBoard: (boardId: string) => void;
+        onDeleteBoard: (boardId: string) => void;
         onOpenPalette: () => void;
         onOpenSettings: () => void;
         onCreateTicket: () => void;
         onSelectTicket: (ticketId: string) => void;
         onDropTicket: (ticketId: string, status: TicketStatus) => void;
         onQuickMoveTicket: (ticketId: string) => void;
+        onMoveTicketToStatus: (ticketId: string, status: TicketStatus) => void;
+        onDeleteTicket: (ticketId: string) => void;
         onManualSync: () => void;
     }
 
@@ -37,13 +42,18 @@
         doneTickets,
         selectedTicketId,
         pendingChanges,
+        onCreateBoard,
         onSelectBoard,
+        onCreateTicketForBoard,
+        onDeleteBoard,
         onOpenPalette,
         onOpenSettings,
         onCreateTicket,
         onSelectTicket,
         onDropTicket,
         onQuickMoveTicket,
+        onMoveTicketToStatus,
+        onDeleteTicket,
         onManualSync,
     }: KanbanWorkspaceViewProps = $props();
 </script>
@@ -53,7 +63,10 @@
         {boards}
         {activeBoardId}
         {syncState}
+        {onCreateBoard}
         {onSelectBoard}
+        {onCreateTicketForBoard}
+        {onDeleteBoard}
         {onOpenPalette}
         {onOpenSettings}
         {onCreateTicket}
@@ -73,6 +86,8 @@
                     }}
                     {onDropTicket}
                     {onQuickMoveTicket}
+                    {onMoveTicketToStatus}
+                    {onDeleteTicket}
                 />
                 <KanbanColumn
                     title="In Progress"
@@ -85,6 +100,8 @@
                     }}
                     {onDropTicket}
                     {onQuickMoveTicket}
+                    {onMoveTicketToStatus}
+                    {onDeleteTicket}
                 />
                 <KanbanColumn
                     title="Done"
@@ -97,6 +114,8 @@
                     }}
                     {onDropTicket}
                     {onQuickMoveTicket}
+                    {onMoveTicketToStatus}
+                    {onDeleteTicket}
                 />
             </div>
         </main>

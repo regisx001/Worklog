@@ -70,6 +70,14 @@
     </Button>
 
     <a
+        href="/"
+        class="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground max-[920px]:px-2"
+        data-toolbar-action="true"
+    >
+        <BugIcon class="size-3.5" />
+        <span class="max-[1040px]:hidden">APP</span>
+    </a>
+    <a
         href="/debug"
         class="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground max-[920px]:px-2"
         data-toolbar-action="true"
