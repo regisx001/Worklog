@@ -8,72 +8,78 @@
 @plugin '@tailwindcss/typography';
 
 :root {
-  --radius: 0.45rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.205 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  /* Exported mockup design-system tokens */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --blur-md: blur(16px);
+  --blur-lg: blur(24px);
+  --blur-xl: blur(40px);
+
+  --wl-bg-base: #09090b;
+  --wl-bg-panel: rgba(24, 24, 27, 0.65);
+  --wl-bg-sidebar: rgba(18, 18, 20, 0.75);
+  --wl-bg-card: rgba(255, 255, 255, 0.03);
+  --wl-bg-raised: rgba(255, 255, 255, 0.06);
+
+  --wl-border-subtle: rgba(255, 255, 255, 0.06);
+  --wl-border-default: rgba(255, 255, 255, 0.12);
+  --wl-border-strong: rgba(255, 255, 255, 0.2);
+
+  --wl-text-primary: #fafafa;
+  --wl-text-secondary: #a1a1aa;
+  --wl-text-tertiary: #71717a;
+
+  --wl-accent-grove: #1db954;
+  --wl-accent-loud: #1ed760;
+
+  --wl-status-done: #3fb950;
+  --wl-status-warn: #d29922;
+  --wl-status-err: #f85149;
+  --wl-status-info: #58a6ff;
+
+  --wl-label-green-text: #56d364;
+  --wl-label-blue-text: #79c0ff;
+  --wl-label-yellow-text: #e3b341;
+  --wl-label-red-text: #ff7b72;
+  --wl-label-purple-text: #d2a8ff;
+
+  /* shadcn semantic mapping */
+  --background: var(--wl-bg-base);
+  --foreground: var(--wl-text-primary);
+  --card: #141417;
+  --card-foreground: var(--wl-text-primary);
+  --popover: #18181b;
+  --popover-foreground: var(--wl-text-primary);
+  --primary: var(--wl-accent-grove);
+  --primary-foreground: #04120a;
+  --secondary: rgba(255, 255, 255, 0.08);
+  --secondary-foreground: var(--wl-text-primary);
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: var(--wl-text-secondary);
+  --accent: rgba(29, 185, 84, 0.16);
+  --accent-foreground: #bbf7d0;
+  --destructive: var(--wl-status-err);
+  --border: var(--wl-border-default);
+  --input: var(--wl-border-default);
+  --ring: var(--wl-accent-grove);
+  --chart-1: var(--wl-status-info);
+  --chart-2: var(--wl-accent-grove);
+  --chart-3: var(--wl-label-purple-text);
+  --chart-4: var(--wl-label-yellow-text);
+  --chart-5: var(--wl-status-err);
+  --sidebar: var(--wl-bg-sidebar);
+  --sidebar-foreground: var(--wl-text-primary);
+  --sidebar-primary: var(--wl-accent-grove);
+  --sidebar-primary-foreground: #04120a;
+  --sidebar-accent: rgba(255, 255, 255, 0.07);
+  --sidebar-accent-foreground: var(--wl-text-primary);
+  --sidebar-border: var(--wl-border-default);
+  --sidebar-ring: var(--wl-accent-loud);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.922 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -112,7 +118,16 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface-panel: var(--wl-bg-panel);
+  --color-surface-sidebar: var(--wl-bg-sidebar);
+  --color-surface-card: var(--wl-bg-card);
+  --color-surface-raised: var(--wl-bg-raised);
+  --color-text-secondary: var(--wl-text-secondary);
+  --color-text-tertiary: var(--wl-text-tertiary);
+  --color-accent-loud: var(--wl-accent-loud);
   --font-sans: 'Inter Variable', sans-serif;
+  --font-display: 'Geist Variable', 'Inter Variable', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
@@ -124,10 +139,15 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-size: 13px;
+    background-image:
+      radial-gradient(70% 60% at 0% 0%, rgba(29, 185, 84, 0.08), transparent 60%),
+      radial-gradient(60% 55% at 100% 100%, rgba(88, 166, 255, 0.08), transparent 62%);
+    background-attachment: fixed;
   }
- 	html {
- 		@apply font-sans;
+  html {
+    @apply font-sans;
   }
 }
 

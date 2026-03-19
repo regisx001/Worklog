@@ -1,10 +1,5 @@
 <script lang="ts">
-  import FolderKanbanIcon from "@lucide/svelte/icons/folder-kanban";
-  import KeyboardIcon from "@lucide/svelte/icons/keyboard";
-  import Settings2Icon from "@lucide/svelte/icons/settings-2";
-  import { Badge } from "$lib/components/ui/badge/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { Separator } from "$lib/components/ui/separator/index.js";
+  import { resetToolbarState, setToolbarState } from "$lib/hooks/toolbar.js";
   import KanbanColumn from "$lib/components/app/KanbanColumn.svelte";
   import Sidebar from "$lib/components/app/Sidebar.svelte";
   import TicketDetailPanel from "$lib/components/app/TicketDetailPanel.svelte";
@@ -333,102 +328,88 @@
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   });
+
+  $effect(() => {
+    setToolbarState({
+      projectName: activeProject?.name ?? "Project",
+      pendingChanges,
+      syncState,
+      onOpenPalette: () => {
+        commandPaletteOpen = true;
+      },
+      onCreateTicket: createTicket,
+      onManualSync: manualSync,
+    });
+
+    return () => {
+      resetToolbarState();
+    };
+  });
 </script>
 
-<div class="dark h-dvh overflow-hidden bg-background text-foreground">
-  <div class="grid h-full grid-cols-[18rem_1fr]">
-    <Sidebar
-      {projects}
-      {activeProjectId}
-      {syncState}
-      onSelectProject={selectProject}
-      onOpenPalette={() => {
-        commandPaletteOpen = true;
-      }}
-      onOpenSettings={openSettingsPlaceholder}
-      onCreateTicket={createTicket}
-    />
-
-    <div class="flex min-w-0 min-h-0 flex-col">
-      <header class="flex h-12 items-center justify-between px-4">
-        <div class="flex items-center gap-2">
-          <FolderKanbanIcon class="size-4 text-muted-foreground" />
-          <h1 class="text-sm font-semibold">
-            {activeProject?.name ?? "Project"}
-          </h1>
-          <Badge variant="outline" class="text-[10px]">desktop-first</Badge>
-        </div>
-        <div class="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <KeyboardIcon class="size-3.5" />
-          <Badge variant="outline" class="text-[10px]">Cmd/Ctrl+K</Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            onclick={() => (commandPaletteOpen = true)}>Commands</Button
-          >
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Settings"
-            onclick={openSettingsPlaceholder}
-          >
-            <Settings2Icon class="size-4" />
-          </Button>
-        </div>
-      </header>
-
-      <Separator />
-
-      <main class="min-h-0 flex-1 p-3">
-        <div class="grid h-full min-h-0 grid-cols-3 gap-3">
-          <KanbanColumn
-            title="Todo"
-            status="todo"
-            tickets={todoTickets}
-            {selectedTicketId}
-            onSelectTicket={openTicket}
-            onDragTicketStart={() => {
-              // drag state is handled through dataTransfer for drop targets
-            }}
-            onDropTicket={moveTicket}
-            onQuickMoveTicket={quickMoveTicket}
-          />
-          <KanbanColumn
-            title="In Progress"
-            status="in-progress"
-            tickets={inProgressTickets}
-            {selectedTicketId}
-            onSelectTicket={openTicket}
-            onDragTicketStart={() => {
-              // drag state is handled through dataTransfer for drop targets
-            }}
-            onDropTicket={moveTicket}
-            onQuickMoveTicket={quickMoveTicket}
-          />
-          <KanbanColumn
-            title="Done"
-            status="done"
-            tickets={doneTickets}
-            {selectedTicketId}
-            onSelectTicket={openTicket}
-            onDragTicketStart={() => {
-              // drag state is handled through dataTransfer for drop targets
-            }}
-            onDropTicket={moveTicket}
-            onQuickMoveTicket={quickMoveTicket}
-          />
-        </div>
-      </main>
-
-      <SyncStatusBar {syncState} {pendingChanges} onManualSync={manualSync} />
-    </div>
-  </div>
-
-  <TicketDetailPanel
-    bind:open={detailOpen}
-    ticket={selectedTicket}
-    onUpdateTicket={updateTicket}
-    onAddComment={addComment}
+<div class="grid h-full min-h-0 grid-cols-[18rem_1fr]">
+  <Sidebar
+    {projects}
+    {activeProjectId}
+    {syncState}
+    onSelectProject={selectProject}
+    onOpenPalette={() => {
+      commandPaletteOpen = true;
+    }}
+    onOpenSettings={openSettingsPlaceholder}
+    onCreateTicket={createTicket}
   />
-  <CommandPalette bind:open={commandPaletteOpen} actions={commandActions} />
+
+  <div class="flex min-w-0 min-h-0 flex-col">
+    <main class="min-h-0 flex-1 p-3">
+      <div class="grid h-full min-h-0 grid-cols-3 gap-3">
+        <KanbanColumn
+          title="Todo"
+          status="todo"
+          tickets={todoTickets}
+          {selectedTicketId}
+          onSelectTicket={openTicket}
+          onDragTicketStart={() => {
+            // drag state is handled through dataTransfer for drop targets
+          }}
+          onDropTicket={moveTicket}
+          onQuickMoveTicket={quickMoveTicket}
+        />
+        <KanbanColumn
+          title="In Progress"
+          status="in-progress"
+          tickets={inProgressTickets}
+          {selectedTicketId}
+          onSelectTicket={openTicket}
+          onDragTicketStart={() => {
+            // drag state is handled through dataTransfer for drop targets
+          }}
+          onDropTicket={moveTicket}
+          onQuickMoveTicket={quickMoveTicket}
+        />
+        <KanbanColumn
+          title="Done"
+          status="done"
+          tickets={doneTickets}
+          {selectedTicketId}
+          onSelectTicket={openTicket}
+          onDragTicketStart={() => {
+            // drag state is handled through dataTransfer for drop targets
+          }}
+          onDropTicket={moveTicket}
+          onQuickMoveTicket={quickMoveTicket}
+        />
+      </div>
+    </main>
+
+    <SyncStatusBar {syncState} {pendingChanges} onManualSync={manualSync} />
+  </div>
 </div>
+
+<TicketDetailPanel
+  bind:open={detailOpen}
+  ticket={selectedTicket}
+  onUpdateTicket={updateTicket}
+  onAddComment={addComment}
+/>
+<CommandPalette bind:open={commandPaletteOpen} actions={commandActions} />
