@@ -1,4 +1,13 @@
 <script lang="ts">
+    import {
+        Trash,
+        FolderOpen,
+        CheckCheck,
+        CircleDot,
+        ArrowLeftRight,
+        Check,
+    } from "@lucide/svelte";
+
     import { Badge } from "$lib/components/ui/badge/index.js";
     import {
         Card,
@@ -14,7 +23,7 @@
         ContextMenuTrigger,
     } from "$lib/components/ui/context-menu/index.js";
     import { cn } from "$lib/utils.js";
-    import type { Ticket, TicketStatus } from "./types.js";
+    import type { Ticket, TicketStatus } from "$lib/components/app/types.js";
 
     interface TicketCardProps {
         ticket: Ticket;
@@ -114,51 +123,63 @@
 
     <ContextMenuContent>
         <ContextMenuItem
+            class="text-[12px]"
             onclick={() => {
                 onSelect(ticket.id);
             }}
         >
+            <FolderOpen width="12px" />
             Open ticket
         </ContextMenuItem>
         <ContextMenuItem
+            class="text-[12px]"
             onclick={() => {
                 onQuickMove(ticket.id);
             }}
         >
+            <ArrowLeftRight width="12px" />
             Quick move
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
+            class="text-[12px]"
             disabled={ticket.status === "todo"}
             onclick={() => {
                 onMoveToStatus(ticket.id, "todo");
             }}
         >
+            <Check />
             Move to Todo
         </ContextMenuItem>
         <ContextMenuItem
+            class="text-[12px]"
             disabled={ticket.status === "in_progress"}
             onclick={() => {
                 onMoveToStatus(ticket.id, "in_progress");
             }}
         >
+            <CircleDot width="12px" />
             Move to In Progress
         </ContextMenuItem>
         <ContextMenuItem
+            class="text-[12px]"
             disabled={ticket.status === "done"}
             onclick={() => {
                 onMoveToStatus(ticket.id, "done");
             }}
         >
+            <CheckCheck width="12px" />
             Move to Done
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
+            class="text-[12px]"
             variant="destructive"
             onclick={() => {
                 onDelete(ticket.id);
             }}
         >
+            <Trash width="12px" />
             Delete ticket
         </ContextMenuItem>
     </ContextMenuContent>
