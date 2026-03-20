@@ -154,7 +154,7 @@ git push origin app-v0.1.0
 ```
 
 4. GitHub Actions builds and uploads artifacts for macOS, Linux, and Windows.
-5. Open the draft release in GitHub and publish it after validation.
+5. The workflow also builds and uploads AUR-ready artifacts (PKGBUILD, .SRCINFO, package tarball).
 
 ## Recommended IDE Setup
 
