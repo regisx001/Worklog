@@ -76,6 +76,7 @@
   --sidebar-accent-foreground: var(--wl-text-primary);
   --sidebar-border: var(--wl-border-default);
   --sidebar-ring: var(--wl-accent-loud);
+  --app-toolbar-height: 2.5rem;
 }
 
 .dark {
@@ -140,7 +141,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-size: 13px;
+    font-size: 12px;
     background-image:
       radial-gradient(70% 60% at 0% 0%, rgba(29, 185, 84, 0.08), transparent 60%),
       radial-gradient(60% 55% at 100% 100%, rgba(88, 166, 255, 0.08), transparent 62%);

@@ -66,6 +66,7 @@
 <Sheet bind:open>
     <SheetContent
         side="right"
+        overlayClass="top-[var(--app-toolbar-height)]"
         class="w-140 max-w-[92vw] border-l border-border/80 p-0 text-[12px] data-[side=right]:top-[var(--app-toolbar-height)] data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >

@@ -140,7 +140,7 @@
 
 <header
     bind:this={toolbarEl}
-    class="flex h-10 min-h-10 w-full select-none items-center border-b border-border bg-[color-mix(in_srgb,var(--color-background)_92%,white_8%)] px-2 backdrop-blur-md"
+    class="relative z-[60] flex h-[var(--app-toolbar-height)] min-h-[var(--app-toolbar-height)] w-full select-none items-center border-b border-border bg-card px-2"
 >
     <ToolbarIdentity {projectName} />
 
