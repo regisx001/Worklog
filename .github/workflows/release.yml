@@ -133,8 +133,17 @@ jobs:
           options: -v ${{ github.workspace }}:/workspace
           run: |
             pacman -Sy --noconfirm base-devel
-            useradd -m builder
-            chown -R builder:builder /workspace
+            WS_UID=$(stat -c '%u' /workspace)
+            WS_GID=$(stat -c '%g' /workspace)
+
+            if ! getent group "$WS_GID" >/dev/null; then
+              groupadd -g "$WS_GID" buildergrp
+            fi
+
+            if ! id -u builder >/dev/null 2>&1; then
+              useradd -m -u "$WS_UID" -g "$WS_GID" builder
+            fi
+
             su builder -c 'cd /workspace && makepkg --printsrcinfo > .SRCINFO && makepkg -f --nodeps --noconfirm'
 
       # Upload AUR-ready files
