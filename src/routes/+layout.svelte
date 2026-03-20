@@ -2,8 +2,6 @@
 	import "./layout.css";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
-	import AppToolbar from "$lib/components/app/Toolbar/AppToolbar.svelte";
-	import { toolbarState } from "$lib/hooks/toolbar.svelte.js";
 	import { useWorkspace } from "$lib/hooks/workspace.svelte";
 
 	const workspace = useWorkspace();
@@ -64,15 +62,6 @@
 <div
 	class="dark flex h-dvh flex-col overflow-hidden bg-background text-foreground"
 >
-	<AppToolbar
-		projectName={toolbarState.projectName}
-		pendingChanges={toolbarState.pendingChanges}
-		syncState={toolbarState.syncState}
-		onOpenPalette={toolbarState.onOpenPalette}
-		onCreateTicket={toolbarState.onCreateTicket}
-		onManualSync={toolbarState.onManualSync}
-	/>
-
 	<div class="min-h-0 flex-1">
 		{@render children()}
 	</div>

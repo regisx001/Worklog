@@ -14,7 +14,7 @@
         ContextMenuTrigger,
     } from "$lib/components/ui/context-menu/index.js";
     import { cn } from "$lib/utils.js";
-    import type { Ticket, TicketStatus } from "./types.js";
+    import type { Ticket, TicketStatus } from "$lib/components/app/types.js";
 
     interface TicketCardProps {
         ticket: Ticket;
