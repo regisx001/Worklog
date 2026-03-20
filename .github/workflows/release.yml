@@ -61,7 +61,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: app-v__VERSION__
-          releaseName: App v__VERSION__
+          releaseName: Worklog v__VERSION__
           releaseBody: See the assets to download this version and install.
           releaseDraft: false
           prerelease: false
@@ -147,3 +147,15 @@ jobs:
             .SRCINFO
             worklog_*.deb
             *.pkg.tar.zst
+
+      - name: Bundle AUR release asset
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          tar -czf worklog-aur-package-${VERSION}.tar.gz PKGBUILD .SRCINFO worklog_*.deb *.pkg.tar.zst
+
+      - name: Upload AUR bundle to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          gh release upload "app-v${VERSION}" "worklog-aur-package-${VERSION}.tar.gz" --clobber
