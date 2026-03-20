@@ -2,7 +2,7 @@
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { Separator } from "$lib/components/ui/separator/index.js";
     import TicketCard from "./TicketCard.svelte";
-    import type { Ticket, TicketStatus } from "./types.js";
+    import type { Ticket, TicketStatus } from "$lib/components/app/types.js";
 
     interface KanbanColumnProps {
         title: string;

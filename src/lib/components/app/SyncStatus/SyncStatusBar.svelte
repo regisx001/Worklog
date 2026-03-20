@@ -4,7 +4,7 @@
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
     import { Separator } from "$lib/components/ui/separator/index.js";
-    import type { SyncState } from "./types.js";
+    import type { SyncState } from "$lib/components/app/types.js";
 
     interface SyncStatusBarProps {
         syncState: SyncState;
