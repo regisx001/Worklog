@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { Trash, FolderOpen, FilePlusCorner } from "@lucide/svelte";
     import { goto } from "$app/navigation";
     import PlusIcon from "@lucide/svelte/icons/plus";
     import SearchIcon from "@lucide/svelte/icons/search";
@@ -166,7 +167,9 @@
         } catch (error) {
             setFailure("Failed to create board", error);
             boardFormError =
-                error instanceof Error ? error.message : "Failed to create board.";
+                error instanceof Error
+                    ? error.message
+                    : "Failed to create board.";
         } finally {
             creatingBoard = false;
         }
@@ -262,26 +265,32 @@
 
                             <ContextMenuContent>
                                 <ContextMenuItem
+                                    class="text-[12px]"
                                     onclick={() => {
                                         void openBoard(board.id);
                                     }}
                                 >
+                                    <FolderOpen />
                                     Open board
                                 </ContextMenuItem>
                                 <ContextMenuItem
+                                    class="text-[12px]"
                                     onclick={() => {
                                         void createTicketForBoard(board.id);
                                     }}
                                 >
+                                    <FilePlusCorner />
                                     Create ticket
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                                 <ContextMenuItem
                                     variant="destructive"
+                                    class="text-[12px]"
                                     onclick={() => {
                                         void deleteBoard(board.id);
                                     }}
                                 >
+                                    <Trash width="12px" />
                                     Delete board
                                 </ContextMenuItem>
                             </ContextMenuContent>
