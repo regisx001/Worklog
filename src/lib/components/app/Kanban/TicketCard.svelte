@@ -49,8 +49,8 @@
 
     const cardClass = $derived.by(() =>
         cn(
-            "hover:bg-muted/30 focus-visible:ring-ring/50 gap-2 border border-border/80 bg-card px-0 py-0 transition-colors focus-visible:ring-2",
-            isSelected && "ring-2 ring-ring",
+            "hover:bg-accent/30 hover:border-primary/40 focus-visible:ring-ring/50 gap-2 rounded-lg border border-border/70 bg-gradient-to-t from-primary/5 to-card px-0 py-0 shadow-xs transition-colors focus-visible:ring-2",
+            isSelected && "ring-2 ring-primary/50",
         ),
     );
 
@@ -87,12 +87,12 @@
             <Card size="sm" class={cardClass}>
                 <CardHeader class="px-3 pt-3 pb-0">
                     <div class="flex items-start justify-between gap-2">
-                        <CardTitle class="text-sm font-medium leading-snug"
+                        <CardTitle class="text-sm font-semibold leading-snug"
                             >{ticket.title}</CardTitle
                         >
                         <Badge
                             variant="outline"
-                            class="shrink-0 text-[10px] uppercase tracking-wide"
+                            class="shrink-0 text-[10px] uppercase tracking-[0.08em]"
                             >{primaryLabel}</Badge
                         >
                     </div>
@@ -103,7 +103,9 @@
                     <div
                         class="text-muted-foreground flex items-center gap-1 text-[11px]"
                     >
-                        <span>#{ticket.id}</span>
+                        <span class="font-mono tracking-[0.04em]"
+                            >#{ticket.id}</span
+                        >
                         <span>•</span>
                         <span>{ticket.comments.length} comments</span>
                     </div>

@@ -34,20 +34,24 @@
     }
 </script>
 
-<div class="space-y-2">
+<div
+    class="space-y-2 rounded-lg border border-border/70 bg-surface-panel/70 p-2.5 sm:p-3"
+>
     <p class="text-[11px] font-medium text-muted-foreground">
         Comments ({comments.length})
     </p>
     <div class="space-y-2">
         {#if comments.length === 0}
             <p
-                class="rounded-none border border-dashed border-border px-2.5 py-3 text-center text-[11px] text-muted-foreground"
+                class="rounded-md border border-dashed border-border/80 px-2.5 py-3 text-center text-[11px] text-muted-foreground"
             >
                 No comments yet
             </p>
         {:else}
             {#each comments as comment, index (`${comment.author}-${comment.timestamp}-${index}`)}
-                <div class="rounded-none border border-border/80 px-2 py-1.5">
+                <div
+                    class="rounded-md border border-border/80 bg-card/70 px-2 py-1.5"
+                >
                     <div
                         class="mb-1 flex items-center justify-between text-[11px] text-muted-foreground"
                     >
@@ -61,7 +65,7 @@
     </div>
     <Textarea
         value={newCommentDraft}
-        class="min-h-16 text-[12px]"
+        class="min-h-16 border-border/70 bg-card/80 text-[12px]"
         placeholder="Add comment and hit Enter on Add"
         oninput={(event) => {
             onCommentChange((event.currentTarget as HTMLTextAreaElement).value);
@@ -69,8 +73,11 @@
         onkeydown={onEditorKeyDown}
     />
     <div class="flex justify-end">
-        <Button size="sm" variant="secondary" onclick={onAddComment}
-            >Add comment</Button
+        <Button
+            size="sm"
+            variant="secondary"
+            class="w-full sm:w-auto"
+            onclick={onAddComment}>Add comment</Button
         >
     </div>
 </div>

@@ -14,12 +14,15 @@
     let { ticket }: TicketDetailHeaderProps = $props();
 </script>
 
-<SheetHeader class="gap-1 px-3 py-2.5">
+<SheetHeader
+    class="gap-1 border-b border-border/70 bg-surface-panel/80 px-4 py-3"
+>
     <div class="flex items-center gap-2">
-        <SheetTitle class="text-xs font-semibold tracking-wide"
+        <SheetTitle
+            class="font-mono text-[11px] font-semibold tracking-[0.08em]"
             >{ticket.id}</SheetTitle
         >
-        <Badge variant="outline" class="text-[10px] uppercase"
+        <Badge variant="outline" class="text-[10px] uppercase tracking-[0.08em]"
             >{ticket.labels[0] ?? "general"}</Badge
         >
     </div>

@@ -1,6 +1,5 @@
 <script lang="ts">
     import { Badge } from "$lib/components/ui/badge/index.js";
-    import { Separator } from "$lib/components/ui/separator/index.js";
     import TicketCard from "./TicketCard.svelte";
     import type { Ticket, TicketStatus } from "$lib/components/app/types.js";
 
@@ -34,8 +33,8 @@
 
     const columnClass = $derived.by(() =>
         isDropTarget
-            ? "bg-muted/20 bg-accent/15 flex min-h-0 flex-col rounded-none border border-border/70"
-            : "bg-muted/20 flex min-h-0 flex-col rounded-none border border-border/70",
+            ? "bg-gradient-to-b from-surface-card to-card ring-primary/20 flex min-h-0 flex-col rounded-xl border border-border/70 shadow-sm ring-2"
+            : "bg-gradient-to-b from-surface-card to-card flex min-h-0 flex-col rounded-xl border border-border/70 shadow-xs",
     );
 
     function onDragOver(event: DragEvent) {
@@ -90,21 +89,23 @@
     ondrop={onDrop}
     ondragleave={onDragLeave}
 >
-    <header class="flex items-center justify-between px-3 py-2.5">
+    <header
+        class="flex items-center justify-between border-b border-border/70 px-4 py-3"
+    >
         <div class="flex items-center gap-2">
             <h2
-                class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                class="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
             >
                 {title}
             </h2>
-            <Badge variant="outline">{tickets.length}</Badge>
+            <Badge variant="outline" class="text-[10px]">{tickets.length}</Badge
+            >
         </div>
     </header>
-    <Separator />
 
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div
-        class="no-scrollbar min-h-0 flex-1 overflow-y-auto p-2"
+        class="no-scrollbar min-h-0 flex-1 overflow-y-auto p-3.5"
         onkeydown={onListKeyDown}
         role="listbox"
         aria-label={`${title} tickets`}
@@ -113,7 +114,7 @@
         <div class="space-y-2">
             {#if tickets.length === 0}
                 <div
-                    class="rounded-none border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground"
+                    class="rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-6 text-center text-xs text-muted-foreground"
                 >
                     Drop a ticket here
                 </div>

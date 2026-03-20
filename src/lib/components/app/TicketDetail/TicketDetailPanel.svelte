@@ -66,8 +66,7 @@
 <Sheet bind:open>
     <SheetContent
         side="right"
-        overlayClass="top-[var(--app-toolbar-height)]"
-        class="w-140 max-w-[92vw] border-l border-border/80 p-0 text-[12px] data-[side=right]:top-(--app-toolbar-height) data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
+        class="w-full max-w-[100vw] border-l border-border/80 bg-gradient-to-b from-surface-card to-card p-0 text-[12px] shadow-lg sm:w-[34rem] sm:max-w-[94vw] lg:w-[35rem] data-[side=right]:top-[var(--app-toolbar-height)] data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >
         {#if ticket}
@@ -77,7 +76,7 @@
                 <Separator />
 
                 <div
-                    class="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
+                    class="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3 sm:space-y-4 sm:p-4"
                 >
                     <TicketEditorSection
                         title={draftTitle}
@@ -109,8 +108,12 @@
 
                 <Separator />
 
-                <div class="flex items-center justify-between gap-2 px-3 py-2">
-                    <div class="text-[11px] text-muted-foreground">
+                <div
+                    class="flex flex-col items-stretch gap-2 border-t border-border/70 bg-surface-panel/70 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+                >
+                    <div
+                        class="text-[10px] text-muted-foreground sm:text-[11px]"
+                    >
                         <span
                             >{hasDraftChanges
                                 ? "Unsaved edits"
@@ -121,19 +124,25 @@
                                 >Comment draft pending</span
                             >
                         {/if}
-                        <span class="ml-2">Ctrl/Cmd+Enter to save</span>
+                        <span class="ml-2 hidden sm:inline"
+                            >Ctrl/Cmd+Enter to save</span
+                        >
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div
+                        class="flex w-full items-center justify-end gap-2 sm:w-auto"
+                    >
                         <Button
                             variant="outline"
                             size="sm"
+                            class="flex-1 sm:flex-none"
                             onclick={() => (open = false)}
                         >
                             Close
                         </Button>
                         <Button
                             size="sm"
+                            class="flex-1 sm:flex-none"
                             onclick={onSaveTicket}
                             disabled={!hasDraftChanges}
                         >

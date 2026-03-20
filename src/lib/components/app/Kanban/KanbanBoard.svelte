@@ -27,7 +27,9 @@
     }: KanbanBoardProps = $props();
 </script>
 
-<div class="grid h-full min-h-0 grid-cols-3 gap-3">
+<div
+    class="grid h-full min-h-0 grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-3 @5xl/main:gap-5"
+>
     <KanbanColumn
         title="Todo"
         status="todo"
