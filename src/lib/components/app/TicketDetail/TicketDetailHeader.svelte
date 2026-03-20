@@ -14,14 +14,16 @@
     let { ticket }: TicketDetailHeaderProps = $props();
 </script>
 
-<SheetHeader class="gap-1 px-4 py-3">
+<SheetHeader class="gap-1 px-3 py-2.5">
     <div class="flex items-center gap-2">
-        <SheetTitle class="text-sm font-semibold">{ticket.id}</SheetTitle>
-        <Badge variant="outline" class="uppercase"
+        <SheetTitle class="text-xs font-semibold tracking-wide"
+            >{ticket.id}</SheetTitle
+        >
+        <Badge variant="outline" class="text-[10px] uppercase"
             >{ticket.labels[0] ?? "general"}</Badge
         >
     </div>
-    <SheetDescription class="text-xs text-muted-foreground">
+    <SheetDescription class="text-[11px] text-muted-foreground">
         Inline editing enabled. Save with Ctrl/Cmd+Enter.
     </SheetDescription>
 </SheetHeader>

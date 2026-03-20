@@ -18,34 +18,50 @@
         onAddComment,
         onEditorKeyDown,
     }: TicketCommentsSectionProps = $props();
+
+    function formatTimestamp(timestamp: string) {
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) {
+            return timestamp;
+        }
+
+        return date.toLocaleString(undefined, {
+            month: "short",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
 </script>
 
 <div class="space-y-2">
-    <p class="text-xs font-medium text-muted-foreground">Comments</p>
+    <p class="text-[11px] font-medium text-muted-foreground">
+        Comments ({comments.length})
+    </p>
     <div class="space-y-2">
         {#if comments.length === 0}
             <p
-                class="rounded-none border border-dashed border-border px-2.5 py-4 text-center text-xs text-muted-foreground"
+                class="rounded-none border border-dashed border-border px-2.5 py-3 text-center text-[11px] text-muted-foreground"
             >
                 No comments yet
             </p>
         {:else}
             {#each comments as comment, index (`${comment.author}-${comment.timestamp}-${index}`)}
-                <div class="rounded-none border border-border/80 px-2.5 py-2">
+                <div class="rounded-none border border-border/80 px-2 py-1.5">
                     <div
                         class="mb-1 flex items-center justify-between text-[11px] text-muted-foreground"
                     >
                         <span>{comment.author}</span>
-                        <span>{comment.timestamp}</span>
+                        <span>{formatTimestamp(comment.timestamp)}</span>
                     </div>
-                    <p class="text-xs leading-relaxed">{comment.body}</p>
+                    <p class="text-[11px] leading-relaxed">{comment.body}</p>
                 </div>
             {/each}
         {/if}
     </div>
     <Textarea
         value={newCommentDraft}
-        class="min-h-20"
+        class="min-h-16 text-[12px]"
         placeholder="Add comment and hit Enter on Add"
         oninput={(event) => {
             onCommentChange((event.currentTarget as HTMLTextAreaElement).value);
@@ -53,6 +69,8 @@
         onkeydown={onEditorKeyDown}
     />
     <div class="flex justify-end">
-        <Button variant="secondary" onclick={onAddComment}>Add comment</Button>
+        <Button size="sm" variant="secondary" onclick={onAddComment}
+            >Add comment</Button
+        >
     </div>
 </div>

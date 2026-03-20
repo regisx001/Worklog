@@ -45,12 +45,28 @@
         onSubmitComment,
         onEditorKeyDown,
     }: TicketDetailPanelProps = $props();
+
+    const hasDraftChanges = $derived.by(() => {
+        if (!ticket) return false;
+
+        const currentLabel = ticket.labels[0] ?? "";
+        return (
+            draftTitle.trim() !== ticket.title.trim() ||
+            draftDescription.trim() !== ticket.description.trim() ||
+            draftLabel.trim() !== currentLabel.trim() ||
+            draftStatus !== ticket.status
+        );
+    });
+
+    const hasPendingComment = $derived.by(
+        () => newCommentDraft.trim().length > 0,
+    );
 </script>
 
 <Sheet bind:open>
     <SheetContent
         side="right"
-        class="w-140 max-w-[92vw] border-l border-border/80 p-0"
+        class="w-140 max-w-[92vw] border-l border-border/80 p-0 text-[12px] data-[side=right]:top-[var(--app-toolbar-height)] data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >
         {#if ticket}
@@ -60,7 +76,7 @@
                 <Separator />
 
                 <div
-                    class="no-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-4"
+                    class="no-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
                 >
                     <TicketEditorSection
                         title={draftTitle}
@@ -83,7 +99,7 @@
 
                     <TicketCommentsSection
                         comments={ticket.comments}
-                        newCommentDraft={newCommentDraft}
+                        {newCommentDraft}
                         onCommentChange={onNewCommentChange}
                         onAddComment={onSubmitComment}
                         {onEditorKeyDown}
@@ -92,16 +108,42 @@
 
                 <Separator />
 
-                <div class="flex items-center justify-end gap-2 px-4 py-3">
-                    <Button variant="outline" onclick={() => (open = false)}
-                        >Close</Button
-                    >
-                    <Button onclick={onSaveTicket}>Save changes</Button>
+                <div class="flex items-center justify-between gap-2 px-3 py-2">
+                    <div class="text-[11px] text-muted-foreground">
+                        <span
+                            >{hasDraftChanges
+                                ? "Unsaved edits"
+                                : "All edits saved"}</span
+                        >
+                        {#if hasPendingComment}
+                            <span class="ml-2 text-chart-4"
+                                >Comment draft pending</span
+                            >
+                        {/if}
+                        <span class="ml-2">Ctrl/Cmd+Enter to save</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onclick={() => (open = false)}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            size="sm"
+                            onclick={onSaveTicket}
+                            disabled={!hasDraftChanges}
+                        >
+                            {hasDraftChanges ? "Save changes" : "Saved"}
+                        </Button>
+                    </div>
                 </div>
             </div>
         {:else}
             <div
-                class="flex h-full items-center justify-center p-6 text-xs text-muted-foreground"
+                class="flex h-full items-center justify-center p-6 text-[11px] text-muted-foreground"
             >
                 Pick a ticket to inspect
             </div>
