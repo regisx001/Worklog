@@ -312,7 +312,7 @@
             id: "new-ticket",
             label: "Create ticket",
             subtitle: "Add a new todo ticket in the active board",
-            shortcut: "Ctrl/Cmd+N",
+            shortcut: "Ctrl/Cmd+T",
             run: () => {
                 void createTicket();
             },
@@ -415,7 +415,7 @@
                 commandPaletteOpen = true;
             }
 
-            if (isMeta && key === "n") {
+            if (isMeta && (key === "t" || key === "n")) {
                 event.preventDefault();
                 void createTicket();
             }
@@ -648,4 +648,5 @@
     onSubmitComment={ticketDraft.addComment}
     {onEditorKeyDown}
 />
+
 <CommandPalette bind:open={commandPaletteOpen} actions={commandActions} />

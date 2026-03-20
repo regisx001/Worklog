@@ -27,14 +27,14 @@
 </script>
 
 <div class="flex items-center gap-1.5" data-toolbar-action="true">
-    <Badge variant="outline" class="hidden text-[10px] xl:inline-flex"
+    <!-- <Badge variant="outline" class="hidden text-[10px] xl:inline-flex"
         >{syncLabel}</Badge
     >
     <Badge variant="outline" class="hidden text-[10px] lg:inline-flex"
         >{pendingChanges} changes</Badge
-    >
+    > -->
 
-    <Button
+    <!-- <Button
         variant="ghost"
         size="sm"
         class="h-7 gap-1.5 max-[920px]:px-2"
@@ -43,9 +43,9 @@
     >
         <SearchIcon class="size-3.5" />
         <span class="max-[1040px]:hidden">Ctrl/Cmd+K</span>
-    </Button>
+    </Button> -->
 
-    <Button
+    <!-- <Button
         variant="outline"
         size="sm"
         class="h-7 gap-1.5 max-[920px]:px-2"
@@ -57,9 +57,9 @@
             class={`size-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`}
         />
         <span class="max-[1040px]:hidden">Sync</span>
-    </Button>
+    </Button> -->
 
-    <Button
+    <!-- <Button
         size="sm"
         class="h-7 gap-1.5 max-[920px]:px-2"
         data-toolbar-action="true"
@@ -67,7 +67,7 @@
     >
         <PlusIcon class="size-3.5" />
         <span class="max-[1040px]:hidden">Ticket</span>
-    </Button>
+    </Button> -->
 
     <a
         href="/"
