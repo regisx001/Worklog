@@ -29,9 +29,9 @@
 <div
     class="space-y-2.5 rounded-lg border border-border/70 bg-surface-panel/70 p-2.5 sm:space-y-3 sm:p-3"
 >
-    <div class="space-y-1.5">
+    <div>
         <label
-            class="text-[12px] font-medium text-muted-foreground"
+            class="mb-2.5 block text-[12px] font-medium text-muted-foreground"
             for="ticket-title">Title</label
         >
         <Input
@@ -46,9 +46,9 @@
         />
     </div>
 
-    <div class="space-y-1.5">
+    <div>
         <label
-            class="text-[12px] font-medium text-muted-foreground"
+            class="mb-2.5 block text-[12px] font-medium text-muted-foreground"
             for="ticket-label">Label</label
         >
         <Input
@@ -63,8 +63,10 @@
         />
     </div>
 
-    <div class="space-y-1.5">
-        <p class="text-[11px] font-medium text-muted-foreground">Status</p>
+    <div>
+        <p class="mb-2.5 text-[11px] font-medium text-muted-foreground">
+            Status
+        </p>
         <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-3 sm:gap-2">
             {#each statusOptions as option}
                 <Button

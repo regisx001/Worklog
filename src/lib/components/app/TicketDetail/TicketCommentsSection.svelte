@@ -37,7 +37,7 @@
 <div
     class="space-y-2 rounded-lg border border-border/70 bg-surface-panel/70 p-2.5 sm:p-3"
 >
-    <p class="text-[11px] font-medium text-muted-foreground">
+    <p class="text-[11px] mb-2.5 block font-medium text-muted-foreground">
         Comments ({comments.length})
     </p>
     <div class="space-y-2">
