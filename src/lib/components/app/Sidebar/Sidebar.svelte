@@ -8,6 +8,16 @@
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
     import {
+        AlertDialog,
+        AlertDialogAction,
+        AlertDialogCancel,
+        AlertDialogContent,
+        AlertDialogDescription,
+        AlertDialogFooter,
+        AlertDialogHeader,
+        AlertDialogTitle,
+    } from "$lib/components/ui/alert-dialog/index.js";
+    import {
         ContextMenu,
         ContextMenuContent,
         ContextMenuItem,
@@ -46,6 +56,8 @@
     let boardDescription = $state("");
     let boardFormError = $state<string | null>(null);
     let sidebarError = $state<string | null>(null);
+    let deleteDialogOpen = $state(false);
+    let boardPendingDeletionId = $state<string | null>(null);
 
     const activeBoardId = $derived.by(() => boards.active?.id ?? null);
 
@@ -114,11 +126,6 @@
         const target = boards.boards.find((board) => board.id === boardId);
         if (!target) return;
 
-        const confirmed = window.confirm(
-            `Delete board \"${target.name}\" and all its tickets?`,
-        );
-        if (!confirmed) return;
-
         try {
             await boards.remove(boardId);
             if (boards.active?.id) {
@@ -130,6 +137,30 @@
             setFailure("Failed to delete board", error);
         }
     }
+
+    function requestBoardDeletion(boardId: string) {
+        boardPendingDeletionId = boardId;
+        deleteDialogOpen = true;
+    }
+
+    async function confirmBoardDeletion() {
+        if (!boardPendingDeletionId) return;
+
+        const boardId = boardPendingDeletionId;
+        boardPendingDeletionId = null;
+        deleteDialogOpen = false;
+
+        await deleteBoard(boardId);
+    }
+
+    const boardPendingDeletion = $derived.by(() => {
+        if (!boardPendingDeletionId) return null;
+        return (
+            boards.boards.find(
+                (board) => board.id === boardPendingDeletionId,
+            ) ?? null
+        );
+    });
 
     function openCreateBoardDialog() {
         boardFormError = null;
@@ -292,7 +323,7 @@
                                     variant="destructive"
                                     class="text-[12px]"
                                     onclick={() => {
-                                        void deleteBoard(board.id);
+                                        requestBoardDeletion(board.id);
                                     }}
                                 >
                                     <Trash width="12px" />
@@ -338,6 +369,34 @@
         </div>
     </div>
 </aside>
+
+<AlertDialog bind:open={deleteDialogOpen}>
+    <AlertDialogContent>
+        <AlertDialogHeader>
+            <AlertDialogTitle>Delete board?</AlertDialogTitle>
+            <AlertDialogDescription>
+                {#if boardPendingDeletion}
+                    Delete board "{boardPendingDeletion.name}" and all of its
+                    tickets. This action cannot be undone.
+                {:else}
+                    Delete this board and all of its tickets. This action cannot
+                    be undone.
+                {/if}
+            </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+            <AlertDialogCancel
+                onclick={() => {
+                    boardPendingDeletionId = null;
+                }}>Cancel</AlertDialogCancel
+            >
+            <AlertDialogAction
+                variant="destructive"
+                onclick={confirmBoardDeletion}>Delete board</AlertDialogAction
+            >
+        </AlertDialogFooter>
+    </AlertDialogContent>
+</AlertDialog>
 
 <Dialog bind:open={createBoardDialogOpen}>
     <DialogContent class="max-w-lg border border-border bg-card p-0">
