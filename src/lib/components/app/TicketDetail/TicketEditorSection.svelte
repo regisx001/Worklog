@@ -26,16 +26,18 @@
     }: TicketEditorSectionProps = $props();
 </script>
 
-<div class="space-y-3">
-    <div class="space-y-1.5">
+<div
+    class="space-y-2.5 rounded-lg border border-border/70 bg-surface-panel/70 p-2.5 sm:space-y-3 sm:p-3"
+>
+    <div>
         <label
-            class="text-[11px] font-medium text-muted-foreground"
+            class="mb-2.5 block text-[12px] font-medium text-muted-foreground"
             for="ticket-title">Title</label
         >
         <Input
             id="ticket-title"
             value={title}
-            class="h-8 text-[12px]"
+            class="h-8 border-border/70 bg-card/80 text-[12px]"
             placeholder="Ticket title"
             oninput={(event) => {
                 onTitleChange((event.currentTarget as HTMLInputElement).value);
@@ -44,16 +46,16 @@
         />
     </div>
 
-    <div class="space-y-1.5">
+    <div>
         <label
-            class="text-[11px] font-medium text-muted-foreground"
+            class="mb-2.5 block text-[12px] font-medium text-muted-foreground"
             for="ticket-label">Label</label
         >
         <Input
             id="ticket-label"
             value={label}
-            class="h-8 text-[12px]"
-            placeholder="bug, feat, refactor..."
+            class="h-8 border-border/70 bg-card/80 text-[12px]"
+            placeholder="bug, feat, refactor (comma separated)"
             oninput={(event) => {
                 onLabelChange((event.currentTarget as HTMLInputElement).value);
             }}
@@ -61,14 +63,16 @@
         />
     </div>
 
-    <div class="space-y-1.5">
-        <p class="text-[11px] font-medium text-muted-foreground">Status</p>
-        <div class="grid grid-cols-3 gap-2">
+    <div>
+        <p class="mb-2.5 text-[11px] font-medium text-muted-foreground">
+            Status
+        </p>
+        <div class="grid grid-cols-1 gap-1.5 sm:grid-cols-3 sm:gap-2">
             {#each statusOptions as option}
                 <Button
                     size="sm"
                     variant={status === option.value ? "default" : "outline"}
-                    class="h-7 px-2 text-[11px]"
+                    class="h-8 justify-start rounded-md px-2 text-[11px] sm:h-7 sm:justify-center"
                     onclick={() => {
                         onStatusChange(option.value);
                     }}

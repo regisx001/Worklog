@@ -12,18 +12,29 @@
     }
 
     let { ticket }: TicketDetailHeaderProps = $props();
+
+    const ticketLabels = $derived.by(() =>
+        ticket.labels.length > 0 ? ticket.labels : ["general"],
+    );
 </script>
 
-<SheetHeader class="gap-1 px-3 py-2.5">
-    <div class="flex items-center gap-2">
-        <SheetTitle class="text-xs font-semibold tracking-wide"
+<SheetHeader
+    class="gap-1 border-b border-border/70 bg-surface-panel/80 px-4 py-3"
+>
+    <div class="flex flex-wrap items-center gap-2">
+        <SheetTitle
+            class="font-mono text-[12px] font-semibold tracking-[0.08em]"
             >{ticket.id}</SheetTitle
         >
-        <Badge variant="outline" class="text-[10px] uppercase"
-            >{ticket.labels[0] ?? "general"}</Badge
-        >
+        {#each ticketLabels as label, index (`${ticket.id}-${label}-${index}`)}
+            <Badge
+                variant="outline"
+                class="text-[10px] uppercase tracking-[0.08em]"
+                >{label}</Badge
+            >
+        {/each}
     </div>
-    <SheetDescription class="text-[11px] text-muted-foreground">
+    <SheetDescription class="text-[12px] text-muted-foreground">
         Inline editing enabled. Save with Ctrl/Cmd+Enter.
     </SheetDescription>
 </SheetHeader>

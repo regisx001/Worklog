@@ -29,9 +29,9 @@
     });
 </script>
 
-<div class="bg-background">
+<div class="bg-surface-panel/85 backdrop-blur-[1px]">
     <Separator />
-    <footer class="flex h-10 items-center justify-between px-3 text-xs">
+    <footer class="flex h-10 items-center justify-between px-4 text-xs">
         <div class="text-muted-foreground flex items-center gap-2">
             <span class={`size-2 rounded-full ${indicatorClass}`}></span>
             <CircleDotIcon class="size-3.5" />

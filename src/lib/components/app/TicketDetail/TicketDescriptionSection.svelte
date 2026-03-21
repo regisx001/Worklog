@@ -25,17 +25,19 @@
     });
 </script>
 
-<div class="space-y-1.5">
+<div
+    class="space-y-1.5 rounded-lg border border-border/70 bg-surface-panel/70 p-2.5 sm:p-3"
+>
     <label
-        class="text-[11px] font-medium text-muted-foreground"
+        class="text-[11px] mb-2.5 block font-medium text-muted-foreground"
         for="ticket-description"
     >
-        Description (markdown)
+        Description
     </label>
     <Textarea
         id="ticket-description"
         value={description}
-        class="min-h-28 text-[12px]"
+        class="min-h-24 border-border/70 bg-card/80 text-[12px] sm:min-h-28"
         placeholder="What should be done? Use markdown style plain text."
         oninput={(event) => {
             onDescriptionChange(
@@ -45,7 +47,7 @@
         onkeydown={onEditorKeyDown}
     />
     <div
-        class="prose prose-invert prose-p:my-1 max-w-none rounded-none border border-border bg-muted/20 p-2 text-[11px]"
+        class="prose prose-invert prose-p:my-1 max-w-none rounded-md border border-border/70 bg-muted/30 p-2 text-[11px]"
     >
         {@html escapedDescription}
     </div>

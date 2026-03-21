@@ -22,7 +22,6 @@
         DialogTitle,
     } from "$lib/components/ui/dialog/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
-    import { Separator } from "$lib/components/ui/separator/index.js";
     import { Textarea } from "$lib/components/ui/textarea/index.js";
     import {
         Tooltip,
@@ -184,9 +183,11 @@
     oncontextmenu={() => {
         return false;
     }}
-    class="bg-sidebar text-sidebar-foreground flex h-full w-72 flex-col border-r border-sidebar-border"
+    class="text-sidebar-foreground flex h-auto max-h-[46vh] w-full flex-col border-b border-sidebar-border/80 bg-linear-to-b from-surface-sidebar to-surface-panel md:h-full md:max-h-none md:w-60 md:border-r md:border-b-0 lg:w-72"
 >
-    <header class="space-y-2 px-3 py-2.5">
+    <header
+        class="space-y-2 border-b border-sidebar-border/70 px-2.5 py-2.5 sm:px-3 sm:py-3"
+    >
         <div class="flex items-center justify-between">
             <div
                 class="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
@@ -217,14 +218,12 @@
         {/if}
     </header>
 
-    <Separator />
-
-    <nav class="min-h-0 flex-1 overflow-y-auto p-2">
-        <ul class="space-y-1">
+    <nav class="min-h-0 flex-1 overflow-y-auto p-2.5 sm:p-3">
+        <ul class="space-y-1.5">
             {#if boards.boards.length === 0}
                 <li>
                     <p
-                        class="rounded-md border border-dashed border-border px-2.5 py-4 text-center text-xs text-muted-foreground"
+                        class="rounded-lg border border-dashed border-border/80 px-2.5 py-4 text-center text-xs text-muted-foreground"
                     >
                         No boards available
                     </p>
@@ -239,9 +238,12 @@
                                     onclick={() => {
                                         void openBoard(board.id);
                                     }}
-                                    class="hover:bg-sidebar-accent focus-visible:ring-ring/50 flex w-full min-w-0 items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2"
+                                    class="hover:bg-sidebar-accent/80 hover:border-sidebar-border/70 focus-visible:ring-ring/50 flex w-full min-w-0 items-center justify-between rounded-lg border border-transparent px-2.5 py-2 text-left text-sm transition-colors outline-none focus-visible:ring-2 sm:py-2.5"
                                     class:bg-sidebar-accent={board.id ===
                                         activeBoardId}
+                                    class:border-sidebar-border={board.id ===
+                                        activeBoardId}
+                                    class:shadow-xs={board.id === activeBoardId}
                                     aria-current={board.id === activeBoardId
                                         ? "page"
                                         : undefined}
@@ -257,7 +259,10 @@
                                                 "No description"}
                                         </p>
                                     </div>
-                                    <Badge variant="outline" class="shrink-0">
+                                    <Badge
+                                        variant="outline"
+                                        class="shrink-0 font-mono text-[10px]"
+                                    >
                                         {board.id.slice(-4).toUpperCase()}
                                     </Badge>
                                 </button>
@@ -301,11 +306,9 @@
         </ul>
     </nav>
 
-    <Separator />
-
-    <div class="space-y-2 p-2.5">
+    <div class="space-y-2 border-t border-sidebar-border/70 p-2.5 sm:p-3">
         <div
-            class="flex items-center justify-between rounded-md border border-border/70 px-2.5 py-2 text-xs"
+            class="flex items-center justify-between rounded-lg border border-border/70 bg-card/70 px-2.5 py-2 text-xs"
         >
             <div class="flex items-center gap-2">
                 <span class={`size-2 rounded-full ${syncDotClass}`}></span>
@@ -317,8 +320,8 @@
 
         <div class="flex items-center gap-2">
             <Button
-                variant="outline"
-                class="flex-1 justify-start"
+                variant="secondary"
+                class="flex-1 justify-start text-[11px]"
                 onclick={toolbarState.onOpenPalette}
             >
                 <SearchIcon />

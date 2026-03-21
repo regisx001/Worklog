@@ -3,6 +3,7 @@
     import CommandPalette from "$lib/components/app/CommandPalette/CommandPalette.svelte";
     import KanbanBoard from "$lib/components/app/Kanban/KanbanBoard.svelte";
     import TicketDetailPanel from "$lib/components/app/TicketDetail/TicketDetailPanel.svelte";
+    import SurfaceCard from "$lib/components/app/theme-v2/SurfaceCard.svelte";
     import { Button } from "$lib/components/ui/button/index.js";
     import {
         Dialog,
@@ -480,30 +481,25 @@
 
 {#if workspace.status === "loading" || workspace.status === "idle"}
     <div class="flex h-full items-center justify-center p-8">
-        <div
-            class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+        <SurfaceCard
+            class="w-full max-w-md text-center"
+            title="Initializing Workspace"
+            subtitle="Restoring your last workspace. If this takes too long, open one manually."
+            bodyClass="space-y-3"
         >
-            <h1 class="font-display text-lg font-semibold">
-                Initializing Workspace
-            </h1>
-            <p class="text-sm text-muted-foreground">
-                Restoring your last workspace. If this takes too long, open one
-                manually.
-            </p>
             <Button onclick={() => void openWorkspacePicker()}
                 >Open Workspace</Button
             >
-        </div>
+        </SurfaceCard>
     </div>
 {:else if workspace.status === "error"}
     <div class="flex h-full items-center justify-center p-8">
-        <div
-            class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+        <SurfaceCard
+            class="w-full max-w-md text-center"
+            title="Open a Workspace"
+            subtitle="Pick a local folder to start managing boards and tickets."
+            bodyClass="space-y-3"
         >
-            <h1 class="font-display text-lg font-semibold">Open a Workspace</h1>
-            <p class="text-sm text-muted-foreground">
-                Pick a local folder to start managing boards and tickets.
-            </p>
             <Button onclick={() => void openWorkspacePicker()}
                 >Open Workspace</Button
             >
@@ -513,25 +509,24 @@
             {#if pageError}
                 <p class="text-xs text-red-300">{pageError}</p>
             {/if}
-        </div>
+        </SurfaceCard>
     </div>
 {:else if boards.boards.length === 0}
     <div class="flex h-full items-center justify-center p-8">
-        <div
-            class="w-full max-w-md space-y-3 rounded-xl border border-border/80 bg-surface-panel/80 p-5 text-center"
+        <SurfaceCard
+            class="w-full max-w-md text-center"
+            title="No Boards Yet"
+            subtitle="Create your first board to start adding tickets."
+            bodyClass="space-y-3"
         >
-            <h1 class="font-display text-lg font-semibold">No Boards Yet</h1>
-            <p class="text-sm text-muted-foreground">
-                Create your first board to start adding tickets.
-            </p>
             <Button onclick={openCreateBoardDialog}>Create First Board</Button>
             {#if pageError}
                 <p class="text-xs text-red-300">{pageError}</p>
             {/if}
-        </div>
+        </SurfaceCard>
     </div>
 {:else}
-    <div class="h-full p-3">
+    <div class="@container/main h-full p-4">
         {#if pageError}
             <div class="pb-3">
                 <p
