@@ -30,7 +30,13 @@
           "path": "$DOCUMENT/.worklog"
         },
         {
+          "path": "$HOME/.worklog"
+        },
+        {
           "path": "$DOCUMENT/**/*"
+        },
+        {
+          "path": "$HOME/**/*"
         }
       ]
     },
@@ -41,7 +47,13 @@
           "path": "$DOCUMENT/.worklog"
         },
         {
+          "path": "$HOME/.worklog"
+        },
+        {
           "path": "$DOCUMENT/**/*"
+        },
+        {
+          "path": "$HOME/**/*"
         }
       ]
     }
