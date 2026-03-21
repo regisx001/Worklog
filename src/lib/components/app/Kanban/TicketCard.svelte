@@ -45,7 +45,9 @@
         onDelete,
     }: TicketCardProps = $props();
 
-    const primaryLabel = $derived.by(() => ticket.labels[0] ?? "general");
+    const ticketLabels = $derived.by(() =>
+        ticket.labels.length > 0 ? ticket.labels : ["general"],
+    );
 
     const cardClass = $derived.by(() =>
         cn(
@@ -90,11 +92,15 @@
                         <CardTitle class="text-sm font-semibold leading-snug"
                             >{ticket.title}</CardTitle
                         >
-                        <Badge
-                            variant="outline"
-                            class="shrink-0 text-[10px] uppercase tracking-[0.08em]"
-                            >{primaryLabel}</Badge
-                        >
+                        <div class="flex shrink-0 flex-wrap justify-end gap-1">
+                            {#each ticketLabels as label, index (`${ticket.id}-${label}-${index}`)}
+                                <Badge
+                                    variant="outline"
+                                    class="text-[10px] uppercase tracking-[0.08em]"
+                                    >{label}</Badge
+                                >
+                            {/each}
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent

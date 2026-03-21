@@ -49,11 +49,14 @@
     const hasDraftChanges = $derived.by(() => {
         if (!ticket) return false;
 
-        const currentLabel = ticket.labels[0] ?? "";
+        const currentLabels = ticket.labels
+            .map((label) => label.trim())
+            .filter((label) => label.length > 0)
+            .join(", ");
         return (
             draftTitle.trim() !== ticket.title.trim() ||
             draftDescription.trim() !== ticket.description.trim() ||
-            draftLabel.trim() !== currentLabel.trim() ||
+            draftLabel.trim() !== currentLabels.trim() ||
             draftStatus !== ticket.status
         );
     });
@@ -66,7 +69,7 @@
 <Sheet bind:open>
     <SheetContent
         side="right"
-        class="w-full max-w-[100vw] border-l border-border/80 bg-linear-to-b from-surface-card to-card p-0 text-[12px] shadow-lg sm:w-[34rem] sm:max-w-[94vw] lg:w-[35rem] data-[side=right]:top-[var(--app-toolbar-height)] data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
+        class="w-full max-w-[100vw] border-l border-border/80 bg-linear-to-b from-surface-card to-card p-0 text-[12px] shadow-lg sm:w-136 sm:max-w-[94vw] lg:w-140 data-[side=right]:top-(--app-toolbar-height) data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >
         {#if ticket}

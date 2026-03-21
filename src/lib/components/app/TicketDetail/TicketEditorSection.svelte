@@ -55,7 +55,7 @@
             id="ticket-label"
             value={label}
             class="h-8 border-border/70 bg-card/80 text-[12px]"
-            placeholder="bug, feat, refactor..."
+            placeholder="bug, feat, refactor (comma separated)"
             oninput={(event) => {
                 onLabelChange((event.currentTarget as HTMLInputElement).value);
             }}

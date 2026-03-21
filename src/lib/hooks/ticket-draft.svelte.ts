@@ -21,13 +21,30 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
         { value: "done", label: "Done" },
     ];
 
+    function labelsToDraft(labels: string[]) {
+        const sanitized = labels
+            .map((label) => label.trim())
+            .filter((label) => label.length > 0);
+        return sanitized.join(", ");
+    }
+
+    function draftToLabels(value: string) {
+        const parsed = value
+            .split(",")
+            .map((label) => label.trim())
+            .filter((label) => label.length > 0);
+
+        // Preserve first-seen order while avoiding duplicate labels.
+        return [...new Set(parsed)];
+    }
+
     $effect(() => {
         const ticket = getTicket();
         if (!ticket) return;
 
         draftTitle = ticket.title;
         draftDescription = ticket.description;
-        draftLabel = ticket.labels[0] ?? "";
+        draftLabel = labelsToDraft(ticket.labels);
         draftStatus = ticket.status;
         newComment = "";
     });
@@ -36,10 +53,12 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
         const ticket = getTicket();
         if (!ticket) return;
 
+        const nextLabels = draftToLabels(draftLabel);
+
         onUpdateTicket(ticket.id, {
             title: draftTitle.trim() || ticket.title,
             description: draftDescription.trim(),
-            labels: [draftLabel.trim() || "general"],
+            labels: nextLabels.length > 0 ? nextLabels : ["general"],
             status: draftStatus,
         });
     }
