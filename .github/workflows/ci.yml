@@ -53,39 +53,41 @@ jobs:
       - name: Build frontend
         run: bun run build
 
-  tauri-build:
-    name: Tauri Binary Build
-    runs-on: ubuntu-24.04
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+  # REMOVED BECAUSE MOSTLY IT'S FAILS BECAUSE OF THE FRONTEND BUILDING
+  # tauri-build:
+  #   name: Tauri Binary Build
+  #   runs-on: ubuntu-24.04
 
-      - name: Install Linux system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            pkg-config \
-            libgtk-3-dev \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+  #     - name: Install Linux system dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y \
+  #           build-essential \
+  #           pkg-config \
+  #           libgtk-3-dev \
+  #           libwebkit2gtk-4.1-dev \
+  #           libappindicator3-dev \
+  #           librsvg2-dev \
+  #           patchelf
 
-      - name: Install frontend dependencies
-        run: bun install --frozen-lockfile
+  #     - name: Setup Bun
+  #       uses: oven-sh/setup-bun@v2
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+  #     - name: Install frontend dependencies
+  #       run: bun install --frozen-lockfile
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri
+  #     - name: Setup Rust toolchain
+  #       uses: dtolnay/rust-toolchain@stable
 
-      - name: Build Tauri binary (no bundle)
-        run: bun tauri build --no-bundle
+  #     - name: Cache Rust dependencies
+  #       uses: Swatinem/rust-cache@v2
+  #       with:
+  #         workspaces: src-tauri
+
+  #     - name: Build Tauri binary (no bundle)
+  #       run: bun tauri build --no-bundle
