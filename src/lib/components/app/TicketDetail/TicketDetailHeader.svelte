@@ -19,14 +19,14 @@
 >
     <div class="flex items-center gap-2">
         <SheetTitle
-            class="font-mono text-[11px] font-semibold tracking-[0.08em]"
+            class="font-mono text-[12px] font-semibold tracking-[0.08em]"
             >{ticket.id}</SheetTitle
         >
         <Badge variant="outline" class="text-[10px] uppercase tracking-[0.08em]"
             >{ticket.labels[0] ?? "general"}</Badge
         >
     </div>
-    <SheetDescription class="text-[11px] text-muted-foreground">
+    <SheetDescription class="text-[12px] text-muted-foreground">
         Inline editing enabled. Save with Ctrl/Cmd+Enter.
     </SheetDescription>
 </SheetHeader>

@@ -31,7 +31,7 @@
 >
     <div class="space-y-1.5">
         <label
-            class="text-[11px] font-medium text-muted-foreground"
+            class="text-[12px] font-medium text-muted-foreground"
             for="ticket-title">Title</label
         >
         <Input
@@ -48,7 +48,7 @@
 
     <div class="space-y-1.5">
         <label
-            class="text-[11px] font-medium text-muted-foreground"
+            class="text-[12px] font-medium text-muted-foreground"
             for="ticket-label">Label</label
         >
         <Input

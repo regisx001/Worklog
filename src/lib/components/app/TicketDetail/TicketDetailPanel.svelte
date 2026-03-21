@@ -66,7 +66,7 @@
 <Sheet bind:open>
     <SheetContent
         side="right"
-        class="w-full max-w-[100vw] border-l border-border/80 bg-gradient-to-b from-surface-card to-card p-0 text-[12px] shadow-lg sm:w-[34rem] sm:max-w-[94vw] lg:w-[35rem] data-[side=right]:top-[var(--app-toolbar-height)] data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
+        class="w-full max-w-[100vw] border-l border-border/80 bg-linear-to-b from-surface-card to-card p-0 text-[12px] shadow-lg sm:w-[34rem] sm:max-w-[94vw] lg:w-[35rem] data-[side=right]:top-[var(--app-toolbar-height)] data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >
         {#if ticket}
