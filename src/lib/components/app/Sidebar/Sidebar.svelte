@@ -1,10 +1,5 @@
 <script lang="ts">
-    import {
-        Trash,
-        FolderOpen,
-        FilePlusCorner,
-        SquarePen,
-    } from "@lucide/svelte";
+    import { Trash, FolderOpen, FilePlusIcon, SquarePen } from "@lucide/svelte";
     import { goto } from "$app/navigation";
     import PlusIcon from "@lucide/svelte/icons/plus";
     import SearchIcon from "@lucide/svelte/icons/search";
@@ -387,7 +382,7 @@
                                         void createTicketForBoard(board.id);
                                     }}
                                 >
-                                    <FilePlusCorner />
+                                    <FilePlusIcon />
                                     Create ticket
                                 </ContextMenuItem>
                                 <ContextMenuItem

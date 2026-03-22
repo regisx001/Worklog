@@ -18,7 +18,7 @@
         "@fontsource-variable/geist": "^5.2.8",
         "@fontsource-variable/inter": "^5.2.8",
         "@internationalized/date": "^3.12.0",
-        "@lucide/svelte": "^0.577.0",
+        "@lucide/svelte": "^0.554.0",
         "@sveltejs/adapter-static": "^3.0.6",
         "@sveltejs/kit": "^2.9.0",
         "@sveltejs/vite-plugin-svelte": "^5.0.0",
@@ -148,7 +148,7 @@
 
     "@layerstack/utils": ["@layerstack/utils@2.0.0-next.14", "", { "dependencies": { "d3-array": "^3.2.4", "d3-time": "^3.1.0", "d3-time-format": "^4.1.0", "lodash-es": "^4.17.21" } }, "sha512-1I2CS0Cwgs53W35qVg1eBdYhB/CiPvL3s0XE61b8jWkTHxgjBF65yYNgXjW74kv7WI7GsJcWMNBufPd0rnu9kA=="],
 
-    "@lucide/svelte": ["@lucide/svelte@0.577.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-0P6mkySd2MapIEgq08tADPmcN4DHndC/02PWwaLkOerXlx5Sv9aT4BxyXLIY+eccr0g/nEyCYiJesqS61YdBZQ=="],
+    "@lucide/svelte": ["@lucide/svelte@0.554.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-CM6wLEH8uk3WBpC42t8R0hF7SlQrsYEL6qGuXdB99xKZwKglpWmX5XgYu7FIYOCBYOyC1rm4dNhIe6uF9pOXqw=="],
 
     "@polka/url": ["@polka/url@1.0.0-next.29", "", {}, "sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww=="],
 
