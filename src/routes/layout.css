@@ -4,8 +4,8 @@
 @import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
-@plugin '@tailwindcss/forms';
-@plugin '@tailwindcss/typography';
+/* @plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography'; */
 
 :root {
   --background: oklch(1 0 0);

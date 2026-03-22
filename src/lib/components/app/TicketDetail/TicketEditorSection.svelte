@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Button } from "$lib/components/ui/button/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
+    import { TagInput } from "$lib/components/ui/tag-input";
     import type { TicketStatus } from "$lib/components/app/types.js";
 
     interface TicketEditorSectionProps {
@@ -24,6 +25,29 @@
         onStatusChange,
         onEditorKeyDown,
     }: TicketEditorSectionProps = $props();
+
+    function labelsFromText(value: string) {
+        const parsed = value
+            .split(",")
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0);
+
+        return [...new Set(parsed)];
+    }
+
+    function labelsToText(values: string[]) {
+        return values.join(", ");
+    }
+
+    let tags = $state<string[]>([]);
+
+    $effect(() => {
+        const nextTags = labelsFromText(label);
+
+        if (labelsToText(tags) !== labelsToText(nextTags)) {
+            tags = nextTags;
+        }
+    });
 </script>
 
 <div
@@ -49,18 +73,20 @@
     <div>
         <label
             class="mb-2.5 block text-[12px] font-medium text-muted-foreground"
-            for="ticket-label">Label</label
+            for="ticket-labels">Labels</label
         >
-        <Input
-            id="ticket-label"
-            value={label}
-            class="h-8 border-border/70 bg-card/80 text-[12px]"
-            placeholder="bug, feat, refactor (comma separated)"
-            oninput={(event) => {
-                onLabelChange((event.currentTarget as HTMLInputElement).value);
-            }}
-            onkeydown={onEditorKeyDown}
-        />
+        <div id="ticket-labels">
+            <TagInput
+                bind:tags
+                placeholder="Add labels and press Enter"
+                onadd={() => {
+                    onLabelChange(labelsToText(tags));
+                }}
+                onremove={() => {
+                    onLabelChange(labelsToText(tags));
+                }}
+            />
+        </div>
     </div>
 
     <div>
