@@ -189,7 +189,10 @@
 
     const boardPendingRename = $derived.by(() => {
         if (!boardPendingRenameId) return null;
-        return boards.boards.find((board) => board.id === boardPendingRenameId) ?? null;
+        return (
+            boards.boards.find((board) => board.id === boardPendingRenameId) ??
+            null
+        );
     });
 
     async function submitBoardRename() {
