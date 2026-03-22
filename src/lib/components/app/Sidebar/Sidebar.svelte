@@ -281,7 +281,7 @@
     oncontextmenu={() => {
         return false;
     }}
-    class="text-sidebar-foreground flex h-auto max-h-[46vh] w-full flex-col border-b border-sidebar-border/80 bg-linear-to-b from-surface-sidebar to-surface-panel md:h-full md:max-h-none md:w-60 md:border-r md:border-b-0 lg:w-72"
+    class="text-sidebar-foreground flex h-auto max-h-[46vh] w-full flex-col border-b border-sidebar-border/90 bg-surface-sidebar md:h-full md:max-h-none md:w-60 md:border-r md:border-b-0 lg:w-72"
 >
     <header
         class="space-y-2 border-b border-sidebar-border/70 px-2.5 py-2.5 sm:px-3 sm:py-3"

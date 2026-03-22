@@ -140,7 +140,7 @@
 
 <header
     bind:this={toolbarEl}
-    class="relative z-60 flex h-(--app-toolbar-height) min-h-(--app-toolbar-height) w-full items-center border-b border-border/80 bg-linear-to-b from-surface-card to-card px-2 shadow-xs backdrop-blur-[1px]"
+    class="relative z-60 flex h-(--app-toolbar-height) min-h-(--app-toolbar-height) w-full items-center border-b border-border/90 bg-surface-sidebar px-2 shadow-2xs"
 >
     <ToolbarIdentity {projectName} />
 

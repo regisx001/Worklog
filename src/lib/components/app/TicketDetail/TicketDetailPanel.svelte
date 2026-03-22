@@ -69,7 +69,7 @@
 <Sheet bind:open>
     <SheetContent
         side="right"
-        class="w-full max-w-[100vw] border-l border-border/80 bg-linear-to-b from-surface-card to-card p-0 text-[12px] shadow-lg data-[side=right]:sm:w-[40rem] data-[side=right]:sm:max-w-[96vw] data-[side=right]:lg:w-[44rem] data-[side=right]:top-(--app-toolbar-height) data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
+        class="w-full max-w-[100vw] border-l border-border/90 bg-surface-card p-0 text-[12px] shadow-lg data-[side=right]:sm:w-[40rem] data-[side=right]:sm:max-w-[96vw] data-[side=right]:lg:w-[44rem] data-[side=right]:top-(--app-toolbar-height) data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >
         {#if ticket}
@@ -112,7 +112,7 @@
                 <Separator />
 
                 <div
-                    class="flex flex-col items-stretch gap-2 border-t border-border/70 bg-surface-panel/70 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4"
+                    class="flex flex-col items-stretch gap-2 border-t border-border/90 bg-surface-panel px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4"
                 >
                     <div
                         class="text-[10px] text-muted-foreground sm:text-[11px]"
