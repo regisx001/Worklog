@@ -50,6 +50,23 @@ export function useBoards(getWorkspacePath: () => string | null) {
         }
     }
 
+    async function rename(id: string, name: string) {
+        const workspacePath = requireWorkspacePath();
+        const db = await getDb(workspacePath);
+        const updated = await BoardRepo.renameBoard(db, id, name);
+        if (!updated) throw new Error('Board not found');
+
+        _boards = _boards.map((board) =>
+            board.id === id ? updated : board,
+        );
+
+        if (_active?.id === id) {
+            _active = updated;
+        }
+
+        return updated;
+    }
+
     function setActive(board: Board) {
         _active = board;
     }
@@ -58,6 +75,6 @@ export function useBoards(getWorkspacePath: () => string | null) {
         get boards() { return _boards },
         get active() { return _active },
         get loading() { return _loading },
-        load, create, remove, setActive
+        load, create, remove, rename, setActive
     };
 }
