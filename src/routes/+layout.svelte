@@ -44,11 +44,11 @@
 		}
 	});
 
+	const handleContextmenu = (event: MouseEvent) => {
+		event.preventDefault();
+	};
 	$effect(() => {
 		document.documentElement.classList.add("dark");
-		const handleContextmenu = (event: MouseEvent) => {
-			event.preventDefault();
-		};
 
 		document.addEventListener("contextmenu", handleContextmenu);
 

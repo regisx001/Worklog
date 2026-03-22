@@ -1,4 +1,6 @@
 <script lang="ts">
+    import SearchIcon from "@lucide/svelte/icons/search";
+    import CornerDownLeftIcon from "@lucide/svelte/icons/corner-down-left";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import {
         Dialog,
@@ -69,31 +71,47 @@
 
 <Dialog bind:open>
     <DialogContent
-        class="max-w-xl border border-border bg-card p-0"
+        class="max-w-2xl border border-border/90 bg-surface-card p-0 text-foreground antialiased shadow-xl data-open:zoom-in-100 data-closed:zoom-out-100"
         showCloseButton={false}
     >
-        <DialogHeader class="px-3 pt-3 pb-1">
-            <DialogTitle class="text-sm">Command Palette</DialogTitle>
-            <DialogDescription class="text-xs text-muted-foreground">
-                Type to filter actions. Navigate with arrows and Enter.
+        <DialogHeader class="border-b border-border/80 px-3 pt-3 pb-2">
+            <div class="flex items-center justify-between gap-3">
+                <DialogTitle class="text-sm font-semibold tracking-wide"
+                    >Command Palette</DialogTitle
+                >
+                <Badge variant="outline" class="text-[10px]"
+                    >{filteredActions.length} result{filteredActions.length ===
+                    1
+                        ? ""
+                        : "s"}</Badge
+                >
+            </div>
+            <DialogDescription class="text-[11px] text-foreground/75">
+                Search actions and press Enter to run.
             </DialogDescription>
         </DialogHeader>
 
-        <div class="px-3 pb-3">
-            <Input
-                bind:value={query}
-                autocomplete="off"
-                placeholder="Search actions..."
-                onkeydown={onInputKeyDown}
-                aria-label="Command search"
-            />
+        <div class="border-b border-border/80 px-3 py-2.5">
+            <div class="relative">
+                <SearchIcon
+                    class="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                    bind:value={query}
+                    autocomplete="off"
+                    class="h-8 border-border/90 bg-background pl-8 text-xs text-foreground placeholder:text-foreground/45"
+                    placeholder="Search actions, boards, tickets..."
+                    onkeydown={onInputKeyDown}
+                    aria-label="Command search"
+                />
+            </div>
         </div>
 
-        <Separator />
-
-        <div class="max-h-80 overflow-y-auto p-2">
+        <div class="max-h-80 overflow-y-auto p-2 no-scrollbar">
             {#if filteredActions.length === 0}
-                <p class="px-2 py-6 text-center text-xs text-muted-foreground">
+                <p
+                    class="rounded-md border border-dashed border-border/80 px-2 py-6 text-center text-xs text-muted-foreground"
+                >
                     No command found
                 </p>
             {:else}
@@ -106,27 +124,46 @@
                                     selectedIndex = index;
                                 }}
                                 onclick={() => runSelectedAction(index)}
-                                class="hover:bg-muted flex w-full items-center justify-between rounded-none px-2 py-2 text-left"
-                                class:bg-muted={selectedIndex === index}
+                                class="group flex w-full items-center justify-between rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:bg-accent/70"
+                                class:bg-accent={selectedIndex === index}
+                                class:border-primary={selectedIndex === index}
                             >
-                                <div>
-                                    <p class="text-xs font-medium">
+                                <div class="min-w-0">
+                                    <p class="truncate text-xs font-semibold">
                                         {action.label}
                                     </p>
                                     <p
-                                        class="text-[11px] text-muted-foreground"
+                                        class="truncate text-[11px] text-muted-foreground"
                                     >
                                         {action.subtitle}
                                     </p>
                                 </div>
-                                <Badge variant="outline" class="text-[10px]"
-                                    >{action.shortcut}</Badge
-                                >
+                                <div class="ml-3 flex items-center gap-1.5">
+                                    {#if selectedIndex === index}
+                                        <CornerDownLeftIcon
+                                            class="size-3 text-primary"
+                                        />
+                                    {/if}
+                                    <Badge
+                                        variant="outline"
+                                        class="text-[10px] text-muted-foreground"
+                                        >{action.shortcut}</Badge
+                                    >
+                                </div>
                             </button>
                         </li>
                     {/each}
                 </ul>
             {/if}
+        </div>
+
+        <Separator />
+
+        <div
+            class="flex items-center justify-between px-3 py-1.5 text-[10px] text-muted-foreground"
+        >
+            <span>Arrow keys to navigate</span>
+            <span>Enter to run</span>
         </div>
     </DialogContent>
 </Dialog>

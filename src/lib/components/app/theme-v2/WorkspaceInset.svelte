@@ -12,7 +12,7 @@
 
 <div
     class={cn(
-        "m-0.5 flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border/70 bg-surface-panel/90 shadow-sm ring-1 ring-white/5 backdrop-blur-[1px] sm:m-1 md:m-2",
+        "m-0.5 flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border/90 bg-surface-panel shadow-sm sm:m-1 md:m-2",
         className,
     )}
 >
