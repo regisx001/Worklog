@@ -69,7 +69,7 @@
 <Sheet bind:open>
     <SheetContent
         side="right"
-        class="w-full max-w-[100vw] border-l border-border/80 bg-linear-to-b from-surface-card to-card p-0 text-[12px] shadow-lg sm:w-136 sm:max-w-[94vw] lg:w-140 data-[side=right]:top-(--app-toolbar-height) data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
+        class="w-full max-w-[100vw] border-l border-border/80 bg-linear-to-b from-surface-card to-card p-0 text-[12px] shadow-lg data-[side=right]:sm:w-[40rem] data-[side=right]:sm:max-w-[96vw] data-[side=right]:lg:w-[44rem] data-[side=right]:top-(--app-toolbar-height) data-[side=right]:h-[calc(100dvh-var(--app-toolbar-height))]"
         aria-label="Ticket details"
     >
         {#if ticket}

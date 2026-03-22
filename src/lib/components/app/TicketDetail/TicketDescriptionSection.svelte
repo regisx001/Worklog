@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Textarea } from "$lib/components/ui/textarea/index.js";
-
+    import { Markdown } from "$lib/components/ui/markdown";
     interface TicketDescriptionSectionProps {
         description: string;
         onDescriptionChange: (value: string) => void;
@@ -13,16 +13,7 @@
         onEditorKeyDown,
     }: TicketDescriptionSectionProps = $props();
 
-    const escapedDescription = $derived.by(() => {
-        const text = description
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
-
-        return text.replaceAll("\n", "<br />");
-    });
+    const markdownPreview = $derived(description.trim());
 </script>
 
 <div
@@ -37,8 +28,13 @@
     <Textarea
         id="ticket-description"
         value={description}
-        class="min-h-24 border-border/70 bg-card/80 text-[12px] sm:min-h-28"
-        placeholder="What should be done? Use markdown style plain text."
+        class="min-h-28 border-border/70 bg-card/80 font-mono text-[12px] leading-relaxed sm:min-h-32"
+        placeholder="# Summary
+
+- What needs to be done
+- Acceptance criteria
+
+Use Markdown to format your notes."
         oninput={(event) => {
             onDescriptionChange(
                 (event.currentTarget as HTMLTextAreaElement).value,
@@ -49,6 +45,11 @@
     <div
         class="prose prose-invert prose-p:my-1 max-w-none rounded-md border border-border/70 bg-muted/30 p-2 text-[11px]"
     >
-        {@html escapedDescription}
+        <Markdown
+            content={markdownPreview.length > 0
+                ? markdownPreview
+                : "_Preview appears here as you write Markdown._"}
+            class=""
+        />
     </div>
 </div>
