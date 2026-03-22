@@ -51,8 +51,8 @@
 
     const cardClass = $derived.by(() =>
         cn(
-            "hover:bg-accent/30 hover:border-primary/40 focus-visible:ring-ring/50 gap-2 rounded-lg border border-border/70 bg-gradient-to-t from-primary/5 to-card px-0 py-0 shadow-xs transition-colors focus-visible:ring-2",
-            isSelected && "ring-2 ring-primary/50",
+            "hover:bg-surface-card hover:border-primary/50 focus-visible:ring-ring/50 gap-2 rounded-lg border border-border bg-surface-raised text-foreground px-0 py-0 shadow-sm ring-1 ring-black/10 transition-colors focus-visible:ring-2 dark:ring-white/5",
+            isSelected && "border-primary/60 ring-2 ring-primary/45 shadow-md",
         ),
     );
 
@@ -89,14 +89,15 @@
             <Card size="sm" class={cardClass}>
                 <CardHeader class="px-3 pt-3 pb-0">
                     <div class="flex items-start justify-between gap-2">
-                        <CardTitle class="text-sm font-semibold leading-snug"
+                        <CardTitle
+                            class="text-sm leading-snug font-semibold text-foreground"
                             >{ticket.title}</CardTitle
                         >
                         <div class="flex shrink-0 flex-wrap justify-end gap-1">
                             {#each ticketLabels as label, index (`${ticket.id}-${label}-${index}`)}
                                 <Badge
                                     variant="outline"
-                                    class="text-[10px] uppercase tracking-[0.08em]"
+                                    class="border-border/90 bg-surface-card text-[10px] tracking-[0.08em] uppercase text-foreground/90"
                                     >{label}</Badge
                                 >
                             {/each}
@@ -107,7 +108,7 @@
                     class="flex items-center justify-between px-3 pt-2 pb-3"
                 >
                     <div
-                        class="text-muted-foreground flex items-center gap-1 text-[11px]"
+                        class="text-text-tertiary flex items-center gap-1 text-[11px]"
                     >
                         <span class="font-mono tracking-[0.04em]"
                             >#{ticket.id}</span
@@ -118,7 +119,7 @@
                     <div class="flex items-center gap-1.5">
                         <Badge
                             variant="outline"
-                            class="text-[10px]"
+                            class="border-border/90 bg-surface-card text-[10px] text-foreground/85"
                             title="Move ticket to next column (M)"
                         >
                             M

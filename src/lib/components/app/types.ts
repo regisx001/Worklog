@@ -37,6 +37,18 @@ export interface WorkspaceMeta {
     created_at: string;
 }
 
+export interface AppSettings {
+    author_name: string;
+    default_branch: string;
+    autosave_seconds: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export type UpdateAppSettingsInput = Partial<
+    Pick<AppSettings, "author_name" | "default_branch" | "autosave_seconds">
+>;
+
 export interface Board {
     id: string;
     name: string;

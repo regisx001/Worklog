@@ -15,7 +15,7 @@
             <Sidebar />
 
             <div
-                class="flex min-h-0 min-w-0 flex-col border-t border-border/70 bg-linear-to-b from-surface-raised to-surface-panel/60 md:border-t-0"
+                class="flex min-h-0 min-w-0 flex-col border-t border-border/70 md:border-t-0"
             >
                 <main class="min-h-0 flex-1">{@render children()}</main>
 

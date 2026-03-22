@@ -1,5 +1,6 @@
 <script lang="ts">
     import BugIcon from "@lucide/svelte/icons/bug";
+    import SettingsIcon from "@lucide/svelte/icons/settings";
     import RefreshCcwIcon from "@lucide/svelte/icons/refresh-ccw";
     import SearchIcon from "@lucide/svelte/icons/search";
     import PlusIcon from "@lucide/svelte/icons/plus";
@@ -84,6 +85,14 @@
     >
         <BugIcon class="size-3.5" />
         <span class="max-[1040px]:hidden">Debug</span>
+    </a>
+    <a
+        href="/settings"
+        class="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent/70 hover:text-accent-foreground max-[920px]:px-2"
+        data-toolbar-action="true"
+    >
+        <SettingsIcon class="size-3.5" />
+        <span class="max-[1040px]:hidden">Settings</span>
     </a>
     <!-- <a
         href="/dashboard-01"
