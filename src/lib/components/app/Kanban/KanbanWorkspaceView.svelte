@@ -4,6 +4,16 @@
     import KanbanBoard from "$lib/components/app/Kanban/KanbanBoard.svelte";
     import TicketDetailPanel from "$lib/components/app/TicketDetail/TicketDetailPanel.svelte";
     import SurfaceCard from "$lib/components/app/theme-v2/SurfaceCard.svelte";
+    import {
+        AlertDialog,
+        AlertDialogAction,
+        AlertDialogCancel,
+        AlertDialogContent,
+        AlertDialogDescription,
+        AlertDialogFooter,
+        AlertDialogHeader,
+        AlertDialogTitle,
+    } from "$lib/components/ui/alert-dialog/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
     import {
         Dialog,
@@ -55,6 +65,8 @@
     let localPendingChanges = $state(0);
     let pageError = $state<string | null>(null);
     let lastLoadedBoardId = $state<string | null>(null);
+    let deleteTicketDialogOpen = $state(false);
+    let ticketPendingDeletionId = $state<string | null>(null);
 
     const activeBoard = $derived.by(() => boards.active);
 
@@ -73,6 +85,15 @@
         return (
             tickets.tickets.find((ticket) => ticket.id === selectedTicketId) ??
             null
+        );
+    });
+
+    const ticketPendingDeletion = $derived.by(() => {
+        if (!ticketPendingDeletionId) return null;
+        return (
+            tickets.tickets.find(
+                (ticket) => ticket.id === ticketPendingDeletionId,
+            ) ?? null
         );
     });
 
@@ -254,11 +275,6 @@
         );
         if (!targetTicket) return;
 
-        const confirmed = window.confirm(
-            `Delete ticket \"${targetTicket.title}\"?`,
-        );
-        if (!confirmed) return;
-
         try {
             await tickets.remove(ticketId);
             markDirty();
@@ -270,6 +286,21 @@
         } catch (error) {
             setFailure("Failed to delete ticket", error);
         }
+    }
+
+    function requestTicketDeletion(ticketId: string) {
+        ticketPendingDeletionId = ticketId;
+        deleteTicketDialogOpen = true;
+    }
+
+    async function confirmTicketDeletion() {
+        if (!ticketPendingDeletionId) return;
+
+        const ticketId = ticketPendingDeletionId;
+        ticketPendingDeletionId = null;
+        deleteTicketDialogOpen = false;
+
+        await deleteTicket(ticketId);
     }
 
     function manualSync() {
@@ -551,11 +582,38 @@
                 void moveTicketToStatus(ticketId, status);
             }}
             onDeleteTicket={(ticketId) => {
-                void deleteTicket(ticketId);
+                requestTicketDeletion(ticketId);
             }}
         />
     </div>
 {/if}
+
+<AlertDialog bind:open={deleteTicketDialogOpen}>
+    <AlertDialogContent>
+        <AlertDialogHeader>
+            <AlertDialogTitle>Delete ticket?</AlertDialogTitle>
+            <AlertDialogDescription>
+                {#if ticketPendingDeletion}
+                    Delete ticket "{ticketPendingDeletion.title}". This action
+                    cannot be undone.
+                {:else}
+                    Delete this ticket. This action cannot be undone.
+                {/if}
+            </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+            <AlertDialogCancel
+                onclick={() => {
+                    ticketPendingDeletionId = null;
+                }}>Cancel</AlertDialogCancel
+            >
+            <AlertDialogAction
+                variant="destructive"
+                onclick={confirmTicketDeletion}>Delete ticket</AlertDialogAction
+            >
+        </AlertDialogFooter>
+    </AlertDialogContent>
+</AlertDialog>
 
 <Dialog bind:open={createBoardDialogOpen}>
     <DialogContent class="max-w-lg border border-border bg-card p-0">
