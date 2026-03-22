@@ -5978,7 +5978,7 @@ dependencies = [
 
 [[package]]
 name = "worklog"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "serde",
  "serde_json",
