@@ -37,3 +37,20 @@ export async function deleteBoard(db: Database, id: string): Promise<void> {
     // Tickets cascade-deleted automatically via FK
     await db.execute(`DELETE FROM boards WHERE id = ?`, [id]);
 }
+
+export async function renameBoard(
+    db: Database,
+    id: string,
+    name: string,
+): Promise<Board | null> {
+    const updatedAt = new Date().toISOString();
+
+    await db.execute(
+        `UPDATE boards
+         SET name = ?, updated_at = ?
+         WHERE id = ?`,
+        [name, updatedAt, id],
+    );
+
+    return getBoardById(db, id);
+}

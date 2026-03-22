@@ -1,5 +1,10 @@
 <script lang="ts">
-    import { Trash, FolderOpen, FilePlusCorner } from "@lucide/svelte";
+    import {
+        Trash,
+        FolderOpen,
+        FilePlusCorner,
+        SquarePen,
+    } from "@lucide/svelte";
     import { goto } from "$app/navigation";
     import PlusIcon from "@lucide/svelte/icons/plus";
     import SearchIcon from "@lucide/svelte/icons/search";
@@ -58,6 +63,11 @@
     let sidebarError = $state<string | null>(null);
     let deleteDialogOpen = $state(false);
     let boardPendingDeletionId = $state<string | null>(null);
+    let renameDialogOpen = $state(false);
+    let boardPendingRenameId = $state<string | null>(null);
+    let renameBoardName = $state("");
+    let renameBoardError = $state<string | null>(null);
+    let renamingBoard = $state(false);
 
     const activeBoardId = $derived.by(() => boards.active?.id ?? null);
 
@@ -165,6 +175,65 @@
     function openCreateBoardDialog() {
         boardFormError = null;
         createBoardDialogOpen = true;
+    }
+
+    function requestBoardRename(boardId: string) {
+        const target = boards.boards.find((board) => board.id === boardId);
+        if (!target) return;
+
+        boardPendingRenameId = boardId;
+        renameBoardName = target.name;
+        renameBoardError = null;
+        renameDialogOpen = true;
+    }
+
+    const boardPendingRename = $derived.by(() => {
+        if (!boardPendingRenameId) return null;
+        return boards.boards.find((board) => board.id === boardPendingRenameId) ?? null;
+    });
+
+    async function submitBoardRename() {
+        if (!boardPendingRenameId) return;
+
+        const nextName = renameBoardName.trim();
+        if (!nextName) {
+            renameBoardError = "Board name is required.";
+            return;
+        }
+
+        if (!/^[a-zA-Z0-9 _.-]+$/.test(nextName)) {
+            renameBoardError =
+                "Name can only include letters, numbers, spaces, dot, dash, and underscore.";
+            return;
+        }
+
+        const isDuplicate = boards.boards.some(
+            (board) =>
+                board.id !== boardPendingRenameId &&
+                board.name.trim().toLowerCase() === nextName.toLowerCase(),
+        );
+        if (isDuplicate) {
+            renameBoardError = "Board name must be unique.";
+            return;
+        }
+
+        renamingBoard = true;
+        renameBoardError = null;
+
+        try {
+            await boards.rename(boardPendingRenameId, nextName);
+            renameDialogOpen = false;
+            boardPendingRenameId = null;
+            renameBoardName = "";
+        } catch (error) {
+            setFailure("Failed to rename board", error);
+            renameBoardError =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to rename board.";
+        } finally {
+            renamingBoard = false;
+        }
     }
 
     async function submitBoardCreation() {
@@ -318,6 +387,15 @@
                                     <FilePlusCorner />
                                     Create ticket
                                 </ContextMenuItem>
+                                <ContextMenuItem
+                                    class="text-[12px]"
+                                    onclick={() => {
+                                        requestBoardRename(board.id);
+                                    }}
+                                >
+                                    <SquarePen />
+                                    Rename board
+                                </ContextMenuItem>
                                 <ContextMenuSeparator />
                                 <ContextMenuItem
                                     variant="destructive"
@@ -397,6 +475,66 @@
         </AlertDialogFooter>
     </AlertDialogContent>
 </AlertDialog>
+
+<Dialog bind:open={renameDialogOpen}>
+    <DialogContent class="max-w-lg border border-border bg-card p-0">
+        <DialogHeader class="px-4 pt-4 pb-2">
+            <DialogTitle class="text-sm">Rename Board</DialogTitle>
+            <DialogDescription class="text-xs text-muted-foreground">
+                {#if boardPendingRename}
+                    Rename "{boardPendingRename.name}".
+                {:else}
+                    Rename the selected board.
+                {/if}
+            </DialogDescription>
+        </DialogHeader>
+
+        <form
+            class="space-y-3 px-4 pb-4"
+            onsubmit={(event) => {
+                event.preventDefault();
+                void submitBoardRename();
+            }}
+        >
+            <div class="space-y-1.5">
+                <label
+                    class="text-xs font-medium text-muted-foreground"
+                    for="sidebar-board-rename"
+                >
+                    New Board Name
+                </label>
+                <Input
+                    id="sidebar-board-rename"
+                    bind:value={renameBoardName}
+                    placeholder="Backend API"
+                    autocomplete="off"
+                />
+            </div>
+
+            {#if renameBoardError}
+                <p class="text-xs text-red-300">{renameBoardError}</p>
+            {/if}
+
+            <div class="flex items-center justify-end gap-2 pt-1">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onclick={() => {
+                        renameDialogOpen = false;
+                        boardPendingRenameId = null;
+                        renameBoardName = "";
+                        renameBoardError = null;
+                    }}
+                >
+                    Cancel
+                </Button>
+                <Button type="submit" disabled={renamingBoard}>
+                    {renamingBoard ? "Renaming..." : "Rename Board"}
+                </Button>
+            </div>
+        </form>
+    </DialogContent>
+</Dialog>
 
 <Dialog bind:open={createBoardDialogOpen}>
     <DialogContent class="max-w-lg border border-border bg-card p-0">
