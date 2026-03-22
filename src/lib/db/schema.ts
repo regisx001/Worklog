@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const CREATE_TABLES = `
   CREATE TABLE IF NOT EXISTS workspace_meta (
@@ -28,6 +28,15 @@ export const CREATE_TABLES = `
     comments    TEXT NOT NULL DEFAULT '[]',
     created_at  TEXT NOT NULL,
     updated_at  TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS app_settings (
+    id                INTEGER PRIMARY KEY CHECK (id = 1),
+    author_name       TEXT NOT NULL DEFAULT '',
+    default_branch    TEXT NOT NULL DEFAULT 'main',
+    autosave_seconds  INTEGER NOT NULL DEFAULT 10,
+    created_at        TEXT NOT NULL,
+    updated_at        TEXT NOT NULL
   );
 
   CREATE INDEX IF NOT EXISTS idx_tickets_board_id ON tickets(board_id);

@@ -33,8 +33,8 @@
 
     const columnClass = $derived.by(() =>
         isDropTarget
-            ? "bg-surface-raised ring-primary/30 flex min-h-0 flex-col rounded-xl border border-primary/40 shadow-sm ring-2"
-            : "bg-surface-card flex min-h-0 flex-col rounded-xl border border-border/90 shadow-xs",
+            ? "bg-surface-card ring-primary/35 flex min-h-0 flex-col rounded-xl border border-primary/45 shadow-sm ring-2"
+            : "bg-surface-panel flex min-h-0 flex-col rounded-xl border border-border/90 shadow-xs",
     );
 
     function onDragOver(event: DragEvent) {
