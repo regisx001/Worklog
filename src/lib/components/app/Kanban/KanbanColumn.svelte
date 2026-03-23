@@ -31,10 +31,34 @@
 
     let isDropTarget = $state(false);
 
+    const statusMeta = $derived.by(() => {
+        if (status === "todo") {
+            return {
+                dotClass: "bg-slate-400",
+                toneClass: "text-slate-300",
+                laneRing: "ring-slate-400/20",
+            };
+        }
+
+        if (status === "in_progress") {
+            return {
+                dotClass: "bg-blue-400",
+                toneClass: "text-blue-300",
+                laneRing: "ring-blue-400/20",
+            };
+        }
+
+        return {
+            dotClass: "bg-emerald-400",
+            toneClass: "text-emerald-300",
+            laneRing: "ring-emerald-400/20",
+        };
+    });
+
     const columnClass = $derived.by(() =>
         isDropTarget
-            ? "bg-surface-card ring-primary/35 flex min-h-0 flex-col rounded-xl border border-primary/45 shadow-sm ring-2"
-            : "bg-surface-panel flex min-h-0 flex-col rounded-xl border border-border/90 shadow-xs",
+            ? `bg-surface-card ${statusMeta.laneRing} flex min-h-0 flex-col rounded-xl border border-primary/45 shadow-md ring-2`
+            : `bg-muted/40 ${statusMeta.laneRing} flex min-h-0 flex-col rounded-xl border border-border/85 shadow-xs ring-1`,
     );
 
     function onDragOver(event: DragEvent) {
@@ -90,33 +114,42 @@
     ondragleave={onDragLeave}
 >
     <header
-        class="flex items-center justify-between border-b border-border/70 px-4 py-3"
+        class="flex items-center justify-between border-b border-border/80 bg-surface-panel px-3.5 py-2.5"
     >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2.5">
+            <span class={`h-2 w-2 rounded-full ${statusMeta.dotClass}`}></span>
             <h2
-                class="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+                class={`text-[11px] font-semibold uppercase tracking-[0.08em] ${statusMeta.toneClass}`}
             >
                 {title}
             </h2>
-            <Badge variant="outline" class="text-[10px]">{tickets.length}</Badge
+            <Badge
+                variant="outline"
+                class="border-border/80 bg-background text-[10px] text-foreground/80"
+                >{tickets.length}</Badge
             >
         </div>
     </header>
 
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div
-        class="no-scrollbar min-h-0 flex-1 overflow-y-auto p-3.5"
+        class="no-scrollbar min-h-0 flex-1 overflow-y-auto p-2.5"
         onkeydown={onListKeyDown}
         role="listbox"
         aria-label={`${title} tickets`}
         tabindex="0"
     >
-        <div class="space-y-2">
+        <div class="space-y-2.5">
             {#if tickets.length === 0}
                 <div
-                    class="rounded-lg border border-dashed border-border/80 bg-muted/30 px-3 py-6 text-center text-xs text-muted-foreground"
+                    class="rounded-lg border border-dashed border-border/80 bg-background/40 px-3 py-6 text-center"
                 >
-                    Drop a ticket here
+                    <p class="text-[11px] font-medium text-foreground/85">
+                        No tickets in {title}
+                    </p>
+                    <p class="mt-1 text-[10px] text-muted-foreground">
+                        Drag a card here to move it.
+                    </p>
                 </div>
             {:else}
                 {#each tickets as ticket (ticket.id)}

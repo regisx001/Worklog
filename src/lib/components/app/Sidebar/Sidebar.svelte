@@ -306,7 +306,7 @@
                         <PlusIcon />
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent sideOffset={8}
+                <TooltipContent class="z-100" sideOffset={8}
                     >Create board (Ctrl/Cmd+B)</TooltipContent
                 >
             </Tooltip>
@@ -357,12 +357,6 @@
                                                 "No description"}
                                         </p>
                                     </div>
-                                    <Badge
-                                        variant="outline"
-                                        class="shrink-0 font-mono text-[10px]"
-                                    >
-                                        {board.id.slice(-4).toUpperCase()}
-                                    </Badge>
                                 </button>
                             </ContextMenuTrigger>
 
