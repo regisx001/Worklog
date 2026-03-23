@@ -19,7 +19,8 @@
     "@tauri-apps/plugin-fs": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-sql": "~2",
-    "@tauri-apps/plugin-store": "~2"
+    "@tauri-apps/plugin-store": "~2",
+    "mode-watcher": "^1.1.0"
   },
   "devDependencies": {
     "@dnd-kit-svelte/svelte": "^0.1.6",

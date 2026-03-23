@@ -1,4 +1,7 @@
 <script lang="ts">
+    import MoonIcon from "@lucide/svelte/icons/moon";
+    import SunIcon from "@lucide/svelte/icons/sun";
+    import { toggleMode } from "mode-watcher";
     import { Badge } from "$lib/components/ui/badge/index.js";
     import { Button } from "$lib/components/ui/button/index.js";
     import { Input } from "$lib/components/ui/input/index.js";
@@ -221,6 +224,35 @@
                     </label>
                     <Input id="autosave-seconds" bind:value={autosaveSeconds} />
                 </div>
+            </div>
+        </div>
+
+        <div class="rounded-lg border border-border/90 bg-surface-card">
+            <div class="space-y-1 px-4 py-3">
+                <h2 class="text-xs font-semibold">Appearance</h2>
+                <p class="text-[11px] text-muted-foreground">
+                    Switch between dark and light mode.
+                </p>
+            </div>
+
+            <Separator />
+
+            <div class="flex items-center justify-between p-4">
+                <div class="space-y-1">
+                    <p class="text-xs font-medium">Theme</p>
+                    <p class="text-[11px] text-muted-foreground">
+                        Toggle UI color mode
+                    </p>
+                </div>
+                <Button onclick={toggleMode} variant="outline" size="icon">
+                    <SunIcon
+                        class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 !transition-all dark:scale-0 dark:-rotate-90"
+                    />
+                    <MoonIcon
+                        class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 !transition-all dark:scale-100 dark:rotate-0"
+                    />
+                    <span class="sr-only">Toggle theme</span>
+                </Button>
             </div>
         </div>
 

@@ -2,6 +2,7 @@
 	import "./layout.css";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/stores";
+	import { ModeWatcher } from "mode-watcher";
 	import { useWorkspace } from "$lib/hooks/workspace.svelte";
 	import AppToolbar from "$lib/components/app/Toolbar/AppToolbar.svelte";
 	import { toolbarState } from "$lib/hooks/toolbar.svelte.js";
@@ -48,21 +49,16 @@
 		event.preventDefault();
 	};
 	$effect(() => {
-		document.documentElement.classList.add("dark");
-
 		document.addEventListener("contextmenu", handleContextmenu);
 
-		// Cleanup the event listener when the component is destroyed
 		return () => {
-			document.documentElement.classList.remove("dark");
 			document.removeEventListener("contextmenu", handleContextmenu);
 		};
 	});
 </script>
 
-<div
-	class="dark flex h-dvh flex-col overflow-hidden bg-background text-foreground"
->
+<ModeWatcher defaultMode="dark" />
+<div class="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
 	<AppToolbar
 		projectName={toolbarState.projectName}
 		pendingChanges={toolbarState.pendingChanges}
