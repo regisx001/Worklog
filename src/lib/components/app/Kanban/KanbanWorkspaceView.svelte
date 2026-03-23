@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import { toggleMode } from "mode-watcher";
     import CommandPalette from "$lib/components/app/CommandPalette/CommandPalette.svelte";
     import KanbanBoard from "$lib/components/app/Kanban/KanbanBoard.svelte";
     import TicketDetailPanel from "$lib/components/app/TicketDetail/TicketDetailPanel.svelte";
@@ -355,6 +356,13 @@
             subtitle: "Flush local changes to remote Git branch",
             shortcut: "Ctrl/Cmd+S",
             run: manualSync,
+        },
+        {
+            id: "toggle-theme",
+            label: "Toggle theme",
+            subtitle: "Switch between dark and light mode",
+            shortcut: "Ctrl/Cmd+Shift+L",
+            run: toggleMode,
         },
         {
             id: "focus-todo",
