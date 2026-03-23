@@ -51,8 +51,8 @@
 
     const cardClass = $derived.by(() =>
         cn(
-            "hover:bg-surface-card hover:border-primary/50 focus-visible:ring-ring/50 gap-2 rounded-lg border border-border bg-surface-raised text-foreground px-0 py-0 shadow-sm ring-1 ring-black/10 transition-colors focus-visible:ring-2 dark:ring-white/5",
-            isSelected && "border-primary/60 ring-2 ring-primary/45 shadow-md",
+            "hover:border-primary/40 hover:bg-surface-card focus-visible:ring-ring/45 gap-1.5 rounded-md border border-border/90 bg-card text-foreground px-0 py-0 shadow-xs transition-[border-color,background-color,box-shadow] focus-visible:ring-1",
+            isSelected && "border-primary/55 shadow-sm ring-1 ring-primary/35",
         ),
     );
 
@@ -87,17 +87,17 @@
             class="w-full text-left outline-none"
         >
             <Card size="sm" class={cardClass}>
-                <CardHeader class="px-3 pt-3 pb-0">
+                <CardHeader class="px-2.5 pt-2.5 pb-0">
                     <div class="flex items-start justify-between gap-2">
                         <CardTitle
-                            class="text-sm leading-snug font-semibold text-foreground"
+                            class="text-[12px] leading-snug font-medium text-foreground"
                             >{ticket.title}</CardTitle
                         >
                         <div class="flex shrink-0 flex-wrap justify-end gap-1">
                             {#each ticketLabels as label, index (`${ticket.id}-${label}-${index}`)}
                                 <Badge
                                     variant="outline"
-                                    class="border-border/90 bg-surface-card text-[10px] tracking-[0.08em] uppercase text-foreground/90"
+                                    class="h-4 border-border/80 bg-surface-card px-1.5 text-[9px] font-normal tracking-normal text-foreground/80"
                                     >{label}</Badge
                                 >
                             {/each}
@@ -105,10 +105,10 @@
                     </div>
                 </CardHeader>
                 <CardContent
-                    class="flex items-center justify-between px-3 pt-2 pb-3"
+                    class="flex items-center justify-between px-2.5 pt-1.5 pb-2.5"
                 >
                     <div
-                        class="text-text-tertiary flex items-center gap-1 text-[11px]"
+                        class="text-text-tertiary flex items-center gap-1 text-[10px]"
                     >
                         <span class="font-mono tracking-[0.04em]"
                             >#{ticket.id}</span
@@ -119,7 +119,7 @@
                     <div class="flex items-center gap-1.5">
                         <Badge
                             variant="outline"
-                            class="border-border/90 bg-surface-card text-[10px] text-foreground/85"
+                            class="h-4 border-border/80 bg-surface-card px-1.5 text-[9px] text-foreground/75"
                             title="Move ticket to next column (M)"
                         >
                             M
