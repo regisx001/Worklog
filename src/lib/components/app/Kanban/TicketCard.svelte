@@ -49,6 +49,27 @@
         ticket.labels.length > 0 ? ticket.labels : ["general"],
     );
 
+    const priorityMeta = $derived.by(() => {
+        if (ticket.priority === "high") {
+            return {
+                label: "High",
+                className: "border-amber-500/40 bg-amber-500/10 text-amber-200",
+            };
+        }
+
+        if (ticket.priority === "low") {
+            return {
+                label: "Low",
+                className: "border-sky-500/35 bg-sky-500/10 text-sky-200",
+            };
+        }
+
+        return {
+            label: "Medium",
+            className: "border-violet-500/35 bg-violet-500/10 text-violet-200",
+        };
+    });
+
     const cardClass = $derived.by(() =>
         cn(
             "hover:border-primary/40 hover:bg-surface-card focus-visible:ring-ring/45 gap-1.5 rounded-md border border-border/90 bg-card text-foreground px-0 py-0 shadow-xs transition-[border-color,background-color,box-shadow] focus-visible:ring-1",
@@ -117,6 +138,13 @@
                         <span>{ticket.comments.length} comments</span>
                     </div>
                     <div class="flex items-center gap-1.5">
+                        <Badge
+                            variant="outline"
+                            class={`h-4 px-1.5 text-[9px] ${priorityMeta.className}`}
+                            title="Ticket priority"
+                        >
+                            {priorityMeta.label}
+                        </Badge>
                         <Badge
                             variant="outline"
                             class="h-4 border-border/80 bg-surface-card px-1.5 text-[9px] text-foreground/75"

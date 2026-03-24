@@ -14,6 +14,23 @@ async function migrate_v2(db: Database): Promise<void> {
     `);
 }
 
+async function migrate_v3(db: Database): Promise<void> {
+    const columns = await db.select<Array<{ name: string }>>(`PRAGMA table_info(tickets)`);
+    const hasPriority = columns.some((column) => column.name === 'priority');
+
+    if (!hasPriority) {
+        await db.execute(`
+            ALTER TABLE tickets
+            ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium'
+            CHECK (priority IN ('low', 'medium', 'high'))
+        `);
+    }
+
+    await db.execute(
+        `CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`
+    );
+}
+
 export async function runMigrations(db: Database): Promise<void> {
     const rows = await db.select<{ schema_version: number }[]>(
         `SELECT schema_version FROM workspace_meta WHERE id = 1`
@@ -25,6 +42,10 @@ export async function runMigrations(db: Database): Promise<void> {
 
     if (current < 2) {
         await migrate_v2(db);
+    }
+
+    if (current < 3) {
+        await migrate_v3(db);
     }
 
     await db.execute(

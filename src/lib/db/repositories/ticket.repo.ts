@@ -6,6 +6,7 @@ import { generateId } from '$lib/utils';
 function deserialize(row: any): Ticket {
     return {
         ...row,
+        priority: row.priority ?? 'medium',
         labels: typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels,
         comments: typeof row.comments === 'string' ? JSON.parse(row.comments) : row.comments,
     };
@@ -33,6 +34,7 @@ export async function createTicket(db: Database, input: CreateTicketInput): Prom
         title: input.title,
         description: input.description ?? '',
         status: 'todo',
+        priority: input.priority ?? 'medium',
         labels: input.labels ?? [],
         comments: [],
         created_at: new Date().toISOString(),
@@ -40,11 +42,12 @@ export async function createTicket(db: Database, input: CreateTicketInput): Prom
     };
 
     await db.execute(
-        `INSERT INTO tickets (id, board_id, title, description, status, labels, comments, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tickets (id, board_id, title, description, status, priority, labels, comments, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             ticket.id, ticket.board_id, ticket.title, ticket.description,
             ticket.status,
+            ticket.priority,
             JSON.stringify(ticket.labels),
             JSON.stringify(ticket.comments),
             ticket.created_at, ticket.updated_at
@@ -66,10 +69,11 @@ export async function updateTicket(db: Database, id: string, input: UpdateTicket
 
     await db.execute(
         `UPDATE tickets
-     SET title = ?, description = ?, status = ?, labels = ?, comments = ?, updated_at = ?
+     SET title = ?, description = ?, status = ?, priority = ?, labels = ?, comments = ?, updated_at = ?
      WHERE id = ?`,
         [
             updated.title, updated.description, updated.status,
+            updated.priority,
             JSON.stringify(updated.labels),
             JSON.stringify(updated.comments),
             updated.updated_at, id

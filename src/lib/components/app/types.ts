@@ -1,4 +1,5 @@
 export type TicketStatus = "todo" | "in_progress" | "done";
+export type TicketPriority = "low" | "medium" | "high";
 
 export type SyncState = "up_to_date" | "pending_changes" | "syncing";
 
@@ -69,6 +70,7 @@ export interface Ticket {
     title: string;
     description: string;
     status: TicketStatus;
+    priority: TicketPriority;
     labels: string[];
     comments: Comment[];
     created_at: string;
@@ -77,5 +79,8 @@ export interface Ticket {
 
 // Input types — no id, no timestamps (generated internally)
 export type CreateBoardInput = Pick<Board, "name" | "description">;
-export type CreateTicketInput = Pick<Ticket, "board_id" | "title" | "description" | "labels">;
-export type UpdateTicketInput = Partial<Pick<Ticket, "title" | "description" | "status" | "labels" | "comments">>;
+export type CreateTicketInput = Pick<Ticket, "board_id" | "title" | "description" | "labels"> &
+    Partial<Pick<Ticket, "priority">>;
+export type UpdateTicketInput = Partial<
+    Pick<Ticket, "title" | "description" | "status" | "priority" | "labels" | "comments">
+>;

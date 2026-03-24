@@ -1,4 +1,9 @@
-import type { Ticket, TicketStatus, UpdateTicketInput } from "$lib/components/app/types";
+import type {
+    Ticket,
+    TicketPriority,
+    TicketStatus,
+    UpdateTicketInput,
+} from "$lib/components/app/types";
 
 interface UseTicketDraftOptions {
     getTicket: () => Ticket | null;
@@ -13,12 +18,19 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
     let draftDescription = $state("");
     let draftLabel = $state("");
     let draftStatus = $state<TicketStatus>("todo");
+    let draftPriority = $state<TicketPriority>("medium");
     let newComment = $state("");
 
     const statusOptions: Array<{ value: TicketStatus; label: string }> = [
         { value: "todo", label: "Todo" },
         { value: "in_progress", label: "In Progress" },
         { value: "done", label: "Done" },
+    ];
+
+    const priorityOptions: Array<{ value: TicketPriority; label: string }> = [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
     ];
 
     function labelsToDraft(labels: string[]) {
@@ -46,6 +58,7 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
         draftDescription = ticket.description;
         draftLabel = labelsToDraft(ticket.labels);
         draftStatus = ticket.status;
+        draftPriority = ticket.priority;
         newComment = "";
     });
 
@@ -60,6 +73,7 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
             description: draftDescription.trim(),
             labels: nextLabels.length > 0 ? nextLabels : ["general"],
             status: draftStatus,
+            priority: draftPriority,
         });
     }
 
@@ -84,11 +98,17 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
         get draftStatus() {
             return draftStatus;
         },
+        get draftPriority() {
+            return draftPriority;
+        },
         get newComment() {
             return newComment;
         },
         get statusOptions() {
             return statusOptions;
+        },
+        get priorityOptions() {
+            return priorityOptions;
         },
         setDraftTitle(value: string) {
             draftTitle = value;
@@ -101,6 +121,9 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
         },
         setDraftStatus(value: TicketStatus) {
             draftStatus = value;
+        },
+        setDraftPriority(value: TicketPriority) {
+            draftPriority = value;
         },
         setNewComment(value: string) {
             newComment = value;

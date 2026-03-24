@@ -37,6 +37,7 @@
         CommandAction,
         Comment,
         SyncState,
+        TicketPriority,
         TicketStatus,
         UpdateTicketInput,
     } from "$lib/components/app/types.js";
@@ -68,17 +69,66 @@
     let lastLoadedBoardId = $state<string | null>(null);
     let deleteTicketDialogOpen = $state(false);
     let ticketPendingDeletionId = $state<string | null>(null);
+    let priorityFilter = $state<"all" | TicketPriority>("all");
+    let prioritySort = $state<"created" | "high_to_low" | "low_to_high">(
+        "created",
+    );
+
+    const PRIORITY_RANK: Record<TicketPriority, number> = {
+        low: 1,
+        medium: 2,
+        high: 3,
+    };
 
     const activeBoard = $derived.by(() => boards.active);
 
+    const visibleTickets = $derived.by(() =>
+        tickets.tickets.filter((ticket) => {
+            if (priorityFilter === "all") return true;
+            return ticket.priority === priorityFilter;
+        }),
+    );
+
+    function sortTicketsByPriority(
+        items: typeof visibleTickets,
+    ): typeof visibleTickets {
+        if (prioritySort === "created") {
+            return [...items].sort((a, b) =>
+                a.created_at.localeCompare(b.created_at),
+            );
+        }
+
+        if (prioritySort === "high_to_low") {
+            return [...items].sort((a, b) => {
+                const rankDelta =
+                    PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority];
+                if (rankDelta !== 0) return rankDelta;
+                return a.created_at.localeCompare(b.created_at);
+            });
+        }
+
+        return [...items].sort((a, b) => {
+            const rankDelta =
+                PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+            if (rankDelta !== 0) return rankDelta;
+            return a.created_at.localeCompare(b.created_at);
+        });
+    }
+
     const todoTickets = $derived.by(() =>
-        tickets.tickets.filter((ticket) => ticket.status === "todo"),
+        sortTicketsByPriority(
+            visibleTickets.filter((ticket) => ticket.status === "todo"),
+        ),
     );
     const inProgressTickets = $derived.by(() =>
-        tickets.tickets.filter((ticket) => ticket.status === "in_progress"),
+        sortTicketsByPriority(
+            visibleTickets.filter((ticket) => ticket.status === "in_progress"),
+        ),
     );
     const doneTickets = $derived.by(() =>
-        tickets.tickets.filter((ticket) => ticket.status === "done"),
+        sortTicketsByPriority(
+            visibleTickets.filter((ticket) => ticket.status === "done"),
+        ),
     );
 
     const selectedTicket = $derived.by(() => {
@@ -185,6 +235,7 @@
                 title: "New ticket",
                 description:
                     "Describe the task clearly and keep it actionable.",
+                priority: "medium",
                 labels: ["feature"],
             });
 
@@ -223,6 +274,16 @@
         } catch (error) {
             setFailure("Failed to add comment", error);
         }
+    }
+
+    async function setSelectedTicketPriority(priority: TicketPriority) {
+        if (!selectedTicketId) return;
+        const selected = tickets.tickets.find(
+            (ticket) => ticket.id === selectedTicketId,
+        );
+        if (!selected || selected.priority === priority) return;
+
+        await updateTicket(selectedTicketId, { priority });
     }
 
     function openCreateBoardDialog() {
@@ -314,6 +375,16 @@
         }, 850);
     }
 
+    function setPriorityFilterValue(value: "all" | TicketPriority) {
+        priorityFilter = value;
+    }
+
+    function setPrioritySortValue(
+        value: "created" | "high_to_low" | "low_to_high",
+    ) {
+        prioritySort = value;
+    }
+
     async function openWorkspacePicker() {
         try {
             await workspace.pick();
@@ -324,74 +395,173 @@
         }
     }
 
-    const commandActions = $derived.by<CommandAction[]>(() => [
-        {
-            id: "open-workspace",
-            label: "Open workspace",
-            subtitle: "Pick a local workspace folder",
-            shortcut: "Ctrl/Cmd+O",
-            run: () => {
-                void openWorkspacePicker();
+    const commandActions = $derived.by<CommandAction[]>(() => {
+        const selectedPriorityActions: CommandAction[] = selectedTicket
+            ? [
+                  {
+                      id: "priority-selected-high",
+                      label: "Set selected ticket priority: High",
+                      subtitle: `Apply to ${selectedTicket.title}`,
+                      shortcut: "",
+                      run: () => {
+                          void setSelectedTicketPriority("high");
+                      },
+                  },
+                  {
+                      id: "priority-selected-medium",
+                      label: "Set selected ticket priority: Medium",
+                      subtitle: `Apply to ${selectedTicket.title}`,
+                      shortcut: "",
+                      run: () => {
+                          void setSelectedTicketPriority("medium");
+                      },
+                  },
+                  {
+                      id: "priority-selected-low",
+                      label: "Set selected ticket priority: Low",
+                      subtitle: `Apply to ${selectedTicket.title}`,
+                      shortcut: "",
+                      run: () => {
+                          void setSelectedTicketPriority("low");
+                      },
+                  },
+              ]
+            : [];
+
+        return [
+            {
+                id: "open-workspace",
+                label: "Open workspace",
+                subtitle: "Pick a local workspace folder",
+                shortcut: "Ctrl/Cmd+O",
+                run: () => {
+                    void openWorkspacePicker();
+                },
             },
-        },
-        {
-            id: "new-board",
-            label: "Create board",
-            subtitle: "Open form and create a new board",
-            shortcut: "Ctrl/Cmd+B",
-            run: openCreateBoardDialog,
-        },
-        {
-            id: "new-ticket",
-            label: "Create ticket",
-            subtitle: "Add a new todo ticket in the active board",
-            shortcut: "Ctrl/Cmd+T",
-            run: () => {
-                void createTicket();
+            {
+                id: "new-board",
+                label: "Create board",
+                subtitle: "Open form and create a new board",
+                shortcut: "Ctrl/Cmd+B",
+                run: openCreateBoardDialog,
             },
-        },
-        {
-            id: "sync",
-            label: "Sync now",
-            subtitle: "Flush local changes to remote Git branch",
-            shortcut: "Ctrl/Cmd+S",
-            run: manualSync,
-        },
-        {
-            id: "toggle-theme",
-            label: "Toggle theme",
-            subtitle: "Switch between dark and light mode",
-            shortcut: "Ctrl/Cmd+Shift+L",
-            run: toggleMode,
-        },
-        {
-            id: "focus-todo",
-            label: "Focus Todo column",
-            subtitle: "Select first ticket in Todo",
-            shortcut: "1",
-            run: () => {
-                if (todoTickets[0]) openTicket(todoTickets[0].id);
+            {
+                id: "new-ticket",
+                label: "Create ticket",
+                subtitle: "Add a new todo ticket in the active board",
+                shortcut: "Ctrl/Cmd+T",
+                run: () => {
+                    void createTicket();
+                },
             },
-        },
-        {
-            id: "focus-in_progress",
-            label: "Focus In Progress column",
-            subtitle: "Select first ticket in In Progress",
-            shortcut: "2",
-            run: () => {
-                if (inProgressTickets[0]) openTicket(inProgressTickets[0].id);
+            {
+                id: "sync",
+                label: "Sync now",
+                subtitle: "Flush local changes to remote Git branch",
+                shortcut: "Ctrl/Cmd+S",
+                run: manualSync,
             },
-        },
-        {
-            id: "focus-done",
-            label: "Focus Done column",
-            subtitle: "Select first ticket in Done",
-            shortcut: "3",
-            run: () => {
-                if (doneTickets[0]) openTicket(doneTickets[0].id);
+            {
+                id: "toggle-theme",
+                label: "Toggle theme",
+                subtitle: "Switch between dark and light mode",
+                shortcut: "Ctrl/Cmd+Shift+L",
+                run: toggleMode,
             },
-        },
-    ]);
+            {
+                id: "priority-filter-all",
+                label: "Priority filter: All",
+                subtitle: "Show tickets of all priorities",
+                shortcut: "",
+                run: () => {
+                    setPriorityFilterValue("all");
+                },
+            },
+            {
+                id: "priority-filter-high",
+                label: "Priority filter: High",
+                subtitle: "Show only high priority tickets",
+                shortcut: "",
+                run: () => {
+                    setPriorityFilterValue("high");
+                },
+            },
+            {
+                id: "priority-filter-medium",
+                label: "Priority filter: Medium",
+                subtitle: "Show only medium priority tickets",
+                shortcut: "",
+                run: () => {
+                    setPriorityFilterValue("medium");
+                },
+            },
+            {
+                id: "priority-filter-low",
+                label: "Priority filter: Low",
+                subtitle: "Show only low priority tickets",
+                shortcut: "",
+                run: () => {
+                    setPriorityFilterValue("low");
+                },
+            },
+            {
+                id: "priority-sort-high-to-low",
+                label: "Sort by priority: High to low",
+                subtitle: "Order each column by priority descending",
+                shortcut: "",
+                run: () => {
+                    setPrioritySortValue("high_to_low");
+                },
+            },
+            {
+                id: "priority-sort-low-to-high",
+                label: "Sort by priority: Low to high",
+                subtitle: "Order each column by priority ascending",
+                shortcut: "",
+                run: () => {
+                    setPrioritySortValue("low_to_high");
+                },
+            },
+            {
+                id: "priority-sort-created",
+                label: "Sort by created time",
+                subtitle: "Restore default chronological order",
+                shortcut: "",
+                run: () => {
+                    setPrioritySortValue("created");
+                },
+            },
+            ...selectedPriorityActions,
+            {
+                id: "focus-todo",
+                label: "Focus Todo column",
+                subtitle: "Select first ticket in Todo",
+                shortcut: "1",
+                run: () => {
+                    if (todoTickets[0]) openTicket(todoTickets[0].id);
+                },
+            },
+            {
+                id: "focus-in_progress",
+                label: "Focus In Progress column",
+                subtitle: "Select first ticket in In Progress",
+                shortcut: "2",
+                run: () => {
+                    if (inProgressTickets[0])
+                        openTicket(inProgressTickets[0].id);
+                },
+            },
+            {
+                id: "focus-done",
+                label: "Focus Done column",
+                subtitle: "Select first ticket in Done",
+                shortcut: "3",
+                run: () => {
+                    if (doneTickets[0]) openTicket(doneTickets[0].id);
+                },
+            },
+        ];
+    });
 
     $effect(() => {
         if (workspace.status === "ready") {
@@ -566,6 +736,74 @@
     </div>
 {:else}
     <div class="@container/main h-full p-4">
+        <div
+            class="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-border/80 bg-surface-panel/80 px-2.5 py-2"
+        >
+            <span class="text-[10px] font-medium text-muted-foreground"
+                >Priority filter</span
+            >
+            <Button
+                size="sm"
+                variant={priorityFilter === "all" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPriorityFilterValue("all")}
+            >
+                All
+            </Button>
+            <Button
+                size="sm"
+                variant={priorityFilter === "high" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPriorityFilterValue("high")}
+            >
+                High
+            </Button>
+            <Button
+                size="sm"
+                variant={priorityFilter === "medium" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPriorityFilterValue("medium")}
+            >
+                Medium
+            </Button>
+            <Button
+                size="sm"
+                variant={priorityFilter === "low" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPriorityFilterValue("low")}
+            >
+                Low
+            </Button>
+
+            <span class="ml-2 text-[10px] font-medium text-muted-foreground"
+                >Sort</span
+            >
+            <Button
+                size="sm"
+                variant={prioritySort === "created" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPrioritySortValue("created")}
+            >
+                Created
+            </Button>
+            <Button
+                size="sm"
+                variant={prioritySort === "high_to_low" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPrioritySortValue("high_to_low")}
+            >
+                High-Low
+            </Button>
+            <Button
+                size="sm"
+                variant={prioritySort === "low_to_high" ? "default" : "outline"}
+                class="h-6 px-2 text-[10px]"
+                onclick={() => setPrioritySortValue("low_to_high")}
+            >
+                Low-High
+            </Button>
+        </div>
+
         {#if pageError}
             <div class="pb-3">
                 <p
@@ -698,12 +936,15 @@
     draftDescription={ticketDraft.draftDescription}
     draftLabel={ticketDraft.draftLabel}
     draftStatus={ticketDraft.draftStatus}
+    draftPriority={ticketDraft.draftPriority}
     statusOptions={ticketDraft.statusOptions}
+    priorityOptions={ticketDraft.priorityOptions}
     newCommentDraft={ticketDraft.newComment}
     onDraftTitleChange={ticketDraft.setDraftTitle}
     onDraftDescriptionChange={ticketDraft.setDraftDescription}
     onDraftLabelChange={ticketDraft.setDraftLabel}
     onDraftStatusChange={ticketDraft.setDraftStatus}
+    onDraftPriorityChange={ticketDraft.setDraftPriority}
     onNewCommentChange={ticketDraft.setNewComment}
     onSaveTicket={ticketDraft.saveTicket}
     onSubmitComment={ticketDraft.addComment}

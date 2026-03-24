@@ -6,7 +6,11 @@
     import TicketDescriptionSection from "$lib/components/app/TicketDetail/TicketDescriptionSection.svelte";
     import TicketDetailHeader from "$lib/components/app/TicketDetail/TicketDetailHeader.svelte";
     import TicketEditorSection from "$lib/components/app/TicketDetail/TicketEditorSection.svelte";
-    import type { Ticket, TicketStatus } from "$lib/components/app/types.js";
+    import type {
+        Ticket,
+        TicketPriority,
+        TicketStatus,
+    } from "$lib/components/app/types.js";
 
     interface TicketDetailPanelProps {
         open: boolean;
@@ -15,12 +19,15 @@
         draftDescription: string;
         draftLabel: string;
         draftStatus: TicketStatus;
+        draftPriority: TicketPriority;
         statusOptions: Array<{ value: TicketStatus; label: string }>;
+        priorityOptions: Array<{ value: TicketPriority; label: string }>;
         newCommentDraft: string;
         onDraftTitleChange: (value: string) => void;
         onDraftDescriptionChange: (value: string) => void;
         onDraftLabelChange: (value: string) => void;
         onDraftStatusChange: (value: TicketStatus) => void;
+        onDraftPriorityChange: (value: TicketPriority) => void;
         onNewCommentChange: (value: string) => void;
         onSaveTicket: () => void;
         onSubmitComment: () => void;
@@ -34,12 +41,15 @@
         draftDescription,
         draftLabel,
         draftStatus,
+        draftPriority,
         statusOptions,
+        priorityOptions,
         newCommentDraft,
         onDraftTitleChange,
         onDraftDescriptionChange,
         onDraftLabelChange,
         onDraftStatusChange,
+        onDraftPriorityChange,
         onNewCommentChange,
         onSaveTicket,
         onSubmitComment,
@@ -57,7 +67,8 @@
             draftTitle.trim() !== ticket.title.trim() ||
             draftDescription.trim() !== ticket.description.trim() ||
             draftLabel.trim() !== currentLabels.trim() ||
-            draftStatus !== ticket.status
+            draftStatus !== ticket.status ||
+            draftPriority !== ticket.priority
         );
     });
 
@@ -85,10 +96,13 @@
                         title={draftTitle}
                         label={draftLabel}
                         status={draftStatus}
+                        priority={draftPriority}
                         {statusOptions}
+                        {priorityOptions}
                         onTitleChange={onDraftTitleChange}
                         onLabelChange={onDraftLabelChange}
                         onStatusChange={onDraftStatusChange}
+                        onPriorityChange={onDraftPriorityChange}
                         {onEditorKeyDown}
                     />
 

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const CREATE_TABLES = `
   CREATE TABLE IF NOT EXISTS workspace_meta (
@@ -24,6 +24,8 @@ export const CREATE_TABLES = `
     description TEXT NOT NULL DEFAULT '',
     status      TEXT NOT NULL DEFAULT 'todo'
                 CHECK (status IN ('todo', 'in_progress', 'done')),
+    priority    TEXT NOT NULL DEFAULT 'medium'
+                CHECK (priority IN ('low', 'medium', 'high')),
     labels      TEXT NOT NULL DEFAULT '[]',
     comments    TEXT NOT NULL DEFAULT '[]',
     created_at  TEXT NOT NULL,
@@ -41,4 +43,5 @@ export const CREATE_TABLES = `
 
   CREATE INDEX IF NOT EXISTS idx_tickets_board_id ON tickets(board_id);
   CREATE INDEX IF NOT EXISTS idx_tickets_status   ON tickets(status);
+  CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority);
 `;
