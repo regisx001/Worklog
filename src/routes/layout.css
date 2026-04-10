@@ -1,8 +1,36 @@
+:root {
+  --pico-font-size: 14px;
+  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --color-surface-1: rgba(13, 16, 24, 0.82);
+  --color-surface-2: rgba(17, 22, 33, 0.7);
+  --color-border-soft: rgba(130, 149, 178, 0.24);
+  --color-text-muted: rgba(207, 219, 236, 0.78);
+}
+
 body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(110% 70% at 100% 0%, rgba(72, 95, 140, 0.24), transparent 60%),
+    radial-gradient(100% 90% at 0% 0%, rgba(46, 65, 102, 0.28), transparent 62%),
+    linear-gradient(180deg, #090c12 0%, #05070b 100%);
+  color: rgba(236, 244, 255, 0.95);
+  font-size: var(--pico-font-size);
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
   -webkit-user-select: none; /* Safari, Chrome, and Tauri Webviews */
   -moz-user-select: none;    /* Firefox */
   -ms-user-select: none;     /* IE11/Edge */
   user-select: none;         /* Standard */
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.app-shell-content {
+  padding: 0.85rem 1rem 1.2rem;
 }
 
 /* Re-enable selection for specific elements like input fields */

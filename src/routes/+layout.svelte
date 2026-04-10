@@ -1,5 +1,6 @@
 <script lang="ts">
 	import "./layout.css";
+	import AppToolbar from "$lib/components/app/layout/toolbar/AppToolbar.svelte";
 	let { children } = $props();
 
 	const handleContextmenu = (event: MouseEvent) => {
@@ -14,4 +15,9 @@
 	});
 </script>
 
-{@render children()}
+<div class="app-shell">
+	<AppToolbar />
+	<main class="app-shell-content">
+		{@render children()}
+	</main>
+</div>
