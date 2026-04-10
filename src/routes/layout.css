@@ -1,0 +1,14 @@
+body {
+  -webkit-user-select: none; /* Safari, Chrome, and Tauri Webviews */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE11/Edge */
+  user-select: none;         /* Standard */
+}
+
+/* Re-enable selection for specific elements like input fields */
+input, textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
