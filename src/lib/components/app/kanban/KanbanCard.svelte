@@ -25,7 +25,10 @@
     data-priority={getPriorityTone(task.priority)}
 >
     <header class="kanban-card-head">
-        <span class="kanban-issue-key" aria-label={`Issue key ${getIssueKey(task.id)}`}>
+        <span
+            class="kanban-issue-key"
+            aria-label={`Issue key ${getIssueKey(task.id)}`}
+        >
             {getIssueKey(task.id)}
         </span>
 

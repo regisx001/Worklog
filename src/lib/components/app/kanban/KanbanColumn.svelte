@@ -20,7 +20,9 @@
             <h2>{label}</h2>
             <small>{hint}</small>
         </div>
-        <span class="kanban-column-count">{items.length.toString().padStart(2, "0")}</span>
+        <span class="kanban-column-count"
+            >{items.length.toString().padStart(2, "0")}</span
+        >
     </header>
 
     <section

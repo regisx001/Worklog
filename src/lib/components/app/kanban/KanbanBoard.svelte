@@ -34,7 +34,7 @@
                     label={column.label}
                     hint={column.hint}
                     items={column.items}
-                    onDrop={onDrop}
+                    {onDrop}
                 />
             {/each}
         </div>
