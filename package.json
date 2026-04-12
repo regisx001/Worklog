@@ -20,6 +20,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-sql": "~2",
     "@tauri-apps/plugin-store": "~2",
+    "@thisux/sveltednd": "^0.4.0",
     "mode-watcher": "^1.1.0"
   },
   "devDependencies": {

@@ -11,6 +11,7 @@
         "@tauri-apps/plugin-opener": "^2",
         "@tauri-apps/plugin-sql": "~2",
         "@tauri-apps/plugin-store": "~2",
+        "@thisux/sveltednd": "^0.4.0",
         "mode-watcher": "^1.1.0",
       },
       "devDependencies": {
@@ -246,6 +247,8 @@
     "@tauri-apps/plugin-sql": ["@tauri-apps/plugin-sql@2.3.2", "", { "dependencies": { "@tauri-apps/api": "^2.10.1" } }, "sha512-4VDXhcKXVpyh5KKpnTGAn6q2DikPHH+TXGh9ZDQzULmG/JEz1RDvzQStgBJKddiukRbYEZ8CGIA2kskx+T+PpA=="],
 
     "@tauri-apps/plugin-store": ["@tauri-apps/plugin-store@2.4.2", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-0ClHS50Oq9HEvLPhNzTNFxbWVOqoAp3dRvtewQBeqfIQ0z5m3JRnOISIn2ZVPCrQC0MyGyhTS9DWhHjpigQE7A=="],
+
+    "@thisux/sveltednd": ["@thisux/sveltednd@0.4.0", "", { "peerDependencies": { "svelte": "^5.0.0" } }, "sha512-hUKPxkMOhGHYsAdXk0NH43YV32MELjpoDJyG3RmRS96Rl+Zqbo4g4hitKM1oWbtbIuzJ28RysAeFeRhVAfCFQg=="],
 
     "@types/cookie": ["@types/cookie@0.6.0", "", {}, "sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA=="],
 

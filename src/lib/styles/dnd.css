@@ -1,0 +1,104 @@
+.svelte-dnd-draggable {
+	touch-action: none;
+	user-select: none;
+}
+
+.svelte-dnd-touch-feedback {
+	touch-action: none;
+	user-select: none;
+}
+
+.svelte-dnd-dragging {
+	opacity: 0.72;
+	cursor: grabbing;
+	transform: scale(1.01);
+}
+
+.svelte-dnd-draggable:hover {
+	cursor: grab;
+}
+
+.svelte-dnd-droppable {
+	position: relative;
+	transition: outline-color 130ms ease, background-color 130ms ease;
+}
+
+.svelte-dnd-drop-target {
+	outline: 1.5px dashed var(--dnd-target-color, #99c1ff);
+	background: rgba(153, 193, 255, 0.08);
+}
+
+.svelte-dnd-invalid-target {
+	outline: 1.5px dashed var(--dnd-invalid-color, #e81123);
+	background: rgba(232, 17, 35, 0.09);
+}
+
+.svelte-dnd-placeholder {
+	border: 1.5px dashed rgba(183, 202, 228, 0.42);
+	border-radius: 0.5rem;
+	background: rgba(19, 26, 38, 0.4);
+	min-height: 3.1rem;
+}
+
+.drop-before,
+.drop-after {
+	position: relative;
+}
+
+.drop-before::before,
+.drop-after::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background-color: var(--dnd-target-color, #99c1ff);
+	border-radius: 1px;
+	z-index: 10;
+	pointer-events: none;
+}
+
+.drop-before::before {
+	top: -1px;
+}
+
+.drop-after::after {
+	bottom: -1px;
+}
+
+.drop-left,
+.drop-right {
+	position: relative;
+}
+
+.drop-left::before,
+.drop-right::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background-color: var(--dnd-target-color, #99c1ff);
+	border-radius: 1px;
+	z-index: 10;
+	pointer-events: none;
+}
+
+.drop-left::before {
+	left: -1px;
+}
+
+.drop-right::after {
+	right: -1px;
+}
+
+@media (max-width: 600px) {
+	.svelte-dnd-draggable {
+		width: 100%;
+		touch-action: none;
+	}
+
+	.svelte-dnd-droppable {
+		padding: 0.5rem;
+	}
+}
