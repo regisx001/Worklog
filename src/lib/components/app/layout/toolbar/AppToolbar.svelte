@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { X, SquareIcon, Minus } from "@lucide/svelte";
-    type WindowControlAction = "minimize" | "maximize" | "close";
+    type WindowControlAction = "minimize" | "toggle-maximize" | "close";
+
+    let isMaximized = $state(false);
 
     const runWindowControl = async (action: WindowControlAction) => {
         try {
@@ -12,8 +13,14 @@
                 return;
             }
 
-            if (action === "maximize") {
-                await appWindow.maximize();
+            if (action === "toggle-maximize") {
+                if (await appWindow.isMaximized()) {
+                    await appWindow.unmaximize();
+                } else {
+                    await appWindow.maximize();
+                }
+
+                isMaximized = await appWindow.isMaximized();
                 return;
             }
 
@@ -22,51 +29,90 @@
             console.error("Window control action failed", action, error);
         }
     };
+
+    $effect(() => {
+        let unlistenResize: (() => void) | undefined;
+        let isAlive = true;
+
+        (async () => {
+            try {
+                const { getCurrentWindow } = await import(
+                    "@tauri-apps/api/window"
+                );
+                const appWindow = getCurrentWindow();
+
+                isMaximized = await appWindow.isMaximized();
+                unlistenResize = await appWindow.onResized(async () => {
+                    if (!isAlive) {
+                        return;
+                    }
+
+                    isMaximized = await appWindow.isMaximized();
+                });
+            } catch (error) {
+                console.error(
+                    "Unable to subscribe to window state changes",
+                    error,
+                );
+            }
+        })();
+
+        return () => {
+            isAlive = false;
+            unlistenResize?.();
+        };
+    });
 </script>
 
 <header class="app-toolbar-wrap">
-    <nav
-        class="app-toolbar container-fluid"
-        aria-label="Application toolbar"
-        data-tauri-drag-region
-    >
-        <ul class="toolbar-brand">
-            <li>
-                <strong data-tauri-drag-region>Worklog</strong>
-            </li>
-        </ul>
+    <div class="app-toolbar" aria-label="Application toolbar">
+        <div class="toolbar-drag-region" data-tauri-drag-region>
+            <strong>Worklog</strong>
+        </div>
 
-        <ul class="toolbar-actions toolbar-window-controls">
-            <li>
-                <button
-                    type="button"
-                    class="secondary"
-                    onclick={() => runWindowControl("minimize")}
-                    aria-label="Minimize window"
-                >
-                    <Minus />
-                </button>
-            </li>
-            <li>
-                <button
-                    type="button"
-                    class="secondary"
-                    onclick={() => runWindowControl("maximize")}
-                    aria-label="Maximize window"
-                    ><SquareIcon />
-                </button>
-            </li>
-            <li>
-                <button
-                    type="button"
-                    onclick={() => runWindowControl("close")}
-                    aria-label="Close window"
-                >
-                    <X />
-                </button>
-            </li>
-        </ul>
-    </nav>
+        <div
+            class="toolbar-window-controls"
+            role="toolbar"
+            aria-label="Window controls"
+        >
+            <button
+                type="button"
+                class="window-control"
+                onclick={() => runWindowControl("minimize")}
+                aria-label="Minimize window"
+                title="Minimize"
+            >
+                <span
+                    class="control-icon control-icon-minimize"
+                    aria-hidden="true"
+                ></span>
+            </button>
+
+            <button
+                type="button"
+                class="window-control"
+                onclick={() => runWindowControl("toggle-maximize")}
+                aria-label={isMaximized ? "Restore window" : "Maximize window"}
+                title={isMaximized ? "Restore down" : "Maximize"}
+            >
+                <span
+                    class={`control-icon ${isMaximized ? "control-icon-restore" : "control-icon-maximize"}`}
+                    aria-hidden="true"
+                ></span>
+            </button>
+
+            <button
+                type="button"
+                class="window-control window-control-close"
+                onclick={() => runWindowControl("close")}
+                aria-label="Close window"
+                title="Close"
+            >
+                <span class="control-icon control-icon-close" aria-hidden="true"
+                ></span>
+            </button>
+        </div>
+    </div>
 </header>
 
 <style>
@@ -74,7 +120,7 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        backdrop-filter: blur(14px);
+        backdrop-filter: blur(12px);
         background: linear-gradient(
             180deg,
             var(--color-surface-1) 0%,
@@ -84,54 +130,156 @@
     }
 
     .app-toolbar {
-        min-height: 3.6rem;
-    }
-
-    .app-toolbar ul {
-        align-items: center;
-        gap: 0.5rem;
-        margin: 0;
+        --window-control-width: 2.9rem;
+        min-height: 2rem;
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
         padding: 0;
     }
 
-    .toolbar-brand strong {
-        font-family: var(--font-display);
-        font-size: 0.9rem;
-        letter-spacing: 0.02em;
+    .toolbar-drag-region {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 2rem;
+        display: flex;
+        align-items: center;
+        padding-inline: 0.7rem;
+        padding-right: calc((var(--window-control-width) * 3) + 0.6rem);
     }
 
-    .toolbar-actions button {
-        margin-bottom: 0;
-        padding: 0.34rem 0.58rem;
-        border-radius: 0.45rem;
-        font-size: 0.75rem;
+    .toolbar-drag-region strong {
+        font-family: var(--font-display);
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.045em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
     }
 
     .toolbar-window-controls {
-        margin-left: auto;
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: calc(var(--window-control-width) * 3);
+        max-width: calc(var(--window-control-width) * 3);
+        display: inline-flex;
+        justify-content: flex-end;
+        align-items: stretch;
     }
 
-    .window-close {
-        border-color: rgba(255, 144, 144, 0.35);
-        background: rgba(151, 52, 52, 0.35);
+    .window-control {
+        flex: 0 0 var(--window-control-width);
+        width: var(--window-control-width);
+        min-width: var(--window-control-width);
+        height: 2rem;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+        border: 0;
+        background: transparent;
+        color: rgba(234, 242, 251, 0.88);
+        display: grid;
+        place-items: center;
+    }
+
+    .window-control:hover {
+        background: rgba(132, 149, 176, 0.2);
+    }
+
+    .window-control:active {
+        background: rgba(132, 149, 176, 0.32);
+    }
+
+    .window-control:focus-visible {
+        outline: 1px solid rgba(165, 187, 220, 0.6);
+        outline-offset: -1px;
+    }
+
+    .window-control-close:hover {
+        background: #e81123;
+        color: #ffffff;
+    }
+
+    .window-control-close:active {
+        background: #c50f1f;
+    }
+
+    .control-icon {
+        position: relative;
+        width: 0.75rem;
+        height: 0.75rem;
+        display: inline-block;
+    }
+
+    .control-icon-minimize::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0.08rem;
+        border-top: 1.5px solid currentColor;
+    }
+
+    .control-icon-maximize::before {
+        content: "";
+        position: absolute;
+        inset: 0.08rem;
+        border: 1.5px solid currentColor;
+    }
+
+    .control-icon-restore::before {
+        content: "";
+        position: absolute;
+        top: 0.18rem;
+        left: 0.03rem;
+        width: 0.5rem;
+        height: 0.38rem;
+        border: 1.5px solid currentColor;
+        background: transparent;
+    }
+
+    .control-icon-restore::after {
+        content: "";
+        position: absolute;
+        top: 0.03rem;
+        left: 0.18rem;
+        width: 0.5rem;
+        height: 0.38rem;
+        border: 1.5px solid currentColor;
+        background: transparent;
+    }
+
+    .control-icon-close::before,
+    .control-icon-close::after {
+        content: "";
+        position: absolute;
+        left: 0.34rem;
+        top: 0.02rem;
+        width: 1.5px;
+        height: 0.68rem;
+        background: currentColor;
+        transform-origin: center;
+    }
+
+    .control-icon-close::before {
+        transform: rotate(45deg);
+    }
+
+    .control-icon-close::after {
+        transform: rotate(-45deg);
     }
 
     @media (max-width: 760px) {
         .app-toolbar {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.5rem;
-            padding-top: 0.6rem;
-            padding-bottom: 0.65rem;
+            --window-control-width: 2.45rem;
         }
 
-        .app-toolbar > ul {
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .app-shell-content {
-            padding: 0.7rem 0.8rem 1rem;
+        .toolbar-drag-region {
+            padding-inline: 0.55rem;
+            padding-right: calc((var(--window-control-width) * 3) + 0.45rem);
         }
     }
 </style>
