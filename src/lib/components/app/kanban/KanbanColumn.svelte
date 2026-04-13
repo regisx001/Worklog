@@ -65,7 +65,9 @@
         align-items: center;
         justify-content: space-between;
         border-bottom: 1px solid rgba(151, 174, 206, 0.2);
-        padding: 0.15rem 0.12rem 0.45rem;
+        padding: 10px;
+        border-radius: 10px;
+        margin: 0px 6px;
     }
 
     .kanban-column-title {
