@@ -24,10 +24,16 @@
                         class="kanban-board-item"
                         data-active={board.id === activeBoardId}
                         onclick={() => onSelectBoard(board.id)}
-                        aria-current={board.id === activeBoardId ? "true" : undefined}
+                        aria-current={board.id === activeBoardId
+                            ? "true"
+                            : undefined}
                     >
                         <span>{board.name}</span>
-                        <small>{board.issueCount.toString().padStart(2, "0")}</small>
+                        <small
+                            >{board.issueCount
+                                .toString()
+                                .padStart(2, "0")}</small
+                        >
                     </button>
                 </li>
             {/each}
