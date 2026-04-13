@@ -96,6 +96,7 @@
     }
 
     .kanban-grid {
+        padding: 10px;
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(17rem, 1fr);

@@ -9,7 +9,8 @@
     } from "$lib/components/app/kanban/kanban.types.js";
 
     const columns: KanbanColumnConfig[] = [
-        { status: "todo", label: "To Do", hint: "Backlog" },
+        { status: "backlog", label: "Backlog", hint: "Backlog" },
+        { status: "todo", label: "To Do", hint: "todo later" },
         { status: "in_progress", label: "In Progress", hint: "Active" },
         { status: "done", label: "Done", hint: "Completed" },
     ];
