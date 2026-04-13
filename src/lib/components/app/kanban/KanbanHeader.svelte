@@ -15,11 +15,6 @@
 <style>
     .kanban-header {
         border: 1px solid var(--color-border-soft);
-        background: linear-gradient(
-            160deg,
-            rgba(19, 28, 41, 0.86) 0%,
-            rgba(13, 19, 29, 0.8) 100%
-        );
         border-radius: 0.55rem;
         padding: 0.85rem 0.95rem;
     }

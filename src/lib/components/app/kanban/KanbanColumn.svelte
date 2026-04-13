@@ -51,11 +51,6 @@
         gap: 0.5rem;
         border: 1px solid rgba(140, 160, 188, 0.28);
         border-radius: 0.62rem;
-        background: linear-gradient(
-            180deg,
-            rgba(18, 25, 37, 0.68) 0%,
-            rgba(11, 15, 22, 0.75) 100%
-        );
         padding: 0.58rem;
         min-height: 18rem;
     }

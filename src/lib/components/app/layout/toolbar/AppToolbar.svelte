@@ -121,11 +121,6 @@
         top: 0;
         z-index: 10;
         backdrop-filter: blur(12px);
-        background: linear-gradient(
-            180deg,
-            var(--color-surface-1) 0%,
-            var(--color-surface-2) 100%
-        );
         border-bottom: 1px solid var(--color-border-soft);
     }
 
