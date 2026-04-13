@@ -1,0 +1,282 @@
+' =========================================================
+' Worklog system modeling (PlantUML)
+' Scope: Frontend, hooks, repositories, local persistence, and Tauri runtime
+' Snapshot date: 2026-04-13
+' =========================================================
+
+@startuml Worklog_System_Architecture
+title Worklog - End-to-End System Architecture
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Monospace
+
+actor "End User" as User
+
+node "Desktop Shell (Tauri v2)" as Desktop {
+  frame "SvelteKit Frontend" as FE {
+    component "+layout.svelte\n(app shell)" as Layout
+    component "AppToolbar.svelte\n(window controls)" as Toolbar
+    component "+page.svelte\n(in-memory kanban orchestration)" as Page
+    component "Kanban Components\nBoard/Column/Card/Sidebar/Header" as KanbanUI
+  }
+
+  frame "Domain Hooks (.svelte.ts)" as Hooks {
+    component "useWorkspace" as HookWorkspace
+    component "useBoards" as HookBoards
+    component "useTickets" as HookTickets
+    component "useTicketDraft" as HookDraft
+    component "toolbarState" as HookToolbar
+  }
+
+  frame "Repository Layer" as Repos {
+    component "WorkspaceRepo" as RepoWorkspace
+    component "BoardRepo" as RepoBoard
+    component "TicketRepo" as RepoTicket
+    component "SettingsRepo" as RepoSettings
+  }
+
+  frame "Local DB Layer" as DBL {
+    component "getDb/closeDb\n(connection.ts)" as DbConn
+    component "runMigrations\n(migrate.ts)" as DbMigrate
+    component "CREATE_TABLES\n(schema.ts)" as DbSchema
+    database ".worklog/worklog.db\nSQLite" as Sqlite
+  }
+}
+
+cloud "Browser Storage" as BrowserStorage {
+  database "localStorage\nlast_workspace_path" as LocalStorage
+}
+
+node "Tauri Runtime (Rust)" as RustRuntime {
+  component "src-tauri/src/lib.rs\nplugin registration + invoke handler" as RustLib
+  component "@tauri-apps/api/window" as TauriWindow
+  component "@tauri-apps/plugin-dialog" as TauriDialog
+  component "@tauri-apps/plugin-fs" as TauriFs
+  component "@tauri-apps/plugin-sql" as TauriSql
+}
+
+User --> Layout : launches and uses app
+Layout --> Toolbar : mounts once at shell level
+Layout --> Page : renders route content
+Page --> KanbanUI : passes boards/columns/tasks + handlers
+
+Toolbar --> TauriWindow : minimize/maximize/close\n(dynamic import)
+HookWorkspace --> LocalStorage : read/write remembered workspace path
+HookWorkspace --> TauriDialog : pick workspace directory
+
+HookWorkspace --> DbConn : open_workspace(path)
+HookBoards --> DbConn : list/create/rename/delete boards
+HookTickets --> DbConn : list/create/update/delete tickets
+
+HookBoards --> RepoBoard
+HookTickets --> RepoTicket
+HookWorkspace --> RepoWorkspace
+HookDraft --> HookTickets : onUpdateTicket/onAddComment
+HookToolbar --> Toolbar : command callbacks and sync indicators
+
+DbConn --> TauriFs : exists/mkdir .worklog directory
+DbConn --> TauriSql : Database.load/execute/select
+DbConn --> DbSchema : create tables if needed
+HookWorkspace --> DbMigrate : schema upgrade pipeline
+DbMigrate --> TauriSql
+
+RepoWorkspace --> Sqlite
+RepoBoard --> Sqlite
+RepoTicket --> Sqlite
+RepoSettings --> Sqlite
+TauriSql --> Sqlite
+
+TauriWindow --> RustLib
+TauriDialog --> RustLib
+TauriFs --> RustLib
+TauriSql --> RustLib
+
+note bottom of Page
+Current +page.svelte flow keeps tasks in $state (in-memory demo flow).
+Hooks + repositories provide persisted workspace flow and are modeled here
+as the application logic backbone.
+end note
+
+@enduml
+
+
+@startuml Worklog_Current_Runtime_Flow
+title Worklog - Current Kanban Runtime Flow (In-Memory)
+
+skinparam shadowing false
+skinparam defaultFontName Monospace
+autonumber
+
+actor User
+participant "KanbanCard.svelte" as Card
+participant "@thisux/sveltednd" as DnD
+participant "+page.svelte" as Page
+participant "Derived state\nboards/tasks/activeBoardName" as Derived
+participant "KanbanBoard.svelte" as Board
+
+User -> Card : drag task card
+Card -> DnD : draggable({ container, dragData })
+DnD -> Page : onDrop(state)
+Page -> Page : validate targetContainer as TaskStatus
+
+alt valid target column
+  Page -> Page : allTasks = allTasks.map(...status update...)
+  Page -> Derived : recompute boards and tasks with $derived
+  Derived -> Board : updated props by status column
+  Board -> User : UI re-renders with moved task
+else invalid or missing target
+  Page -> User : ignore drop (no state mutation)
+end
+
+@enduml
+
+
+@startuml Worklog_Persistence_Flow
+title Worklog - Workspace Initialization and Persistence Flow
+
+skinparam shadowing false
+skinparam defaultFontName Monospace
+autonumber
+
+actor User
+participant "useWorkspace" as WS
+participant "localStorage" as LS
+participant "@tauri dialog plugin" as Dialog
+participant "getDb(connection.ts)" as DB
+participant "runMigrations" as MIG
+participant "WorkspaceRepo" as WRepo
+database ".worklog/worklog.db" as SQLite
+
+== App Boot ==
+User -> WS : init()
+WS -> LS : getItem(last_workspace_path)
+
+alt saved path exists
+  WS -> WS : open_workspace(path)
+  WS -> DB : getDb(path)
+  DB -> DB : ensure .worklog folder exists (fs.exists/mkdir)
+  DB -> SQLite : open sqlite:path/.worklog/worklog.db
+  DB -> SQLite : execute CREATE_TABLES
+  WS -> MIG : runMigrations(db)
+  MIG -> SQLite : apply v2/v3 if needed
+  WS -> WRepo : initWorkspace(db, inferredName)
+  WRepo -> SQLite : INSERT OR IGNORE workspace_meta
+  WS -> WRepo : getWorkspaceMeta(db)
+  WRepo -> SQLite : SELECT workspace_meta
+  WS -> LS : setItem(last_workspace_path, path)
+  WS -> User : status = ready
+else no saved path
+  WS -> User : status = no_workspace
+end
+
+== User Chooses Folder ==
+User -> WS : pick()
+WS -> Dialog : open(directory=true)
+Dialog --> WS : selected path or cancel
+
+alt selected
+  WS -> WS : open_workspace(selected)
+  WS -> DB : getDb(selected)
+  WS -> MIG : runMigrations(db)
+  WS -> WRepo : initWorkspace + getWorkspaceMeta
+  WS -> User : status = ready
+else canceled
+  WS -> User : remain unchanged
+end
+
+== Close Workspace ==
+User -> WS : close()
+WS -> DB : closeDb()
+WS -> LS : removeItem(last_workspace_path)
+WS -> User : status = no_workspace
+
+@enduml
+
+
+@startuml Worklog_Workspace_State
+title Worklog - Workspace Lifecycle State Machine
+
+skinparam shadowing false
+skinparam defaultFontName Monospace
+
+[*] --> idle : app started
+idle --> no_workspace : no saved path
+idle --> loading : saved path found
+
+no_workspace --> loading : pick() or open_workspace(path)
+loading --> ready : DB open + migrations + meta loaded
+loading --> error : exception
+
+ready --> loading : open_workspace(new path)
+ready --> no_workspace : close()
+
+error --> loading : retry open_workspace(path)
+error --> no_workspace : close() or clear saved path
+
+@enduml
+
+
+@startuml Worklog_Domain_Data_Model
+title Worklog - Domain and Persistence Data Model
+
+skinparam shadowing false
+skinparam defaultFontName Monospace
+hide methods
+hide circle
+
+class WorkspaceMeta {
+  +name: string
+  +schema_version: number
+  +sync_mode: local | git
+  +created_at: ISO datetime
+}
+
+class Board {
+  +id: string
+  +name: string
+  +description: string
+  +created_at: ISO datetime
+  +updated_at: ISO datetime
+}
+
+class Ticket {
+  +id: string
+  +board_id: string
+  +title: string
+  +description: string
+  +status: backlog | todo | in_progress | done
+  +priority: low | medium | high
+  +labels: string[] (JSON)
+  +comments: Comment[] (JSON)
+  +created_at: ISO datetime
+  +updated_at: ISO datetime
+}
+
+class Comment {
+  +author: string
+  +body: string
+  +timestamp: ISO datetime
+}
+
+class AppSettings {
+  +author_name: string
+  +default_branch: string
+  +autosave_seconds: number
+  +created_at: ISO datetime
+  +updated_at: ISO datetime
+}
+
+WorkspaceMeta "1" -- "many" Board : workspace scope
+Board "1" -- "many" Ticket : board_id
+Ticket "1" o-- "many" Comment : embedded JSON array
+WorkspaceMeta "1" -- "1" AppSettings : singleton rows (id=1)
+
+note right of Ticket
+Type layer allows status = backlog,
+while SQLite CHECK constraint allows:
+todo, in_progress, done.
+end note
+
+@enduml
