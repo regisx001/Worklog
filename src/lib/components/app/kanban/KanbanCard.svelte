@@ -31,7 +31,9 @@
     <p class="kanban-card-description">{task.description}</p>
 
     <footer class="kanban-card-footer">
-        <small>{priorityLabels[task.priority]} priority · {task.updatedAt}</small>
+        <small
+            >{priorityLabels[task.priority]} priority · {task.updatedAt}</small
+        >
     </footer>
 </article>
 
@@ -45,7 +47,9 @@
         );
         border-radius: 0.52rem;
         padding: 0.5rem;
-        transition: border-color 120ms ease, transform 120ms ease;
+        transition:
+            border-color 120ms ease,
+            transform 120ms ease;
     }
 
     .kanban-card:hover {

@@ -3,17 +3,34 @@
     import "$lib/styles/dnd.css";
     import KanbanColumn from "./KanbanColumn.svelte";
     import KanbanHeader from "./KanbanHeader.svelte";
-    import type { KanbanColumnConfig, Task } from "./kanban.types.js";
+    import KanbanSidebar from "./KanbanSidebar.svelte";
+    import type {
+        BoardSidebarItem,
+        KanbanColumnConfig,
+        Task,
+    } from "./kanban.types.js";
 
     interface Props {
         title: string;
         description: string;
+        boards: BoardSidebarItem[];
+        activeBoardId: string;
+        onSelectBoard: (boardId: string) => void;
         columns: KanbanColumnConfig[];
         tasks: Task[];
         onDrop: (state: DragDropState<Task>) => void;
     }
 
-    let { title, description, columns, tasks, onDrop }: Props = $props();
+    let {
+        title,
+        description,
+        boards,
+        activeBoardId,
+        onSelectBoard,
+        columns,
+        tasks,
+        onDrop,
+    }: Props = $props();
 
     const tasksByStatus = $derived(
         columns.map((column) => ({
@@ -24,33 +41,58 @@
 </script>
 
 <main class="container-fluid kanban-page">
-    <KanbanHeader {title} {description} />
+    <div class="kanban-layout">
+        <KanbanSidebar {boards} {activeBoardId} {onSelectBoard} />
 
-    <section class="overflow-auto kanban-scroll" aria-label="Kanban columns">
-        <div class="kanban-grid">
-            {#each tasksByStatus as column (column.status)}
-                <KanbanColumn
-                    status={column.status}
-                    label={column.label}
-                    hint={column.hint}
-                    items={column.items}
-                    {onDrop}
-                />
-            {/each}
-        </div>
-    </section>
+        <section class="kanban-workspace">
+            <KanbanHeader {title} {description} />
+
+            <section class="kanban-scroll" aria-label="Kanban columns">
+                <div class="kanban-grid">
+                    {#each tasksByStatus as column (column.status)}
+                        <KanbanColumn
+                            status={column.status}
+                            label={column.label}
+                            hint={column.hint}
+                            items={column.items}
+                            {onDrop}
+                        />
+                    {/each}
+                </div>
+            </section>
+        </section>
+    </div>
 </main>
 
 <style>
     .kanban-page {
-        display: grid;
-        gap: 0.75rem;
-        min-height: calc(100vh - 4rem);
         padding-inline: 0;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .kanban-layout {
+        display: grid;
+        grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0.72rem;
+        align-items: stretch;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .kanban-workspace {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 0.75rem;
+        min-width: 0;
+        min-height: 0;
     }
 
     .kanban-scroll {
         padding-bottom: 0.25rem;
+        min-height: 0;
+        overflow: auto;
     }
 
     .kanban-grid {
@@ -59,19 +101,21 @@
         grid-auto-columns: minmax(17rem, 1fr);
         gap: 0.7rem;
         align-items: start;
-        min-height: calc(100vh - 10rem);
     }
 
     @media (max-width: 900px) {
+        .kanban-layout {
+            grid-template-columns: 1fr;
+        }
+
         .kanban-grid {
             grid-auto-columns: minmax(15rem, 1fr);
-            min-height: calc(100vh - 8.8rem);
         }
     }
 
     @media (max-width: 640px) {
         .kanban-page {
-            min-height: auto;
+            height: auto;
         }
     }
 </style>

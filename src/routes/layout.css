@@ -24,13 +24,16 @@ body {
 }
 
 .app-shell {
+  height: 100vh;
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .app-shell-content {
   padding: 0.85rem 1rem 1.2rem;
+  min-height: 0;
+  overflow: auto;
 }
 
 /* Re-enable selection for specific elements like input fields */
