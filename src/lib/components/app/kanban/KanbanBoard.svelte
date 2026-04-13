@@ -15,7 +15,9 @@
         description: string;
         boards: BoardSidebarItem[];
         activeBoardId: string;
-        onSelectBoard: (boardId: string) => void;
+        onOpenBoard: (boardId: string) => void;
+        onRenameBoard: (boardId: string, nextName: string) => void;
+        onDeleteBoard: (boardId: string) => void;
         columns: KanbanColumnConfig[];
         tasks: Task[];
         onDrop: (state: DragDropState<Task>) => void;
@@ -26,7 +28,9 @@
         description,
         boards,
         activeBoardId,
-        onSelectBoard,
+        onOpenBoard,
+        onRenameBoard,
+        onDeleteBoard,
         columns,
         tasks,
         onDrop,
@@ -42,7 +46,13 @@
 
 <main class="container-fluid kanban-page">
     <div class="kanban-layout">
-        <KanbanSidebar {boards} {activeBoardId} {onSelectBoard} />
+        <KanbanSidebar
+            {boards}
+            {activeBoardId}
+            {onOpenBoard}
+            {onRenameBoard}
+            {onDeleteBoard}
+        />
 
         <section class="kanban-workspace">
             <KanbanHeader {title} {description} />

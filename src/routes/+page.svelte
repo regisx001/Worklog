@@ -15,13 +15,20 @@
         { status: "done", label: "Done", hint: "Completed" },
     ];
 
-    const baseBoards = [
+    type SidebarBoard = {
+        id: string;
+        name: string;
+    };
+
+    const initialBoards: SidebarBoard[] = [
         { id: "engineering", name: "Engineering" },
         { id: "product", name: "Product" },
         { id: "design", name: "Design" },
-    ] as const;
+    ];
 
-    let activeBoardId = $state<string>(baseBoards[0].id);
+    let allBoards = $state<SidebarBoard[]>(initialBoards);
+
+    let activeBoardId = $state<string>(initialBoards[0]?.id ?? "");
 
     let allTasks = $state<Task[]>([
         {
@@ -81,7 +88,7 @@
     ]);
 
     const boards = $derived<BoardSidebarItem[]>(
-        baseBoards.map((board) => ({
+        allBoards.map((board) => ({
             ...board,
             issueCount: allTasks.filter((task) => task.board_id === board.id)
                 .length,
@@ -100,8 +107,40 @@
         columns.map((column) => column.status),
     );
 
-    function selectBoard(boardId: string) {
+    function boardExists(boardId: string) {
+        return allBoards.some((board) => board.id === boardId);
+    }
+
+    function openBoard(boardId: string) {
+        if (!boardExists(boardId)) {
+            return;
+        }
+
         activeBoardId = boardId;
+    }
+
+    function renameBoard(boardId: string, nextName: string) {
+        const normalized = nextName.trim();
+        if (!normalized) {
+            return;
+        }
+
+        allBoards = allBoards.map((board) =>
+            board.id === boardId ? { ...board, name: normalized } : board,
+        );
+    }
+
+    function deleteBoard(boardId: string) {
+        if (!boardExists(boardId)) {
+            return;
+        }
+
+        allBoards = allBoards.filter((board) => board.id !== boardId);
+        allTasks = allTasks.filter((task) => task.board_id !== boardId);
+
+        if (activeBoardId === boardId) {
+            activeBoardId = allBoards[0]?.id ?? "";
+        }
     }
 
     function handleDrop(state: DragDropState<Task>) {
@@ -138,7 +177,9 @@
     description="Drag and drop tasks between columns to update their status instantly."
     {boards}
     {activeBoardId}
-    onSelectBoard={selectBoard}
+    onOpenBoard={openBoard}
+    onRenameBoard={renameBoard}
+    onDeleteBoard={deleteBoard}
     {columns}
     {tasks}
     onDrop={handleDrop}
