@@ -16,12 +16,19 @@
         boards: BoardSidebarItem[];
         activeBoardId: string;
         onOpenBoard: (boardId: string) => void;
-        onRenameBoard: (boardId: string, nextName: string) => void;
+        onUpdateBoard: (
+            boardId: string,
+            updates: { name: string; description: string },
+        ) => void;
         onDeleteBoard: (boardId: string) => void;
         columns: KanbanColumnConfig[];
         tasks: Task[];
         onDrop: (state: DragDropState<Task>) => void;
     }
+
+    const SIDEBAR_WIDTH_KEY = "worklog.kanban.sidebar.width";
+    const SIDEBAR_MIN_WIDTH = 220;
+    const SIDEBAR_MAX_WIDTH = 420;
 
     let {
         title,
@@ -29,12 +36,116 @@
         boards,
         activeBoardId,
         onOpenBoard,
-        onRenameBoard,
+        onUpdateBoard,
         onDeleteBoard,
         columns,
         tasks,
         onDrop,
     }: Props = $props();
+
+    let sidebarWidth = $state(264);
+    let isResizing = $state(false);
+    let layoutElement: HTMLElement | null = null;
+    let hasRestoredSidebarWidth = false;
+
+    const clampedSidebarWidth = $derived(
+        Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, sidebarWidth)),
+    );
+
+    function clampSidebarWidth(width: number): number {
+        return Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, width));
+    }
+
+    function setSidebarWidthFromClientX(clientX: number) {
+        if (!layoutElement) {
+            return;
+        }
+
+        const layoutRect = layoutElement.getBoundingClientRect();
+        sidebarWidth = clampSidebarWidth(clientX - layoutRect.left);
+    }
+
+    function startResize(event: MouseEvent) {
+        if (event.button !== 0) {
+            return;
+        }
+
+        if (window.innerWidth <= 900) {
+            return;
+        }
+
+        event.preventDefault();
+        isResizing = true;
+        setSidebarWidthFromClientX(event.clientX);
+    }
+
+    function handleWindowMouseMove(event: MouseEvent) {
+        if (!isResizing) {
+            return;
+        }
+
+        setSidebarWidthFromClientX(event.clientX);
+    }
+
+    function persistSidebarWidth() {
+        try {
+            localStorage.setItem(
+                SIDEBAR_WIDTH_KEY,
+                String(clampedSidebarWidth),
+            );
+        } catch (error) {
+            console.error("Unable to persist sidebar width", error);
+        }
+    }
+
+    function stopResize() {
+        if (!isResizing) {
+            return;
+        }
+
+        isResizing = false;
+        persistSidebarWidth();
+    }
+
+    function handleResizerKeydown(event: KeyboardEvent) {
+        if (window.innerWidth <= 900) {
+            return;
+        }
+
+        if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            sidebarWidth = clampSidebarWidth(clampedSidebarWidth - 12);
+            persistSidebarWidth();
+        }
+
+        if (event.key === "ArrowRight") {
+            event.preventDefault();
+            sidebarWidth = clampSidebarWidth(clampedSidebarWidth + 12);
+            persistSidebarWidth();
+        }
+    }
+
+    $effect(() => {
+        if (hasRestoredSidebarWidth) {
+            return;
+        }
+
+        hasRestoredSidebarWidth = true;
+
+        try {
+            const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+            if (!savedWidth) {
+                return;
+            }
+
+            const parsed = Number(savedWidth);
+            if (Number.isFinite(parsed)) {
+                sidebarWidth = clampSidebarWidth(parsed);
+            }
+        } catch (error) {
+            console.error("Unable to restore sidebar width", error);
+        }
+    });
 
     const tasksByStatus = $derived(
         columns.map((column) => ({
@@ -44,15 +155,30 @@
     );
 </script>
 
+<svelte:window onmousemove={handleWindowMouseMove} onmouseup={stopResize} />
+
 <main class="container-fluid kanban-page">
-    <div class="kanban-layout">
+    <div
+        class="kanban-layout"
+        bind:this={layoutElement}
+        style={`--kanban-sidebar-width: ${clampedSidebarWidth}px;`}
+    >
         <KanbanSidebar
             {boards}
             {activeBoardId}
             {onOpenBoard}
-            {onRenameBoard}
+            {onUpdateBoard}
             {onDeleteBoard}
         />
+
+        <button
+            type="button"
+            class="kanban-resizer"
+            aria-label="Resize boards sidebar"
+            data-resizing={isResizing}
+            onmousedown={startResize}
+            onkeydown={handleResizerKeydown}
+        ></button>
 
         <section class="kanban-workspace">
             <KanbanHeader {title} {description} />
@@ -83,12 +209,35 @@
 
     .kanban-layout {
         display: grid;
-        grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
+        grid-template-columns: var(--kanban-sidebar-width, 16.5rem) 0.35rem minmax(
+                0,
+                1fr
+            );
         grid-template-rows: minmax(0, 1fr);
-        gap: 0.72rem;
+        column-gap: 0.5rem;
         align-items: stretch;
         height: 100%;
         min-height: 0;
+    }
+
+    .kanban-resizer {
+        appearance: none;
+        border: 1px solid var(--color-border-soft);
+        width: 100%;
+        min-height: 0;
+        border-radius: 999px;
+        background: rgba(115, 132, 159, 0.18);
+        cursor: col-resize;
+        margin: 0;
+        padding: 0;
+    }
+
+    .kanban-resizer:hover,
+    .kanban-resizer[data-resizing="true"],
+    .kanban-resizer:focus-visible {
+        border-color: rgba(162, 186, 221, 0.52);
+        background: rgba(143, 165, 198, 0.34);
+        outline: none;
     }
 
     .kanban-workspace {
@@ -117,6 +266,11 @@
     @media (max-width: 900px) {
         .kanban-layout {
             grid-template-columns: 1fr;
+            column-gap: 0;
+        }
+
+        .kanban-resizer {
+            display: none;
         }
 
         .kanban-grid {

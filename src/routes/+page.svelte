@@ -18,12 +18,25 @@
     type SidebarBoard = {
         id: string;
         name: string;
+        description: string;
     };
 
     const initialBoards: SidebarBoard[] = [
-        { id: "engineering", name: "Engineering" },
-        { id: "product", name: "Product" },
-        { id: "design", name: "Design" },
+        {
+            id: "engineering",
+            name: "Engineering",
+            description: "Platform, architecture, and delivery work.",
+        },
+        {
+            id: "product",
+            name: "Product",
+            description: "Roadmap, discovery, and release planning.",
+        },
+        {
+            id: "design",
+            name: "Design",
+            description: "UX, visual polish, and interaction improvements.",
+        },
     ];
 
     let allBoards = $state<SidebarBoard[]>(initialBoards);
@@ -119,14 +132,25 @@
         activeBoardId = boardId;
     }
 
-    function renameBoard(boardId: string, nextName: string) {
-        const normalized = nextName.trim();
-        if (!normalized) {
+    function updateBoard(
+        boardId: string,
+        updates: { name: string; description: string },
+    ) {
+        const normalizedName = updates.name.trim();
+        if (!normalizedName) {
             return;
         }
 
+        const normalizedDescription = updates.description.trim();
+
         allBoards = allBoards.map((board) =>
-            board.id === boardId ? { ...board, name: normalized } : board,
+            board.id === boardId
+                ? {
+                      ...board,
+                      name: normalizedName,
+                      description: normalizedDescription,
+                  }
+                : board,
         );
     }
 
@@ -178,7 +202,7 @@
     {boards}
     {activeBoardId}
     onOpenBoard={openBoard}
-    onRenameBoard={renameBoard}
+    onUpdateBoard={updateBoard}
     onDeleteBoard={deleteBoard}
     {columns}
     {tasks}

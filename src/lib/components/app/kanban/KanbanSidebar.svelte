@@ -1,17 +1,25 @@
 <script lang="ts">
+    import AppModal from "../layout/modal/AppModal.svelte";
     import type { BoardSidebarItem } from "./kanban.types.js";
 
     type BoardContextWindow = {
         boardId: string;
-        renaming: boolean;
+    };
+
+    type BoardDetailsEditor = {
+        boardId: string;
         draftName: string;
+        draftDescription: string;
     };
 
     interface Props {
         boards: BoardSidebarItem[];
         activeBoardId: string;
         onOpenBoard: (boardId: string) => void;
-        onRenameBoard: (boardId: string, nextName: string) => void;
+        onUpdateBoard: (
+            boardId: string,
+            updates: { name: string; description: string },
+        ) => void;
         onDeleteBoard: (boardId: string) => void;
     }
 
@@ -19,11 +27,12 @@
         boards,
         activeBoardId,
         onOpenBoard,
-        onRenameBoard,
+        onUpdateBoard,
         onDeleteBoard,
     }: Props = $props();
 
     let contextWindow = $state<BoardContextWindow | null>(null);
+    let detailsEditor = $state<BoardDetailsEditor | null>(null);
     let sidebarElement: HTMLElement | null = null;
 
     function closeContextWindow() {
@@ -38,8 +47,6 @@
 
         contextWindow = {
             boardId,
-            renaming: false,
-            draftName: board.name,
         };
     }
 
@@ -49,40 +56,58 @@
         openContextWindow(boardId);
     }
 
-    function openRenameForm(boardId: string) {
+    function openBoardDetailsEditor(boardId: string) {
         const board = boards.find((item) => item.id === boardId);
         if (!board) {
             return;
         }
 
-        contextWindow = {
+        detailsEditor = {
             boardId,
-            renaming: true,
             draftName: board.name,
+            draftDescription: board.description,
         };
+
+        closeContextWindow();
     }
 
     function updateDraftName(event: Event) {
-        if (!contextWindow || !contextWindow.renaming) {
+        if (!detailsEditor) {
             return;
         }
 
         const target = event.currentTarget as HTMLInputElement;
-        contextWindow.draftName = target.value;
+        detailsEditor.draftName = target.value;
     }
 
-    function saveRename() {
-        if (!contextWindow || !contextWindow.renaming) {
+    function updateDraftDescription(event: Event) {
+        if (!detailsEditor) {
             return;
         }
 
-        const nextName = contextWindow.draftName.trim();
+        const target = event.currentTarget as HTMLTextAreaElement;
+        detailsEditor.draftDescription = target.value;
+    }
+
+    function closeBoardDetailsEditor() {
+        detailsEditor = null;
+    }
+
+    function saveBoardUpdate() {
+        if (!detailsEditor) {
+            return;
+        }
+
+        const nextName = detailsEditor.draftName.trim();
         if (!nextName) {
             return;
         }
 
-        onRenameBoard(contextWindow.boardId, nextName);
-        closeContextWindow();
+        onUpdateBoard(detailsEditor.boardId, {
+            name: nextName,
+            description: detailsEditor.draftDescription.trim(),
+        });
+        closeBoardDetailsEditor();
     }
 
     function handleOpen(boardId: string) {
@@ -112,6 +137,23 @@
 
         closeContextWindow();
     }
+
+    function handleBoardKeydown(event: KeyboardEvent, boardId: string) {
+        if (event.key === "ContextMenu") {
+            event.preventDefault();
+            openContextWindow(boardId);
+            return;
+        }
+
+        if (event.shiftKey && event.key === "F10") {
+            event.preventDefault();
+            openContextWindow(boardId);
+        }
+    }
+
+    function handleSettingsClick() {
+        console.info("Settings action is not configured yet.");
+    }
 </script>
 
 <svelte:window
@@ -125,11 +167,16 @@
     bind:this={sidebarElement}
 >
     <header class="kanban-sidebar-header">
-        <h2>Boards</h2>
-        <small>{boards.length.toString().padStart(2, "0")}</small>
+        <div>
+            <h2>Boards</h2>
+            <p>Right-click a board for actions</p>
+        </div>
+        <small class="kanban-board-total"
+            >{boards.length.toString().padStart(2, "0")}</small
+        >
     </header>
 
-    <nav aria-label="Boards list">
+    <nav class="kanban-sidebar-body" aria-label="Boards list">
         <ul class="kanban-board-list">
             {#each boards as board (board.id)}
                 <li
@@ -142,12 +189,22 @@
                         type="button"
                         class="kanban-board-item"
                         data-active={board.id === activeBoardId}
-                        onclick={() => onOpenBoard(board.id)}
+                        onclick={() => {
+                            onOpenBoard(board.id);
+                            closeContextWindow();
+                        }}
+                        onkeydown={(event) =>
+                            handleBoardKeydown(event, board.id)}
                         aria-current={board.id === activeBoardId
                             ? "true"
                             : undefined}
                     >
-                        <span class="kanban-board-name">{board.name}</span>
+                        <span class="kanban-board-main">
+                            <span class="kanban-board-name">{board.name}</span>
+                            <small class="kanban-board-description"
+                                >{board.description || "No description"}</small
+                            >
+                        </span>
                         <small class="kanban-board-count"
                             >{board.issueCount
                                 .toString()
@@ -155,121 +212,144 @@
                         >
                     </button>
 
-                    <button
-                        type="button"
-                        class="kanban-board-actions-trigger"
-                        aria-label={`Open actions for ${board.name}`}
-                        title="Board actions"
-                        aria-expanded={contextWindow?.boardId === board.id}
-                        onclick={() => openContextWindow(board.id)}
-                    >
-                        ⋯
-                    </button>
-
                     {#if contextWindow?.boardId === board.id}
                         <div class="kanban-board-context-window">
-                            {#if contextWindow.renaming}
-                                <label class="kanban-board-rename-field">
-                                    <span>Rename board</span>
-                                    <input
-                                        type="text"
-                                        value={contextWindow.draftName}
-                                        oninput={updateDraftName}
-                                        maxlength="40"
-                                        placeholder="Board name"
-                                    />
-                                </label>
-                                <div class="kanban-board-rename-actions">
-                                    <button
-                                        type="button"
-                                        class="context-action-save"
-                                        onclick={saveRename}
-                                    >
-                                        Save
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="context-action-cancel"
-                                        onclick={closeContextWindow}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            {:else}
-                                <button
-                                    type="button"
-                                    class="context-action"
-                                    onclick={() => handleOpen(board.id)}
-                                >
-                                    Open
-                                </button>
-                                <button
-                                    type="button"
-                                    class="context-action"
-                                    onclick={() => openRenameForm(board.id)}
-                                >
-                                    Rename
-                                </button>
-                                <button
-                                    type="button"
-                                    class="context-action context-action-delete"
-                                    onclick={() => handleDelete(board.id)}
-                                >
-                                    Delete
-                                </button>
-                            {/if}
+                            <button
+                                type="button"
+                                class="kanban-context-action"
+                                onclick={() => handleOpen(board.id)}
+                            >
+                                Open
+                            </button>
+                            <button
+                                type="button"
+                                class="kanban-context-action"
+                                onclick={() => openBoardDetailsEditor(board.id)}
+                            >
+                                Edit details
+                            </button>
+                            <button
+                                type="button"
+                                class="kanban-context-action kanban-context-delete"
+                                onclick={() => handleDelete(board.id)}
+                            >
+                                Delete
+                            </button>
                         </div>
                     {/if}
                 </li>
             {/each}
         </ul>
     </nav>
+
+    <footer class="kanban-sidebar-footer">
+        <button
+            type="button"
+            class="kanban-settings-button"
+            onclick={handleSettingsClick}
+        >
+            Settings
+        </button>
+    </footer>
+
+    <AppModal
+        open={Boolean(detailsEditor)}
+        title="Edit board details"
+        onClose={closeBoardDetailsEditor}
+    >
+        {#snippet children()}
+            <label class="kanban-board-edit-field">
+                <span>Name</span>
+                <input
+                    type="text"
+                    value={detailsEditor?.draftName ?? ""}
+                    oninput={updateDraftName}
+                    maxlength="40"
+                    placeholder="Board name"
+                />
+            </label>
+
+            <label class="kanban-board-edit-field">
+                <span>Description</span>
+                <textarea
+                    rows="4"
+                    value={detailsEditor?.draftDescription ?? ""}
+                    oninput={updateDraftDescription}
+                    maxlength="180"
+                    placeholder="Short board description"
+                ></textarea>
+            </label>
+        {/snippet}
+
+        {#snippet footer()}
+            <button
+                type="button"
+                class="secondary"
+                onclick={closeBoardDetailsEditor}
+            >
+                Cancel
+            </button>
+            <button type="button" onclick={saveBoardUpdate}>Save</button>
+        {/snippet}
+    </AppModal>
 </aside>
 
 <style>
     .kanban-sidebar {
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
-        gap: 0.52rem;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: 0.45rem;
         border: 1px solid var(--color-border-soft);
-        border-radius: 0.6rem;
-        padding: 0.66rem;
+        border-radius: 0.5rem;
+        padding: 0.55rem;
         height: 100%;
         min-height: 0;
-        overflow: auto;
+        background: rgba(15, 20, 29, 0.9);
+        overflow: hidden;
     }
 
     .kanban-sidebar-header {
         margin: 0;
-        padding: 0.06rem 0.12rem 0.5rem;
-        border-bottom: 1px solid rgba(151, 174, 206, 0.2);
+        padding: 0.02rem 0.1rem 0.45rem;
+        border-bottom: 1px solid rgba(151, 174, 206, 0.22);
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
-        gap: 0.4rem;
+        gap: 0.3rem;
     }
 
     .kanban-sidebar-header h2 {
         margin: 0;
-        font-size: 0.76rem;
+        font-size: 0.74rem;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: rgba(233, 242, 252, 0.94);
+        letter-spacing: 0.05em;
+        color: rgba(232, 240, 251, 0.94);
     }
 
-    .kanban-sidebar-header small {
-        margin: 0;
+    .kanban-sidebar-header p {
+        margin: 0.2rem 0 0;
+        font-size: 0.65rem;
+        color: var(--color-text-muted);
+    }
+
+    .kanban-board-total {
         min-width: 1.7rem;
         height: 1.2rem;
         border-radius: 999px;
-        border: 1px solid rgba(136, 159, 190, 0.28);
-        background: rgba(34, 50, 71, 0.52);
+        border: 1px solid rgba(136, 159, 190, 0.32);
+        background: rgba(35, 46, 62, 0.86);
         color: var(--color-text-muted);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-size: 0.62rem;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.03em;
+    }
+
+    .kanban-sidebar-body {
+        min-height: 0;
+        overflow: auto;
+        padding-right: 0.02rem;
     }
 
     .kanban-board-list {
@@ -277,7 +357,7 @@
         padding: 0;
         list-style: none;
         display: grid;
-        gap: 0.34rem;
+        gap: 0.35rem;
     }
 
     .kanban-board-row {
@@ -288,185 +368,156 @@
     .kanban-board-item {
         width: 100%;
         margin: 0;
-        border-radius: 0.5rem;
-        border: 1px solid rgba(136, 159, 190, 0.23);
+        border-radius: 0.45rem;
+        border: 1px solid rgba(136, 159, 190, 0.28);
+        background: rgba(22, 28, 39, 0.92);
         color: rgba(227, 238, 251, 0.9);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px;
-        font-size: 0.72rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        font-size: 0.71rem;
         text-align: left;
-        transition:
-            border-color 130ms ease,
-            background 130ms ease,
-            box-shadow 130ms ease;
     }
 
     .kanban-board-item:hover {
-        border-color: rgba(167, 194, 230, 0.44);
+        border-color: rgba(161, 185, 219, 0.45);
     }
 
     .kanban-board-item:focus-visible {
-        outline: 1px solid rgba(173, 204, 242, 0.66);
+        outline: 1px solid rgba(173, 204, 242, 0.54);
         outline-offset: 0;
     }
 
-    .kanban-board-name {
+    .kanban-board-item[data-active="true"] {
+        border-color: rgba(139, 176, 221, 0.62);
+        background: rgba(47, 67, 95, 0.86);
+    }
+
+    .kanban-board-main {
         min-width: 0;
+        display: grid;
+        gap: 0.18rem;
+    }
+
+    .kanban-board-name {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        padding-right: 0.56rem;
-        font-size: 0.75rem;
+        font-size: 0.73rem;
         font-weight: 600;
-        letter-spacing: 0.015em;
+        letter-spacing: 0.01em;
+    }
+
+    .kanban-board-description {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: 0.66rem;
+        line-height: 1.35;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .kanban-board-count {
         min-width: 1.65rem;
-        margin-right: 12px;
-        height: 1.15rem;
+        height: 1.12rem;
+        border: 1px solid rgba(136, 159, 190, 0.3);
+        border-radius: 999px;
+        background: rgba(37, 49, 67, 0.88);
         color: var(--color-text-muted);
-        font-size: 0.64rem;
+        font-size: 0.62rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.03em;
     }
 
     .kanban-board-item[data-active="true"] .kanban-board-count {
-        border-color: rgba(173, 205, 241, 0.52);
-        background: rgba(98, 131, 171, 0.32);
-        color: rgba(231, 241, 253, 0.95);
-    }
-
-    .kanban-board-actions-trigger {
-        position: absolute;
-        right: 0.34rem;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 1.52rem;
-        min-width: 1.52rem;
-        height: 1.52rem;
-        margin-right: 6px;
-        border-radius: 0.42rem;
-        border: 1px solid transparent;
-        background: rgba(8, 13, 20, 0);
-        color: rgba(200, 216, 238, 0.68);
-        display: grid;
-        place-items: center;
-        padding: 0;
-        line-height: 1;
-        font-size: 0.95rem;
-        transition:
-            border-color 120ms ease,
-            background 120ms ease,
-            color 120ms ease;
-    }
-
-    /* .kanban-board-row:hover .kanban-board-actions-trigger,
-    .kanban-board-item[data-active="true"] + .kanban-board-actions-trigger,
-    .kanban-board-actions-trigger[aria-expanded="true"] {
-        border-color: rgba(150, 178, 211, 0.3);
-        background: rgba(21, 32, 48, 0.72);
-        color: rgba(230, 241, 252, 0.95);
-    } */
-
-    .kanban-board-actions-trigger:hover,
-    .kanban-board-actions-trigger[aria-expanded="true"] {
-        border-color: rgba(168, 197, 235, 0.48);
-        background: rgba(34, 52, 79, 0.84);
-        color: rgba(231, 240, 252, 0.95);
+        border-color: rgba(168, 197, 235, 0.42);
+        background: rgba(61, 88, 123, 0.88);
+        color: rgba(230, 241, 253, 0.95);
     }
 
     .kanban-board-context-window {
         position: absolute;
-        right: 0.02rem;
-        top: calc(100% + 0.24rem);
+        right: 0;
+        top: calc(100% + 0.2rem);
         z-index: 8;
-        min-width: 11.4rem;
-        border: 1px solid rgba(151, 174, 206, 0.3);
-        border-radius: 0.55rem;
-        background: rgba(8, 13, 20, 0.96);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
-        padding: 0.38rem;
+        min-width: 12rem;
+        border: 1px solid rgba(136, 159, 190, 0.35);
+        border-radius: 0.45rem;
+        background: rgba(20, 27, 38, 0.96);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36);
+        padding: 0.36rem;
         display: grid;
-        gap: 0.24rem;
-        animation: context-window-in 120ms ease;
+        gap: 0.28rem;
     }
 
-    @keyframes context-window-in {
-        from {
-            opacity: 0;
-            transform: translateY(-4px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .context-action {
+    .kanban-context-action {
         width: 100%;
         margin: 0;
-        border: 1px solid transparent;
+        border: 1px solid rgba(136, 159, 190, 0.28);
         border-radius: 0.4rem;
-        background: transparent;
+        background: rgba(30, 41, 57, 0.92);
         color: rgba(231, 240, 252, 0.95);
         text-align: left;
-        padding: 0.35rem 0.42rem;
-        font-size: 0.72rem;
+        padding: 0.34rem 0.42rem;
+        font-size: 0.69rem;
     }
 
-    .context-action:hover {
-        background: rgba(68, 95, 137, 0.24);
+    .kanban-context-action:hover {
+        border-color: rgba(168, 197, 235, 0.42);
+        background: rgba(44, 61, 85, 0.94);
     }
 
-    .context-action-delete {
+    .kanban-context-delete {
         color: rgba(255, 169, 176, 0.95);
     }
 
-    .context-action-delete:hover {
-        background: rgba(180, 49, 62, 0.24);
+    .kanban-context-delete:hover {
+        border-color: rgba(227, 137, 146, 0.45);
+        background: rgba(92, 39, 47, 0.88);
     }
 
-    .kanban-board-rename-field {
+    .kanban-board-edit-field {
         display: grid;
-        gap: 0.26rem;
+        gap: 0.22rem;
         font-size: 0.66rem;
         color: var(--color-text-muted);
     }
 
-    .kanban-board-rename-field input {
+    .kanban-board-edit-field input,
+    .kanban-board-edit-field textarea {
         margin: 0;
-        height: 1.8rem;
+        border-radius: 0.36rem;
+        border: 1px solid rgba(136, 159, 190, 0.35);
+        background: rgba(13, 18, 26, 0.92);
+        color: rgba(229, 239, 251, 0.95);
         font-size: 0.72rem;
+        padding: 0.4rem;
+        resize: vertical;
+        min-height: 1.8rem;
     }
 
-    .kanban-board-rename-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.24rem;
+    .kanban-sidebar-footer {
+        border-top: 1px solid rgba(151, 174, 206, 0.22);
+        padding-top: 0.45rem;
     }
 
-    .kanban-board-rename-actions button {
+    .kanban-settings-button {
+        width: 100%;
         margin: 0;
-        height: 1.74rem;
-        padding: 0 0.42rem;
-        font-size: 0.68rem;
-    }
-
-    .context-action-save {
-        background: rgba(45, 94, 135, 0.52);
-        border: 1px solid rgba(152, 188, 222, 0.36);
-    }
-
-    .context-action-cancel {
-        background: rgba(22, 31, 45, 0.86);
-        border: 1px solid rgba(136, 159, 190, 0.26);
+        border-radius: 0.4rem;
+        border: 1px solid rgba(136, 159, 190, 0.32);
+        background: rgba(25, 35, 48, 0.92);
+        color: rgba(228, 238, 251, 0.94);
+        font-size: 0.7rem;
+        text-align: center;
+        padding: 0.38rem 0.5rem;
     }
 
     @media (max-width: 920px) {
@@ -477,17 +528,7 @@
         }
 
         .kanban-board-context-window {
-            min-width: 10.2rem;
-        }
-
-        .kanban-board-item {
-            padding-right: 2.1rem;
-        }
-
-        .kanban-board-actions-trigger {
-            width: 1.44rem;
-            min-width: 1.44rem;
-            height: 1.44rem;
+            min-width: 10.4rem;
         }
     }
 </style>

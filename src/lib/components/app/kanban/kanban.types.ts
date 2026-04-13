@@ -16,6 +16,7 @@ export interface Task {
 export interface BoardSidebarItem {
     id: string;
     name: string;
+    description: string;
     issueCount: number;
 }
 
