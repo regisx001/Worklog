@@ -202,6 +202,7 @@
         flex: 1;
         overflow-x: auto;
         overflow-y: hidden;
+        min-height: 0;
         padding: var(--pico-spacing);
         transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -209,9 +210,10 @@
     .kanban-board-track {
         display: flex;
         flex-direction: row;
-        align-items: flex-start;
+        align-items: stretch;
         gap: var(--pico-spacing);
         min-height: 100%;
+        height: 100%;
     }
 
     .kanban-main[data-panel-open="true"] .kanban-body {

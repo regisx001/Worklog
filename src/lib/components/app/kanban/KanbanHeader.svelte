@@ -108,8 +108,7 @@
         display: inline-flex;
         align-items: center;
         gap: calc(var(--pico-spacing) * 0.3);
-        padding: calc(var(--pico-spacing) * 0.35)
-            calc(var(--pico-spacing) * 0.75);
+        padding: 0.25rem 0.5rem;
         font-size: var(--pico-font-size-small);
         white-space: nowrap;
     }

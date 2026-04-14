@@ -122,9 +122,11 @@
     .kanban-column {
         display: flex;
         flex-direction: column;
-        width: calc(var(--pico-spacing) * 18);
+        width: calc(var(--pico-spacing) * 24);
         min-width: calc(var(--pico-spacing) * 18);
         max-height: 100%;
+        height: 100%;
+        min-height: 0;
         flex-shrink: 0;
         gap: calc(var(--pico-spacing) * 0.35);
     }

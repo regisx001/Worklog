@@ -78,11 +78,7 @@
     class="kanban-card svelte-dnd-touch-feedback"
     data-done={status === "done"}
 >
-    <button
-        type="button"
-        class="kanban-card-trigger"
-        onclick={handleCardClick}
-    >
+    <button type="button" class="kanban-card-trigger" onclick={handleCardClick}>
         <small class="kanban-card-id">{task.id}</small>
 
         <p class="kanban-card-title">{task.title}</p>
