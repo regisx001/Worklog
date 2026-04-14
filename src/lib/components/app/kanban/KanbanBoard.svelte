@@ -186,7 +186,8 @@
     .kanban-shell {
         display: flex;
         flex-direction: row;
-        height: 100dvh;
+        height: 100%;
+        min-height: 0;
         overflow: hidden;
     }
 

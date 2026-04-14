@@ -117,8 +117,7 @@
 
 <style>
     .app-toolbar-wrap {
-        position: sticky;
-        top: 0;
+        position: relative;
         z-index: 10;
         backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border-soft);
