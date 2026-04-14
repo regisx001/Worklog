@@ -24,6 +24,15 @@
         onClose();
     }
 
+    function handleEscape(event: KeyboardEvent) {
+        if (!open || event.key !== "Escape") {
+            return;
+        }
+
+        event.preventDefault();
+        onClose();
+    }
+
     $effect(() => {
         if (!open) {
             return;
@@ -37,6 +46,8 @@
         };
     });
 </script>
+
+<svelte:window onkeydown={handleEscape} />
 
 {#if open}
     <dialog open oncancel={handleCancel} onclick={handleDialogClick}>
