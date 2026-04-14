@@ -5,6 +5,8 @@
   --color-surface-2: rgba(17, 22, 33, 0.7);
   --color-border-soft: rgba(130, 149, 178, 0.24);
   --color-text-muted: rgba(207, 219, 236, 0.78);
+  --worklog-warning: color-mix(in oklch, var(--pico-color) 40%, oklch(0.78 0.18 70));
+  --worklog-warning-dim: color-mix(in oklch, var(--worklog-warning) 15%, transparent);
 }
 
 body {

@@ -13,6 +13,7 @@
     };
 
     interface Props {
+        workspaceName: string;
         boards: BoardSidebarItem[];
         activeBoardId: string;
         onOpenBoard: (boardId: string) => void;
@@ -24,6 +25,7 @@
     }
 
     let {
+        workspaceName,
         boards,
         activeBoardId,
         onOpenBoard,
@@ -34,6 +36,18 @@
     let contextWindow = $state<BoardContextWindow | null>(null);
     let detailsEditor = $state<BoardDetailsEditor | null>(null);
     let sidebarElement: HTMLElement | null = null;
+
+    const workspaceMonogram = $derived.by(() => {
+        const letters = workspaceName
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]?.toUpperCase() ?? "")
+            .join("");
+
+        return letters.padEnd(2, "W").slice(0, 2);
+    });
 
     function closeContextWindow() {
         contextWindow = null;
@@ -161,23 +175,24 @@
     onmousedown={handleWindowPointerdown}
 />
 
-<aside
+<nav
     class="kanban-sidebar"
     aria-label="Boards sidebar"
     bind:this={sidebarElement}
 >
-    <header class="kanban-sidebar-header">
-        <div>
-            <h2>Boards</h2>
-            <p>Right-click a board for actions</p>
-        </div>
-        <small class="kanban-board-total"
-            >{boards.length.toString().padStart(2, "0")}</small
+    <header class="kanban-workspace-header">
+        <span class="kanban-workspace-avatar" aria-hidden="true"
+            >{workspaceMonogram}</span
+        >
+        <strong class="kanban-workspace-name" title={workspaceName}
+            >{workspaceName}</strong
         >
     </header>
 
-    <nav class="kanban-sidebar-body" aria-label="Boards list">
-        <ul class="kanban-board-list">
+    <small class="kanban-section-label">Boards</small>
+
+    <div class="kanban-sidebar-body" aria-label="Boards list">
+        <ul class="kanban-board-list" role="list">
             {#each boards as board (board.id)}
                 <li
                     class="kanban-board-row"
@@ -199,17 +214,21 @@
                             ? "true"
                             : undefined}
                     >
-                        <span class="kanban-board-main">
-                            <span class="kanban-board-name">{board.name}</span>
-                            <small class="kanban-board-description"
-                                >{board.description || "No description"}</small
-                            >
-                        </span>
-                        <small class="kanban-board-count"
-                            >{board.issueCount
-                                .toString()
-                                .padStart(2, "0")}</small
+                        <svg
+                            class="kanban-board-icon"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            focusable="false"
                         >
+                            <path
+                                d="M4 6h16v5H4zm0 7h7v5H4zm9 0h7v5h-7z"
+                                fill="currentColor"
+                            ></path>
+                        </svg>
+
+                        <span class="kanban-board-name">{board.name}</span>
+
+                        <kbd class="kanban-board-count">{board.issueCount}</kbd>
                     </button>
 
                     {#if contextWindow?.boardId === board.id}
@@ -240,7 +259,7 @@
                 </li>
             {/each}
         </ul>
-    </nav>
+    </div>
 
     <footer class="kanban-sidebar-footer">
         <button
@@ -248,7 +267,17 @@
             class="kanban-settings-button"
             onclick={handleSettingsClick}
         >
-            Settings
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                    d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm8 3.5-1.8.8.2 2-1.8 1-1.4-1.3-1.9.6-.6 1.8h-2l-.6-1.8-1.9-.6-1.4 1.3-1.8-1 .2-2L4 12l.8-1.8-.2-2 1.8-1 1.4 1.3 1.9-.6.6-1.8h2l.6 1.8 1.9.6 1.4-1.3 1.8 1-.2 2L20 12Z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.4"
+                ></path>
+            </svg>
+            <span>Settings</span>
         </button>
     </footer>
 
@@ -292,64 +321,73 @@
             <button type="button" onclick={saveBoardUpdate}>Save</button>
         {/snippet}
     </AppModal>
-</aside>
+</nav>
 
 <style>
     .kanban-sidebar {
-        display: grid;
-        grid-template-rows: auto minmax(0, 1fr) auto;
-        gap: 0.45rem;
-        border: 1px solid var(--color-border-soft);
-        border-radius: 0.5rem;
-        padding: 0.55rem;
-        height: 100%;
+        width: calc(var(--pico-spacing) * 13);
+        flex-shrink: 0;
         min-height: 0;
-        background: rgba(15, 20, 29, 0.9);
+        display: flex;
+        flex-direction: column;
+        background: var(--pico-card-background-color);
+        border-right: var(--pico-border-width) solid
+            var(--pico-muted-border-color);
         overflow: hidden;
     }
 
-    .kanban-sidebar-header {
-        margin: 0;
-        padding: 0.02rem 0.1rem 0.45rem;
-        border-bottom: 1px solid rgba(151, 174, 206, 0.22);
+    .kanban-workspace-header {
         display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 0.3rem;
+        align-items: center;
+        gap: calc(var(--pico-spacing) * 0.5);
+        padding: var(--pico-spacing) calc(var(--pico-spacing) * 0.75);
+        border-bottom: var(--pico-border-width) solid
+            var(--pico-muted-border-color);
+        flex-shrink: 0;
     }
 
-    .kanban-sidebar-header h2 {
-        margin: 0;
-        font-size: 0.74rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: rgba(232, 240, 251, 0.94);
-    }
-
-    .kanban-sidebar-header p {
-        margin: 0.2rem 0 0;
-        font-size: 0.65rem;
-        color: var(--color-text-muted);
-    }
-
-    .kanban-board-total {
-        min-width: 1.7rem;
-        height: 1.2rem;
-        border-radius: 999px;
-        border: 1px solid rgba(136, 159, 190, 0.32);
-        background: rgba(35, 46, 62, 0.86);
-        color: var(--color-text-muted);
+    .kanban-workspace-avatar {
+        width: calc(var(--pico-spacing) * 1.5);
+        aspect-ratio: 1;
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-primary);
+        color: var(--pico-background-color);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.62rem;
-        letter-spacing: 0.03em;
+        font-size: var(--pico-font-size-small);
+        font-family: var(--pico-font-family-monospace);
+        font-weight: var(--pico-font-weight-bold);
+        line-height: 1;
+    }
+
+    .kanban-workspace-name {
+        margin: 0;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--pico-font-size-small);
+        font-weight: var(--pico-font-weight-bold);
+    }
+
+    .kanban-section-label {
+        display: block;
+        margin: 0;
+        padding: calc(var(--pico-spacing) * 0.75)
+            calc(var(--pico-spacing) * 0.75) calc(var(--pico-spacing) * 0.25);
+        color: var(--pico-muted-color);
+        font-size: calc(var(--pico-font-size-small) * 0.85);
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
     }
 
     .kanban-sidebar-body {
+        flex: 1;
         min-height: 0;
-        overflow: auto;
-        padding-right: 0.02rem;
+        overflow-y: auto;
+        padding: 0 calc(var(--pico-spacing) * 0.35)
+            calc(var(--pico-spacing) * 0.5);
     }
 
     .kanban-board-list {
@@ -357,178 +395,169 @@
         padding: 0;
         list-style: none;
         display: grid;
-        gap: 0.35rem;
+        gap: calc(var(--pico-spacing) * 0.2);
     }
 
     .kanban-board-row {
         position: relative;
-        display: block;
     }
 
     .kanban-board-item {
+        position: relative;
         width: 100%;
         margin: 0;
-        border-radius: 0.45rem;
-        border: 1px solid rgba(136, 159, 190, 0.28);
-        background: rgba(22, 28, 39, 0.92);
-        color: rgba(227, 238, 251, 0.9);
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        font-size: 0.71rem;
+        border: 0;
+        border-radius: var(--pico-border-radius);
+        background: transparent;
+        color: var(--pico-muted-color);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: calc(var(--pico-spacing) * 0.5);
+        padding: calc(var(--pico-spacing) * 0.4)
+            calc(var(--pico-spacing) * 0.75);
+        font-size: var(--pico-font-size-small);
         text-align: left;
+        transition:
+            background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+            color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .kanban-board-item::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: calc(var(--pico-spacing) * 0.2);
+        bottom: calc(var(--pico-spacing) * 0.2);
+        width: calc(var(--pico-spacing) * 0.15);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-primary);
+        opacity: 0;
+        transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .kanban-board-item:hover {
-        border-color: rgba(161, 185, 219, 0.45);
+        color: var(--pico-color);
+        background: var(--pico-card-sectioning-background-color);
     }
 
     .kanban-board-item:focus-visible {
-        outline: 1px solid rgba(173, 204, 242, 0.54);
+        outline: var(--pico-border-width) solid var(--pico-primary);
         outline-offset: 0;
     }
 
     .kanban-board-item[data-active="true"] {
-        border-color: rgba(139, 176, 221, 0.62);
-        background: rgba(47, 67, 95, 0.86);
+        color: var(--pico-primary);
+        background: color-mix(in oklch, var(--pico-primary) 10%, transparent);
     }
 
-    .kanban-board-main {
-        min-width: 0;
-        display: grid;
-        gap: 0.18rem;
+    .kanban-board-item[data-active="true"]::before {
+        opacity: 1;
+    }
+
+    .kanban-board-icon {
+        width: calc(var(--pico-spacing) * 0.7);
+        height: calc(var(--pico-spacing) * 0.7);
+        flex-shrink: 0;
+        color: inherit;
     }
 
     .kanban-board-name {
+        flex: 1;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 0.73rem;
-        font-weight: 600;
-        letter-spacing: 0.01em;
-    }
-
-    .kanban-board-description {
-        margin: 0;
-        color: var(--color-text-muted);
-        font-size: 0.66rem;
-        line-height: 1.35;
-        display: -webkit-box;
-        line-clamp: 2;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
     }
 
     .kanban-board-count {
-        min-width: 1.65rem;
-        height: 1.12rem;
-        border: 1px solid rgba(136, 159, 190, 0.3);
-        border-radius: 999px;
-        background: rgba(37, 49, 67, 0.88);
-        color: var(--color-text-muted);
-        font-size: 0.62rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        letter-spacing: 0.03em;
-    }
-
-    .kanban-board-item[data-active="true"] .kanban-board-count {
-        border-color: rgba(168, 197, 235, 0.42);
-        background: rgba(61, 88, 123, 0.88);
-        color: rgba(230, 241, 253, 0.95);
+        margin: 0;
+        margin-left: auto;
+        font-size: calc(var(--pico-font-size-small) * 0.85);
+        font-family: var(--pico-font-family-monospace);
     }
 
     .kanban-board-context-window {
         position: absolute;
         right: 0;
-        top: calc(100% + 0.2rem);
+        top: calc(100% + calc(var(--pico-spacing) * 0.2));
         z-index: 8;
-        min-width: 12rem;
-        border: 1px solid rgba(136, 159, 190, 0.35);
-        border-radius: 0.45rem;
-        background: rgba(20, 27, 38, 0.96);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36);
-        padding: 0.36rem;
+        min-width: calc(var(--pico-spacing) * 8);
+        border: var(--pico-border-width) solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-card-background-color);
+        padding: calc(var(--pico-spacing) * 0.25);
         display: grid;
-        gap: 0.28rem;
+        gap: calc(var(--pico-spacing) * 0.2);
+        box-shadow: var(--pico-card-box-shadow);
     }
 
     .kanban-context-action {
         width: 100%;
         margin: 0;
-        border: 1px solid rgba(136, 159, 190, 0.28);
-        border-radius: 0.4rem;
-        background: rgba(30, 41, 57, 0.92);
-        color: rgba(231, 240, 252, 0.95);
+        border: var(--pico-border-width) solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-card-sectioning-background-color);
+        color: var(--pico-color);
         text-align: left;
-        padding: 0.34rem 0.42rem;
-        font-size: 0.69rem;
+        font-size: var(--pico-font-size-small);
+        padding: calc(var(--pico-spacing) * 0.35)
+            calc(var(--pico-spacing) * 0.5);
     }
 
     .kanban-context-action:hover {
-        border-color: rgba(168, 197, 235, 0.42);
-        background: rgba(44, 61, 85, 0.94);
+        border-color: var(--pico-border-color);
     }
 
     .kanban-context-delete {
-        color: rgba(255, 169, 176, 0.95);
-    }
-
-    .kanban-context-delete:hover {
-        border-color: rgba(227, 137, 146, 0.45);
-        background: rgba(92, 39, 47, 0.88);
+        color: var(--pico-del-color);
     }
 
     .kanban-board-edit-field {
         display: grid;
-        gap: 0.22rem;
-        font-size: 0.66rem;
-        color: var(--color-text-muted);
+        gap: calc(var(--pico-spacing) * 0.2);
+        font-size: var(--pico-font-size-small);
+        color: var(--pico-muted-color);
     }
 
     .kanban-board-edit-field input,
     .kanban-board-edit-field textarea {
         margin: 0;
-        border-radius: 0.36rem;
-        border: 1px solid rgba(136, 159, 190, 0.35);
-        background: rgba(13, 18, 26, 0.92);
-        color: rgba(229, 239, 251, 0.95);
-        font-size: 0.72rem;
-        padding: 0.4rem;
-        resize: vertical;
-        min-height: 1.8rem;
     }
 
     .kanban-sidebar-footer {
-        border-top: 1px solid rgba(151, 174, 206, 0.22);
-        padding-top: 0.45rem;
+        margin-top: auto;
+        padding: calc(var(--pico-spacing) * 0.5)
+            calc(var(--pico-spacing) * 0.35) calc(var(--pico-spacing) * 0.6);
     }
 
     .kanban-settings-button {
         width: 100%;
         margin: 0;
-        border-radius: 0.4rem;
-        border: 1px solid rgba(136, 159, 190, 0.32);
-        background: rgba(25, 35, 48, 0.92);
-        color: rgba(228, 238, 251, 0.94);
-        font-size: 0.7rem;
-        text-align: center;
-        padding: 0.38rem 0.5rem;
+        border: 0;
+        border-radius: var(--pico-border-radius);
+        background: transparent;
+        color: var(--pico-muted-color);
+        display: inline-flex;
+        align-items: center;
+        gap: calc(var(--pico-spacing) * 0.5);
+        padding: calc(var(--pico-spacing) * 0.4)
+            calc(var(--pico-spacing) * 0.75);
+        font-size: var(--pico-font-size-small);
+        text-align: left;
+        transition:
+            background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
+            color 150ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @media (max-width: 920px) {
-        .kanban-sidebar {
-            height: auto;
-            min-height: 0;
-            overflow: visible;
-        }
+    .kanban-settings-button:hover {
+        color: var(--pico-color);
+        background: var(--pico-card-sectioning-background-color);
+    }
 
-        .kanban-board-context-window {
-            min-width: 10.4rem;
-        }
+    .kanban-settings-button svg {
+        width: calc(var(--pico-spacing) * 0.7);
+        height: calc(var(--pico-spacing) * 0.7);
+        flex-shrink: 0;
     }
 </style>

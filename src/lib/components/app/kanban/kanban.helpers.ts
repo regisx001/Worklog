@@ -3,9 +3,9 @@ import type { TicketPriority } from "$lib/components/app/types.js";
 export type LabelTone = "red" | "blue" | "purple" | "gray" | "green";
 
 export const priorityLabels: Record<TicketPriority, string> = {
-    low: "Low",
-    medium: "Medium",
-    high: "High",
+    p1: "P1",
+    p2: "P2",
+    p3: "P3",
 };
 
 export const getPriorityTone = (priority: TicketPriority): TicketPriority =>

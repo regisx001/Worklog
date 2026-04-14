@@ -1,6 +1,9 @@
 <script lang="ts">
     import type { DragDropState } from "@thisux/sveltednd";
     import KanbanBoard from "$lib/components/app/kanban/KanbanBoard.svelte";
+    import { useBoards } from "$lib/hooks/boards.svelte";
+    import { useTickets } from "$lib/hooks/tickets.svelte";
+    import { useWorkspace } from "$lib/hooks/workspace.svelte";
     import type {
         BoardSidebarItem,
         KanbanColumnConfig,
@@ -15,124 +18,81 @@
         { status: "done", label: "Done", hint: "Completed" },
     ];
 
-    type SidebarBoard = {
-        id: string;
-        name: string;
-        description: string;
-    };
+    const workspace = useWorkspace();
+    const boardsApi = useBoards(() => workspace.path);
+    const ticketsApi = useTickets(
+        () => workspace.path,
+        () => boardsApi.active?.id ?? null,
+    );
 
-    const initialBoards: SidebarBoard[] = [
-        {
-            id: "engineering",
-            name: "Engineering",
-            description: "Platform, architecture, and delivery work.",
-        },
-        {
-            id: "product",
-            name: "Product",
-            description: "Roadmap, discovery, and release planning.",
-        },
-        {
-            id: "design",
-            name: "Design",
-            description: "UX, visual polish, and interaction improvements.",
-        },
-    ];
+    let didInitWorkspace = false;
+    let lastLoadedWorkspacePath = $state<string | null>(null);
+    let lastLoadedBoardId = $state<string | null>(null);
+    let loadingError = $state<string | null>(null);
 
-    let allBoards = $state<SidebarBoard[]>(initialBoards);
-
-    let activeBoardId = $state<string>(initialBoards[0]?.id ?? "");
-
-    let allTasks = $state<Task[]>([
-        {
-            id: "1",
-            board_id: "engineering",
-            title: "Design system updates",
-            description:
-                "Migrate board screens from utility classes to semantic PicoCSS.",
-            status: "todo",
-            priority: "high",
-            labels: ["ui", "design"],
-            updatedAt: "2h ago",
-        },
-        {
-            id: "2",
-            board_id: "engineering",
-            title: "User research",
-            description:
-                "Summarize five customer interviews into action items.",
-            status: "in_progress",
-            priority: "medium",
-            labels: ["research", "customer"],
-            updatedAt: "5h ago",
-        },
-        {
-            id: "3",
-            board_id: "product",
-            title: "API documentation",
-            description:
-                "Write examples for every endpoint in the internal API guide.",
-            status: "todo",
-            priority: "low",
-            labels: ["docs", "api"],
-            updatedAt: "1d ago",
-        },
-        {
-            id: "4",
-            board_id: "product",
-            title: "Performance audit",
-            description: "Profile startup and trim expensive render paths.",
-            status: "in_progress",
-            priority: "high",
-            labels: ["infra", "performance"],
-            updatedAt: "3h ago",
-        },
-        {
-            id: "5",
-            board_id: "design",
-            title: "Bug fixes",
-            description:
-                "Resolve reported authentication and session timeout issues.",
-            status: "done",
-            priority: "high",
-            labels: ["bug", "auth"],
-            updatedAt: "Yesterday",
-        },
-    ]);
+    const activeBoardId = $derived(boardsApi.active?.id ?? "");
 
     const boards = $derived<BoardSidebarItem[]>(
-        allBoards.map((board) => ({
+        boardsApi.boards.map((board) => ({
             ...board,
-            issueCount: allTasks.filter((task) => task.board_id === board.id)
-                .length,
+            issueCount:
+                board.id === activeBoardId ? ticketsApi.tickets.length : 0,
         })),
     );
 
-    const activeBoardName = $derived(
-        boards.find((board) => board.id === activeBoardId)?.name ?? "Board",
+    const activeBoardName = $derived(boardsApi.active?.name ?? "Board");
+
+    const workspaceName = $derived(workspace.meta?.name ?? "Worklog");
+
+    const boardDescription = $derived(
+        boardsApi.active?.description ||
+            "Drag and drop tasks between columns to update their status instantly.",
     );
 
-    const tasks = $derived(
-        allTasks.filter((task) => task.board_id === activeBoardId),
-    );
+    const tasks = $derived<Task[]>(ticketsApi.tickets);
 
     const validColumns = new Set<TaskStatus>(
         columns.map((column) => column.status),
     );
 
-    function boardExists(boardId: string) {
-        return allBoards.some((board) => board.id === boardId);
-    }
+    async function loadBoardsAndTickets() {
+        await boardsApi.load();
 
-    function openBoard(boardId: string) {
-        if (!boardExists(boardId)) {
+        if (boardsApi.active?.id) {
+            await ticketsApi.load();
+            lastLoadedBoardId = boardsApi.active.id;
             return;
         }
 
-        activeBoardId = boardId;
+        lastLoadedBoardId = null;
     }
 
-    function updateBoard(
+    async function initializeWorkspace() {
+        try {
+            await workspace.init();
+            loadingError = null;
+
+            if (workspace.status === "ready") {
+                lastLoadedWorkspacePath = null;
+                await loadBoardsAndTickets();
+            }
+        } catch (error) {
+            loadingError = String(error);
+        }
+    }
+
+    async function openBoard(boardId: string) {
+        const board = boardsApi.boards.find((item) => item.id === boardId);
+        if (!board) {
+            return;
+        }
+
+        boardsApi.setActive(board);
+        lastLoadedBoardId = null;
+        await ticketsApi.load();
+    }
+
+    async function updateBoard(
         boardId: string,
         updates: { name: string; description: string },
     ) {
@@ -141,33 +101,40 @@
             return;
         }
 
-        const normalizedDescription = updates.description.trim();
-
-        allBoards = allBoards.map((board) =>
-            board.id === boardId
-                ? {
-                      ...board,
-                      name: normalizedName,
-                      description: normalizedDescription,
-                  }
-                : board,
+        await boardsApi.rename(
+            boardId,
+            normalizedName,
+            updates.description.trim(),
         );
     }
 
-    function deleteBoard(boardId: string) {
-        if (!boardExists(boardId)) {
-            return;
-        }
+    async function deleteBoard(boardId: string) {
+        await boardsApi.remove(boardId);
+        lastLoadedBoardId = null;
 
-        allBoards = allBoards.filter((board) => board.id !== boardId);
-        allTasks = allTasks.filter((task) => task.board_id !== boardId);
-
-        if (activeBoardId === boardId) {
-            activeBoardId = allBoards[0]?.id ?? "";
+        if (boardsApi.active?.id) {
+            await ticketsApi.load();
         }
     }
 
-    function handleDrop(state: DragDropState<Task>) {
+    async function handleCreateTicket(status: TaskStatus, title: string) {
+        if (!activeBoardId) {
+            return;
+        }
+
+        await ticketsApi.create({
+            board_id: activeBoardId,
+            title,
+            description: "",
+            labels: [],
+            status,
+            priority: "p2",
+            ticket_type: "feature",
+            due_date: null,
+        });
+    }
+
+    async function handleDrop(state: DragDropState<Task>) {
         const { draggedItem, targetContainer } = state;
         if (
             !targetContainer ||
@@ -178,14 +145,99 @@
 
         const nextStatus = targetContainer as TaskStatus;
 
-        allTasks = allTasks.map((task) => {
-            if (task.id === draggedItem.id) {
-                return { ...task, status: nextStatus };
-            }
-
-            return task;
+        await ticketsApi.update(draggedItem.id, {
+            status: nextStatus,
         });
     }
+
+    async function handleUpdateTicket(
+        ticketId: string,
+        updates: Partial<
+            Pick<
+                Task,
+                | "title"
+                | "description"
+                | "status"
+                | "priority"
+                | "ticket_type"
+                | "due_date"
+                | "comments"
+            >
+        >,
+    ) {
+        await ticketsApi.update(ticketId, updates);
+    }
+
+    async function handlePickWorkspace() {
+        await workspace.pick();
+
+        if (workspace.status !== "ready") {
+            return;
+        }
+
+        loadingError = null;
+        lastLoadedWorkspacePath = null;
+        lastLoadedBoardId = null;
+        await loadBoardsAndTickets();
+    }
+
+    async function handleCreateFirstBoard() {
+        const nextIndex = boardsApi.boards.length + 1;
+        const board = await boardsApi.create({
+            name: `Board ${nextIndex}`,
+            description: "",
+        });
+
+        boardsApi.setActive(board);
+        lastLoadedBoardId = null;
+        await ticketsApi.load();
+    }
+
+    $effect(() => {
+        if (didInitWorkspace) {
+            return;
+        }
+
+        didInitWorkspace = true;
+        void initializeWorkspace();
+    });
+
+    $effect(() => {
+        const workspacePath = workspace.path;
+
+        if (
+            workspace.status !== "ready" ||
+            !workspacePath ||
+            workspacePath === lastLoadedWorkspacePath
+        ) {
+            return;
+        }
+
+        lastLoadedWorkspacePath = workspacePath;
+        loadingError = null;
+
+        void loadBoardsAndTickets().catch((error) => {
+            loadingError = String(error);
+        });
+    });
+
+    $effect(() => {
+        const boardId = boardsApi.active?.id ?? null;
+
+        if (
+            workspace.status !== "ready" ||
+            !boardId ||
+            boardId === lastLoadedBoardId
+        ) {
+            return;
+        }
+
+        lastLoadedBoardId = boardId;
+
+        void ticketsApi.load().catch((error) => {
+            loadingError = String(error);
+        });
+    });
 </script>
 
 <svelte:head>
@@ -196,15 +248,76 @@
     />
 </svelte:head>
 
-<KanbanBoard
-    title={`${activeBoardName} Board`}
-    description="Drag and drop tasks between columns to update their status instantly."
-    {boards}
-    {activeBoardId}
-    onOpenBoard={openBoard}
-    onUpdateBoard={updateBoard}
-    onDeleteBoard={deleteBoard}
-    {columns}
-    {tasks}
-    onDrop={handleDrop}
-/>
+{#if workspace.status === "idle" || workspace.status === "loading"}
+    <main class="app-state">
+        <article aria-busy="true">Loading workspace...</article>
+    </main>
+{:else if workspace.status === "no_workspace"}
+    <main class="app-state">
+        <article>
+            <h2>No workspace selected</h2>
+            <p>Choose a local folder to initialize Worklog.</p>
+            <button type="button" onclick={handlePickWorkspace}>
+                Open workspace
+            </button>
+        </article>
+    </main>
+{:else if workspace.status === "error"}
+    <main class="app-state">
+        <article>
+            <h2>Workspace failed to load</h2>
+            <p>{workspace.error || loadingError || "Unknown error"}</p>
+            <div role="group">
+                <button type="button" onclick={handlePickWorkspace}>
+                    Choose different workspace
+                </button>
+                <button
+                    type="button"
+                    class="secondary"
+                    onclick={initializeWorkspace}
+                >
+                    Retry
+                </button>
+            </div>
+        </article>
+    </main>
+{:else if boardsApi.boards.length === 0}
+    <main class="app-state">
+        <article>
+            <h2>No boards yet</h2>
+            <p>Create your first board to start organizing tickets.</p>
+            <button type="button" onclick={handleCreateFirstBoard}>
+                Create first board
+            </button>
+        </article>
+    </main>
+{:else}
+    <KanbanBoard
+        {workspaceName}
+        title={`${activeBoardName} Board`}
+        description={boardDescription}
+        {boards}
+        {activeBoardId}
+        onOpenBoard={openBoard}
+        onUpdateBoard={updateBoard}
+        onDeleteBoard={deleteBoard}
+        {columns}
+        {tasks}
+        onCreateTicket={handleCreateTicket}
+        onUpdateTicket={handleUpdateTicket}
+        onDrop={handleDrop}
+    />
+{/if}
+
+<style>
+    .app-state {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        padding: var(--pico-spacing);
+    }
+
+    .app-state article {
+        width: min(calc(var(--pico-spacing) * 22), 100%);
+    }
+</style>
