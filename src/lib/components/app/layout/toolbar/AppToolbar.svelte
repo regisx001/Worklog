@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { XIcon, SquareIcon } from "@lucide/svelte";
     type WindowControlAction = "minimize" | "toggle-maximize" | "close";
 
     let isMaximized = $state(false);

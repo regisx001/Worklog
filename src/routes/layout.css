@@ -1,6 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 :root {
   --pico-font-size: 16px;
-  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-display:"Inter", "Space Grotesk", "Segoe UI", sans-serif;
   --color-surface-1: rgba(13, 16, 24, 0.82);
   --color-surface-2: rgba(17, 22, 33, 0.7);
   --color-border-soft: rgba(130, 149, 178, 0.24);
@@ -18,7 +19,7 @@ body {
     linear-gradient(180deg, #090c12 0%, #05070b 100%);
   color: rgba(236, 244, 255, 0.95);
   font-size: var(--pico-font-size);
-  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family:"Inter", "IBM Plex Sans", "Segoe UI", sans-serif;
   -webkit-user-select: none; /* Safari, Chrome, and Tauri Webviews */
   -moz-user-select: none;    /* Firefox */
   -ms-user-select: none;     /* IE11/Edge */

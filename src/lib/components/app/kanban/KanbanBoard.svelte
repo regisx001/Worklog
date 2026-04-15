@@ -3,26 +3,14 @@
     import "$lib/styles/dnd.css";
     import KanbanColumn from "./KanbanColumn.svelte";
     import KanbanHeader from "./KanbanHeader.svelte";
-    import KanbanSidebar from "./KanbanSidebar.svelte";
     import TicketPanel from "./TicketPanel.svelte";
     import type {
-        BoardSidebarItem,
         KanbanColumnConfig,
         Task,
     } from "./kanban.types.js";
 
     interface Props {
-        workspaceName: string;
         title: string;
-        description: string;
-        boards: BoardSidebarItem[];
-        activeBoardId: string;
-        onOpenBoard: (boardId: string) => void;
-        onUpdateBoard: (
-            boardId: string,
-            updates: { name: string; description: string },
-        ) => void;
-        onDeleteBoard: (boardId: string) => void;
         columns: KanbanColumnConfig[];
         tasks: Task[];
         onDrop: (state: DragDropState<Task>) => void;
@@ -49,14 +37,7 @@
     }
 
     let {
-        workspaceName,
         title,
-        description,
-        boards,
-        activeBoardId,
-        onOpenBoard,
-        onUpdateBoard,
-        onDeleteBoard,
         columns,
         tasks,
         onDrop,
@@ -134,43 +115,32 @@
     });
 </script>
 
-<main class="kanban-shell">
-    <KanbanSidebar
-        {workspaceName}
-        {boards}
-        {activeBoardId}
-        {onOpenBoard}
-        {onUpdateBoard}
-        {onDeleteBoard}
+<main class="kanban-main" data-panel-open={Boolean(selectedTicket)}>
+    <KanbanHeader
+        {title}
+        ticketCount={tasks.length}
+        {inProgressCount}
+        {onFilter}
+        onCreateTicket={() => openInlineCreate("todo")}
     />
 
-    <section class="kanban-main" data-panel-open={Boolean(selectedTicket)}>
-        <KanbanHeader
-            {title}
-            ticketCount={tasks.length}
-            {inProgressCount}
-            {onFilter}
-            onCreateTicket={() => openInlineCreate("todo")}
-        />
-
-        <section class="kanban-body" aria-label="Kanban columns">
-            <div class="kanban-board-track">
-                {#each tasksByStatus as column (column.status)}
-                    <KanbanColumn
-                        status={column.status}
-                        label={column.label}
-                        hint={column.hint}
-                        items={column.items}
-                        {onDrop}
-                        isCreateOpen={inlineCreateStatus === column.status}
-                        onOpenCreate={() => openInlineCreate(column.status)}
-                        onCancelCreate={closeInlineCreate}
-                        onSubmitCreate={submitInlineCreate}
-                        onSelectTicket={openTicketPanel}
-                    />
-                {/each}
-            </div>
-        </section>
+    <section class="kanban-body" aria-label="Kanban columns">
+        <div class="kanban-board-track">
+            {#each tasksByStatus as column (column.status)}
+                <KanbanColumn
+                    status={column.status}
+                    label={column.label}
+                    hint={column.hint}
+                    items={column.items}
+                    {onDrop}
+                    isCreateOpen={inlineCreateStatus === column.status}
+                    onOpenCreate={() => openInlineCreate(column.status)}
+                    onCancelCreate={closeInlineCreate}
+                    onSubmitCreate={submitInlineCreate}
+                    onSelectTicket={openTicketPanel}
+                />
+            {/each}
+        </div>
     </section>
 
     <TicketPanel
@@ -183,19 +153,13 @@
 </main>
 
 <style>
-    .kanban-shell {
-        display: flex;
-        flex-direction: row;
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-    }
-
     .kanban-main {
         flex: 1;
         min-width: 0;
+        min-height: 0;
         display: flex;
         flex-direction: column;
+        height: 100%;
         overflow: hidden;
     }
 
