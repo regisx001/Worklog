@@ -83,7 +83,11 @@
                 aria-label="Minimize window"
                 title="Minimize"
             >
-                <MinusIcon style="padding: 4px;" />
+                <MinusIcon
+                    absoluteStrokeWidth
+                    strokeWidth={0.8}
+                    style="padding: 5px;"
+                />
             </button>
 
             <button
@@ -93,7 +97,11 @@
                 aria-label={isMaximized ? "Restore window" : "Maximize window"}
                 title={isMaximized ? "Restore down" : "Maximize"}
             >
-                <SquareIcon style="padding: 4px;" />
+                <SquareIcon
+                    absoluteStrokeWidth
+                    strokeWidth={0.8}
+                    style="padding: 5px;"
+                />
             </button>
 
             <button
@@ -103,7 +111,11 @@
                 aria-label="Close window"
                 title="Close"
             >
-                <XIcon style="padding: 4px;" />
+                <XIcon
+                    absoluteStrokeWidth
+                    strokeWidth={0.8}
+                    style="padding: 5px;"
+                />
             </button>
         </div>
     </div>

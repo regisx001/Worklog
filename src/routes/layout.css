@@ -46,3 +46,36 @@ input, textarea {
   -ms-user-select: text;
   user-select: text;
 }
+
+/* Remove visual focus effects from button-like controls. */
+:where(
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"]
+):is(:focus, :focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep form-field focus visible, but make it compact and subtle. */
+:where(
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"],
+  textarea,
+  select
+):is(:focus, :focus-visible) {
+  outline: 1px solid color-mix(in srgb, var(--pico-primary) 72%, #ffffff 28%);
+  outline-offset: 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pico-primary) 22%, transparent);
+}
