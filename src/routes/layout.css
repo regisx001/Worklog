@@ -1,10 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 :root {
   --pico-font-size: 16px;
-  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-display:"Inter", "Space Grotesk", "Segoe UI", sans-serif;
   --color-surface-1: rgba(13, 16, 24, 0.82);
   --color-surface-2: rgba(17, 22, 33, 0.7);
   --color-border-soft: rgba(130, 149, 178, 0.24);
   --color-text-muted: rgba(207, 219, 236, 0.78);
+  --worklog-warning: color-mix(in oklch, var(--pico-color) 40%, oklch(0.78 0.18 70));
+  --worklog-warning-dim: color-mix(in oklch, var(--worklog-warning) 15%, transparent);
 }
 
 body {
@@ -16,7 +19,7 @@ body {
     linear-gradient(180deg, #090c12 0%, #05070b 100%);
   color: rgba(236, 244, 255, 0.95);
   font-size: var(--pico-font-size);
-  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family:"Inter", "IBM Plex Sans", "Segoe UI", sans-serif;
   -webkit-user-select: none; /* Safari, Chrome, and Tauri Webviews */
   -moz-user-select: none;    /* Firefox */
   -ms-user-select: none;     /* IE11/Edge */
@@ -42,4 +45,37 @@ input, textarea {
   -moz-user-select: text;
   -ms-user-select: text;
   user-select: text;
+}
+
+/* Remove visual focus effects from button-like controls. */
+:where(
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"]
+):is(:focus, :focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep form-field focus visible, but make it compact and subtle. */
+:where(
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="week"],
+  textarea,
+  select
+):is(:focus, :focus-visible) {
+  outline: 1px solid color-mix(in srgb, var(--pico-primary) 72%, #ffffff 28%);
+  outline-offset: 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pico-primary) 22%, transparent);
 }

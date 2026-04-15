@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { XIcon, SquareIcon, MinusIcon } from "@lucide/svelte";
     type WindowControlAction = "minimize" | "toggle-maximize" | "close";
 
     let isMaximized = $state(false);
@@ -82,10 +83,11 @@
                 aria-label="Minimize window"
                 title="Minimize"
             >
-                <span
-                    class="control-icon control-icon-minimize"
-                    aria-hidden="true"
-                ></span>
+                <MinusIcon
+                    absoluteStrokeWidth
+                    strokeWidth={0.8}
+                    style="padding: 5px;"
+                />
             </button>
 
             <button
@@ -95,10 +97,11 @@
                 aria-label={isMaximized ? "Restore window" : "Maximize window"}
                 title={isMaximized ? "Restore down" : "Maximize"}
             >
-                <span
-                    class={`control-icon ${isMaximized ? "control-icon-restore" : "control-icon-maximize"}`}
-                    aria-hidden="true"
-                ></span>
+                <SquareIcon
+                    absoluteStrokeWidth
+                    strokeWidth={0.8}
+                    style="padding: 5px;"
+                />
             </button>
 
             <button
@@ -108,8 +111,11 @@
                 aria-label="Close window"
                 title="Close"
             >
-                <span class="control-icon control-icon-close" aria-hidden="true"
-                ></span>
+                <XIcon
+                    absoluteStrokeWidth
+                    strokeWidth={0.8}
+                    style="padding: 5px;"
+                />
             </button>
         </div>
     </div>
@@ -117,8 +123,7 @@
 
 <style>
     .app-toolbar-wrap {
-        position: sticky;
-        top: 0;
+        position: relative;
         z-index: 10;
         backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--color-border-soft);
@@ -200,71 +205,6 @@
 
     .window-control-close:active {
         background: #c50f1f;
-    }
-
-    .control-icon {
-        position: relative;
-        width: 0.75rem;
-        height: 0.75rem;
-        display: inline-block;
-    }
-
-    .control-icon-minimize::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0.08rem;
-        border-top: 1.5px solid currentColor;
-    }
-
-    .control-icon-maximize::before {
-        content: "";
-        position: absolute;
-        inset: 0.08rem;
-        border: 1.5px solid currentColor;
-    }
-
-    .control-icon-restore::before {
-        content: "";
-        position: absolute;
-        top: 0.18rem;
-        left: 0.03rem;
-        width: 0.5rem;
-        height: 0.38rem;
-        border: 1.5px solid currentColor;
-        background: transparent;
-    }
-
-    .control-icon-restore::after {
-        content: "";
-        position: absolute;
-        top: 0.03rem;
-        left: 0.18rem;
-        width: 0.5rem;
-        height: 0.38rem;
-        border: 1.5px solid currentColor;
-        background: transparent;
-    }
-
-    .control-icon-close::before,
-    .control-icon-close::after {
-        content: "";
-        position: absolute;
-        left: 0.34rem;
-        top: 0.02rem;
-        width: 1.5px;
-        height: 0.68rem;
-        background: currentColor;
-        transform-origin: center;
-    }
-
-    .control-icon-close::before {
-        transform: rotate(45deg);
-    }
-
-    .control-icon-close::after {
-        transform: rotate(-45deg);
     }
 
     @media (max-width: 760px) {

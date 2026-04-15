@@ -18,19 +18,20 @@ export function useTicketDraft(options: UseTicketDraftOptions) {
     let draftDescription = $state("");
     let draftLabel = $state("");
     let draftStatus = $state<TicketStatus>("todo");
-    let draftPriority = $state<TicketPriority>("medium");
+    let draftPriority = $state<TicketPriority>("p2");
     let newComment = $state("");
 
     const statusOptions: Array<{ value: TicketStatus; label: string }> = [
+        { value: "backlog", label: "Backlog" },
         { value: "todo", label: "Todo" },
         { value: "in_progress", label: "In Progress" },
         { value: "done", label: "Done" },
     ];
 
     const priorityOptions: Array<{ value: TicketPriority; label: string }> = [
-        { value: "low", label: "Low" },
-        { value: "medium", label: "Medium" },
-        { value: "high", label: "High" },
+        { value: "p1", label: "P1" },
+        { value: "p2", label: "P2" },
+        { value: "p3", label: "P3" },
     ];
 
     function labelsToDraft(labels: string[]) {

@@ -6,7 +6,9 @@ import { generateId } from '$lib/utils';
 function deserialize(row: any): Ticket {
     return {
         ...row,
-        priority: row.priority ?? 'medium',
+        priority: row.priority ?? 'p2',
+        ticket_type: row.ticket_type ?? 'feature',
+        due_date: row.due_date ?? null,
         labels: typeof row.labels === 'string' ? JSON.parse(row.labels) : row.labels,
         comments: typeof row.comments === 'string' ? JSON.parse(row.comments) : row.comments,
     };
@@ -33,8 +35,10 @@ export async function createTicket(db: Database, input: CreateTicketInput): Prom
         board_id: input.board_id,
         title: input.title,
         description: input.description ?? '',
-        status: 'todo',
-        priority: input.priority ?? 'medium',
+        status: input.status ?? 'todo',
+        priority: input.priority ?? 'p2',
+        ticket_type: input.ticket_type ?? 'feature',
+        due_date: input.due_date ?? null,
         labels: input.labels ?? [],
         comments: [],
         created_at: new Date().toISOString(),
@@ -42,12 +46,14 @@ export async function createTicket(db: Database, input: CreateTicketInput): Prom
     };
 
     await db.execute(
-        `INSERT INTO tickets (id, board_id, title, description, status, priority, labels, comments, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tickets (id, board_id, title, description, status, priority, ticket_type, due_date, labels, comments, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             ticket.id, ticket.board_id, ticket.title, ticket.description,
             ticket.status,
             ticket.priority,
+            ticket.ticket_type,
+            ticket.due_date,
             JSON.stringify(ticket.labels),
             JSON.stringify(ticket.comments),
             ticket.created_at, ticket.updated_at
@@ -69,11 +75,13 @@ export async function updateTicket(db: Database, id: string, input: UpdateTicket
 
     await db.execute(
         `UPDATE tickets
-     SET title = ?, description = ?, status = ?, priority = ?, labels = ?, comments = ?, updated_at = ?
+     SET title = ?, description = ?, status = ?, priority = ?, ticket_type = ?, due_date = ?, labels = ?, comments = ?, updated_at = ?
      WHERE id = ?`,
         [
             updated.title, updated.description, updated.status,
             updated.priority,
+            updated.ticket_type,
+            updated.due_date,
             JSON.stringify(updated.labels),
             JSON.stringify(updated.comments),
             updated.updated_at, id

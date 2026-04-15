@@ -1,17 +1,8 @@
-import type { TicketPriority, TicketStatus } from "$lib/components/app/types.js";
+import type { Ticket, TicketStatus } from "$lib/components/app/types.js";
 
 export type TaskStatus = TicketStatus;
 
-export interface Task {
-    id: string;
-    board_id: string;
-    title: string;
-    description: string;
-    status: TaskStatus;
-    priority: TicketPriority;
-    labels: string[];
-    updatedAt: string;
-}
+export type Task = Ticket;
 
 export interface BoardSidebarItem {
     id: string;

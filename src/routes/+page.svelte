@@ -1,191 +1,16 @@
 <script lang="ts">
-    import type { DragDropState } from "@thisux/sveltednd";
-    import KanbanBoard from "$lib/components/app/kanban/KanbanBoard.svelte";
-    import type {
-        BoardSidebarItem,
-        KanbanColumnConfig,
-        Task,
-        TaskStatus,
-    } from "$lib/components/app/kanban/kanban.types.js";
+    import { goto } from "$app/navigation";
 
-    const columns: KanbanColumnConfig[] = [
-        { status: "backlog", label: "Backlog", hint: "Backlog" },
-        { status: "todo", label: "To Do", hint: "todo later" },
-        { status: "in_progress", label: "In Progress", hint: "Active" },
-        { status: "done", label: "Done", hint: "Completed" },
-    ];
+    let didRedirect = false;
 
-    type SidebarBoard = {
-        id: string;
-        name: string;
-        description: string;
-    };
-
-    const initialBoards: SidebarBoard[] = [
-        {
-            id: "engineering",
-            name: "Engineering",
-            description: "Platform, architecture, and delivery work.",
-        },
-        {
-            id: "product",
-            name: "Product",
-            description: "Roadmap, discovery, and release planning.",
-        },
-        {
-            id: "design",
-            name: "Design",
-            description: "UX, visual polish, and interaction improvements.",
-        },
-    ];
-
-    let allBoards = $state<SidebarBoard[]>(initialBoards);
-
-    let activeBoardId = $state<string>(initialBoards[0]?.id ?? "");
-
-    let allTasks = $state<Task[]>([
-        {
-            id: "1",
-            board_id: "engineering",
-            title: "Design system updates",
-            description:
-                "Migrate board screens from utility classes to semantic PicoCSS.",
-            status: "todo",
-            priority: "high",
-            labels: ["ui", "design"],
-            updatedAt: "2h ago",
-        },
-        {
-            id: "2",
-            board_id: "engineering",
-            title: "User research",
-            description:
-                "Summarize five customer interviews into action items.",
-            status: "in_progress",
-            priority: "medium",
-            labels: ["research", "customer"],
-            updatedAt: "5h ago",
-        },
-        {
-            id: "3",
-            board_id: "product",
-            title: "API documentation",
-            description:
-                "Write examples for every endpoint in the internal API guide.",
-            status: "todo",
-            priority: "low",
-            labels: ["docs", "api"],
-            updatedAt: "1d ago",
-        },
-        {
-            id: "4",
-            board_id: "product",
-            title: "Performance audit",
-            description: "Profile startup and trim expensive render paths.",
-            status: "in_progress",
-            priority: "high",
-            labels: ["infra", "performance"],
-            updatedAt: "3h ago",
-        },
-        {
-            id: "5",
-            board_id: "design",
-            title: "Bug fixes",
-            description:
-                "Resolve reported authentication and session timeout issues.",
-            status: "done",
-            priority: "high",
-            labels: ["bug", "auth"],
-            updatedAt: "Yesterday",
-        },
-    ]);
-
-    const boards = $derived<BoardSidebarItem[]>(
-        allBoards.map((board) => ({
-            ...board,
-            issueCount: allTasks.filter((task) => task.board_id === board.id)
-                .length,
-        })),
-    );
-
-    const activeBoardName = $derived(
-        boards.find((board) => board.id === activeBoardId)?.name ?? "Board",
-    );
-
-    const tasks = $derived(
-        allTasks.filter((task) => task.board_id === activeBoardId),
-    );
-
-    const validColumns = new Set<TaskStatus>(
-        columns.map((column) => column.status),
-    );
-
-    function boardExists(boardId: string) {
-        return allBoards.some((board) => board.id === boardId);
-    }
-
-    function openBoard(boardId: string) {
-        if (!boardExists(boardId)) {
+    $effect(() => {
+        if (didRedirect) {
             return;
         }
 
-        activeBoardId = boardId;
-    }
-
-    function updateBoard(
-        boardId: string,
-        updates: { name: string; description: string },
-    ) {
-        const normalizedName = updates.name.trim();
-        if (!normalizedName) {
-            return;
-        }
-
-        const normalizedDescription = updates.description.trim();
-
-        allBoards = allBoards.map((board) =>
-            board.id === boardId
-                ? {
-                      ...board,
-                      name: normalizedName,
-                      description: normalizedDescription,
-                  }
-                : board,
-        );
-    }
-
-    function deleteBoard(boardId: string) {
-        if (!boardExists(boardId)) {
-            return;
-        }
-
-        allBoards = allBoards.filter((board) => board.id !== boardId);
-        allTasks = allTasks.filter((task) => task.board_id !== boardId);
-
-        if (activeBoardId === boardId) {
-            activeBoardId = allBoards[0]?.id ?? "";
-        }
-    }
-
-    function handleDrop(state: DragDropState<Task>) {
-        const { draggedItem, targetContainer } = state;
-        if (
-            !targetContainer ||
-            !validColumns.has(targetContainer as TaskStatus)
-        ) {
-            return;
-        }
-
-        const nextStatus = targetContainer as TaskStatus;
-
-        allTasks = allTasks.map((task) => {
-            if (task.id === draggedItem.id) {
-                return { ...task, status: nextStatus };
-            }
-
-            return task;
-        });
-    }
+        didRedirect = true;
+        void goto("/workspace", { replaceState: true });
+    });
 </script>
 
 <svelte:head>
@@ -196,15 +21,19 @@
     />
 </svelte:head>
 
-<KanbanBoard
-    title={`${activeBoardName} Board`}
-    description="Drag and drop tasks between columns to update their status instantly."
-    {boards}
-    {activeBoardId}
-    onOpenBoard={openBoard}
-    onUpdateBoard={updateBoard}
-    onDeleteBoard={deleteBoard}
-    {columns}
-    {tasks}
-    onDrop={handleDrop}
-/>
+<main class="app-state">
+    <article aria-busy="true">Opening workspace...</article>
+</main>
+
+<style>
+    .app-state {
+        min-height: 100%;
+        display: grid;
+        place-items: center;
+        padding: var(--pico-spacing);
+    }
+
+    .app-state article {
+        width: min(calc(var(--pico-spacing) * 22), 100%);
+    }
+</style>
