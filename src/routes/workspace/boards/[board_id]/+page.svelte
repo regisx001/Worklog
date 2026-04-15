@@ -130,9 +130,8 @@
     $effect(() => {
         const workspacePath = workspace.path;
         const boardId = data.board_id;
-        const ticketScope = workspacePath && boardId
-            ? `${workspacePath}:${boardId}`
-            : null;
+        const ticketScope =
+            workspacePath && boardId ? `${workspacePath}:${boardId}` : null;
 
         if (
             workspace.status !== "ready" ||
@@ -187,8 +186,10 @@
     .board-error {
         margin: calc(var(--pico-spacing) * 0.65) var(--pico-spacing)
             calc(var(--pico-spacing) * 0.2);
-        padding: calc(var(--pico-spacing) * 0.55) calc(var(--pico-spacing) * 0.75);
-        border: 1px solid color-mix(in srgb, var(--color-danger) 38%, transparent);
+        padding: calc(var(--pico-spacing) * 0.55)
+            calc(var(--pico-spacing) * 0.75);
+        border: 1px solid
+            color-mix(in srgb, var(--color-danger) 38%, transparent);
         border-radius: var(--radius-sm);
         background: color-mix(in srgb, var(--color-danger) 10%, transparent);
         display: flex;
