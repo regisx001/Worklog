@@ -42,14 +42,15 @@ export async function renameBoard(
     db: Database,
     id: string,
     name: string,
+    description: string,
 ): Promise<Board | null> {
     const updatedAt = new Date().toISOString();
 
     await db.execute(
         `UPDATE boards
-         SET name = ?, updated_at = ?
+         SET name = ?, description = ?, updated_at = ?
          WHERE id = ?`,
-        [name, updatedAt, id],
+        [name, description, updatedAt, id],
     );
 
     return getBoardById(db, id);

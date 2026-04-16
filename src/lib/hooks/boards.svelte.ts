@@ -50,10 +50,10 @@ export function useBoards(getWorkspacePath: () => string | null) {
         }
     }
 
-    async function rename(id: string, name: string) {
+    async function rename(id: string, name: string, description: string) {
         const workspacePath = requireWorkspacePath();
         const db = await getDb(workspacePath);
-        const updated = await BoardRepo.renameBoard(db, id, name);
+        const updated = await BoardRepo.renameBoard(db, id, name, description);
         if (!updated) throw new Error('Board not found');
 
         _boards = _boards.map((board) =>

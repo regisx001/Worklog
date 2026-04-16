@@ -9,7 +9,7 @@ It must feel fast, predictable, and keyboard-first.
 ### Runtime
 - **Shell**: Tauri v2 desktop app
 - **Frontend**: SvelteKit + TypeScript
-- **UI**: TailwindCSS v4 + shadcn-svelte primitives
+- **UI**: PicoCSS v2 with semantic HTML-first components
 - **Package manager**: Bun
 
 ### App Shell
@@ -19,7 +19,7 @@ It must feel fast, predictable, and keyboard-first.
 
 ### Frontend Layers
 - `src/lib/components/app/`: app-level feature components (toolbar, kanban, sidebar, detail panel).
-- `src/lib/components/ui/`: generated shadcn-svelte primitives. Do not edit directly.
+- Reusable UI should be authored in-repo with semantic HTML and PicoCSS v2 patterns (no generated shadcn primitives).
 - `src/lib/hooks/`: domain hooks (`workspace`, `boards`, `tickets`, `toolbar`) using Svelte runes.
 - `src/lib/db/`: local persistence and repository layer (`workspace.repo`, `board.repo`, `ticket.repo`).
 
@@ -42,12 +42,14 @@ It must feel fast, predictable, and keyboard-first.
 
 ## Style System and Visual Language
 - Global tokens and theme mapping live in `src/routes/layout.css`.
+- Base framework styling comes from PicoCSS v2 (`static/css/pico.min.css`) and semantic HTML elements.
 - Primary visual direction:
 	- dark, glassy surfaces
 	- subtle layered borders
 	- small-radius controls
 	- compact density for desktop workflows
 - Use existing token aliases (`--color-*`, `--color-surface-*`, `--font-display`, etc.) instead of introducing ad-hoc colors.
+- Prefer Pico's semantic patterns and minimal custom CSS over utility-heavy styling.
 - Maintain typography hierarchy used in app shell/tooling pages:
 	- display text for headers
 	- compact mono for IDs/debug output
@@ -89,4 +91,5 @@ It must feel fast, predictable, and keyboard-first.
 - Electron or non-Tauri shells.
 - Auto-commit/auto-push without explicit user action.
 - Features requiring internet connectivity for core usage.
+- shadcn-svelte primitives or generated UI kits.
 - Replacing existing architecture with a new framework unless explicitly requested.
