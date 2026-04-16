@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { XIcon } from "@lucide/svelte";
     import type { Snippet } from "svelte";
 
     interface Props {
@@ -59,7 +60,7 @@
                     aria-label="Close"
                     onclick={onClose}
                 >
-                    ×
+                    <XIcon absoluteStrokeWidth style="padding: 5px;" />
                 </button>
                 <p><strong>{title}</strong></p>
             </header>

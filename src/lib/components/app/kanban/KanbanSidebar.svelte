@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { FolderKanbanIcon } from "@lucide/svelte";
     import AppModal from "../layout/modal/AppModal.svelte";
     import type { BoardSidebarItem } from "./kanban.types.js";
 
@@ -181,15 +182,18 @@
     bind:this={sidebarElement}
 >
     <header class="kanban-workspace-header">
-        <span class="kanban-workspace-avatar" aria-hidden="true"
+        <!-- <span class="kanban-workspace-avatar" aria-hidden="true"
             >{workspaceMonogram}</span
         >
         <strong class="kanban-workspace-name" title={workspaceName}
             >{workspaceName}</strong
-        >
-    </header>
+        > -->
+        <small class="kanban-section-label"
+            ><FolderKanbanIcon />
 
-    <small class="kanban-section-label">Boards</small>
+            <span> Boards </span>
+        </small>
+    </header>
 
     <div class="kanban-sidebar-body" aria-label="Boards list">
         <ul class="kanban-board-list" role="list">
@@ -372,11 +376,12 @@
     }
 
     .kanban-section-label {
-        display: block;
+        display: flex;
+        gap: 12px;
         margin: 0;
         padding: calc(var(--pico-spacing) * 0.75)
             calc(var(--pico-spacing) * 0.75) calc(var(--pico-spacing) * 0.25);
-        color: var(--pico-muted-color);
+        /* color: var(--pico-muted-color); */
         font-size: calc(var(--pico-font-size-small) * 0.85);
         text-transform: uppercase;
         letter-spacing: 0.07em;

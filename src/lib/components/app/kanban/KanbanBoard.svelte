@@ -3,6 +3,7 @@
     import "$lib/styles/dnd.css";
     import KanbanColumn from "./KanbanColumn.svelte";
     import KanbanHeader from "./KanbanHeader.svelte";
+    // @ts-ignore
     import TicketPanel from "./TicketPanel.svelte";
     import type { KanbanColumnConfig, Task } from "./kanban.types.js";
 
