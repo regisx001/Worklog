@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FolderKanbanIcon } from "@lucide/svelte";
+    import { FolderKanbanIcon, PlusIcon } from "@lucide/svelte";
     import AppModal from "../layout/modal/AppModal.svelte";
     import type { BoardSidebarItem } from "./kanban.types.js";
 
@@ -13,11 +13,20 @@
         draftDescription: string;
     };
 
+    type NewBoardEditor = {
+        draftName: string;
+        draftDescription: string;
+    };
+
     interface Props {
         workspaceName: string;
         boards: BoardSidebarItem[];
         activeBoardId: string;
         onOpenBoard: (boardId: string) => void;
+        onCreateBoard: (input: {
+            name: string;
+            description: string;
+        }) => Promise<void> | void;
         onUpdateBoard: (
             boardId: string,
             updates: { name: string; description: string },
@@ -30,12 +39,16 @@
         boards,
         activeBoardId,
         onOpenBoard,
+        onCreateBoard,
         onUpdateBoard,
         onDeleteBoard,
     }: Props = $props();
 
     let contextWindow = $state<BoardContextWindow | null>(null);
     let detailsEditor = $state<BoardDetailsEditor | null>(null);
+    let newBoardEditor = $state<NewBoardEditor | null>(null);
+    let creatingBoard = $state(false);
+    let newBoardError = $state<string | null>(null);
     let sidebarElement: HTMLElement | null = null;
 
     const workspaceMonogram = $derived.by(() => {
@@ -84,6 +97,64 @@
         };
 
         closeContextWindow();
+    }
+
+    function openNewBoardEditor() {
+        newBoardEditor = {
+            draftName: "",
+            draftDescription: "",
+        };
+        newBoardError = null;
+    }
+
+    function updateNewBoardName(event: Event) {
+        if (!newBoardEditor) {
+            return;
+        }
+
+        const target = event.currentTarget as HTMLInputElement;
+        newBoardEditor.draftName = target.value;
+        newBoardError = null;
+    }
+
+    function updateNewBoardDescription(event: Event) {
+        if (!newBoardEditor) {
+            return;
+        }
+
+        const target = event.currentTarget as HTMLTextAreaElement;
+        newBoardEditor.draftDescription = target.value;
+    }
+
+    function closeNewBoardEditor() {
+        newBoardEditor = null;
+        newBoardError = null;
+        creatingBoard = false;
+    }
+
+    async function saveNewBoard() {
+        if (!newBoardEditor || creatingBoard) {
+            return;
+        }
+
+        const nextName = newBoardEditor.draftName.trim();
+        if (!nextName) {
+            return;
+        }
+
+        creatingBoard = true;
+        newBoardError = null;
+
+        try {
+            await onCreateBoard({
+                name: nextName,
+                description: newBoardEditor.draftDescription.trim(),
+            });
+            closeNewBoardEditor();
+        } catch (error) {
+            newBoardError = String(error);
+            creatingBoard = false;
+        }
     }
 
     function updateDraftName(event: Event) {
@@ -193,6 +264,15 @@
 
             <span> Boards </span>
         </small>
+
+        <button
+            type="button"
+            class="kanban-create-board-button"
+            onclick={openNewBoardEditor}
+        >
+            <PlusIcon class="kanban-create-board-icon" />
+            <span>New</span>
+        </button>
     </header>
 
     <div class="kanban-sidebar-body" aria-label="Boards list">
@@ -286,6 +366,57 @@
     </footer>
 
     <AppModal
+        open={Boolean(newBoardEditor)}
+        title="Create board"
+        onClose={closeNewBoardEditor}
+    >
+        {#snippet children()}
+            <label class="kanban-board-edit-field">
+                <span>Name</span>
+                <input
+                    type="text"
+                    value={newBoardEditor?.draftName ?? ""}
+                    oninput={updateNewBoardName}
+                    maxlength="40"
+                    placeholder="Board name"
+                />
+            </label>
+
+            <label class="kanban-board-edit-field">
+                <span>Description</span>
+                <textarea
+                    rows="4"
+                    value={newBoardEditor?.draftDescription ?? ""}
+                    oninput={updateNewBoardDescription}
+                    maxlength="180"
+                    placeholder="Short board description"
+                ></textarea>
+            </label>
+
+            {#if newBoardError}
+                <small class="kanban-modal-error">{newBoardError}</small>
+            {/if}
+        {/snippet}
+
+        {#snippet footer()}
+            <button
+                type="button"
+                class="secondary"
+                onclick={closeNewBoardEditor}
+            >
+                Cancel
+            </button>
+            <button
+                type="button"
+                onclick={saveNewBoard}
+                disabled={creatingBoard || !newBoardEditor?.draftName.trim()}
+            >
+                {creatingBoard ? "Creating..." : "Create board"}
+            </button>
+        {/snippet}
+    </AppModal>
+
+    <AppModal
         open={Boolean(detailsEditor)}
         title="Edit board details"
         onClose={closeBoardDetailsEditor}
@@ -329,7 +460,7 @@
 
 <style>
     .kanban-sidebar {
-        width: calc(var(--pico-spacing) * 13);
+        width: calc(var(--pico-spacing) * 18);
         flex-shrink: 0;
         min-height: 0;
         display: flex;
@@ -343,6 +474,7 @@
     .kanban-workspace-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: calc(var(--pico-spacing) * 0.5);
         padding: var(--pico-spacing) calc(var(--pico-spacing) * 0.75);
         border-bottom: var(--pico-border-width) solid
@@ -377,6 +509,7 @@
 
     .kanban-section-label {
         display: flex;
+        align-items: center;
         gap: 12px;
         margin: 0;
         padding: calc(var(--pico-spacing) * 0.75)
@@ -385,6 +518,33 @@
         font-size: calc(var(--pico-font-size-small) * 0.85);
         text-transform: uppercase;
         letter-spacing: 0.07em;
+    }
+
+    .kanban-create-board-button {
+        margin: 0;
+        border: var(--pico-border-width) solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-card-sectioning-background-color);
+        color: var(--pico-muted-color);
+        display: inline-flex;
+        align-items: center;
+        gap: calc(var(--pico-spacing) * 0.35);
+        padding: calc(var(--pico-spacing) * 0.25)
+            calc(var(--pico-spacing) * 0.45);
+        font-size: calc(var(--pico-font-size-small) * 0.85);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .kanban-create-board-button:hover {
+        color: var(--pico-color);
+        border-color: var(--pico-border-color);
+    }
+
+    .kanban-create-board-icon {
+        width: calc(var(--pico-spacing) * 0.55);
+        height: calc(var(--pico-spacing) * 0.55);
+        flex-shrink: 0;
     }
 
     .kanban-sidebar-body {
@@ -528,6 +688,11 @@
     .kanban-board-edit-field input,
     .kanban-board-edit-field textarea {
         margin: 0;
+    }
+
+    .kanban-modal-error {
+        color: var(--pico-del-color);
+        margin-top: calc(var(--pico-spacing) * 0.25);
     }
 
     .kanban-sidebar-footer {

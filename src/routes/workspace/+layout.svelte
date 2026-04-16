@@ -87,6 +87,24 @@
         await goto(boardPath(fallbackBoard.id), { replaceState: true });
     }
 
+    async function handleCreateBoard(input: {
+        name: string;
+        description: string;
+    }) {
+        const normalizedName = input.name.trim();
+        if (!normalizedName) {
+            return;
+        }
+
+        const board = await boardsApi.create({
+            name: normalizedName,
+            description: input.description.trim(),
+        });
+
+        boardsApi.setActive(board);
+        await goto(boardPath(board.id), { replaceState: true });
+    }
+
     async function handlePickWorkspace() {
         await workspace.pick();
 
@@ -106,13 +124,10 @@
 
     async function handleCreateFirstBoard() {
         const nextIndex = boardsApi.boards.length + 1;
-        const board = await boardsApi.create({
+        await handleCreateBoard({
             name: `Board ${nextIndex}`,
             description: "",
         });
-
-        boardsApi.setActive(board);
-        await goto(boardPath(board.id), { replaceState: true });
     }
 
     $effect(() => {
@@ -193,6 +208,7 @@
             {boards}
             {activeBoardId}
             onOpenBoard={handleOpenBoard}
+            onCreateBoard={handleCreateBoard}
             onUpdateBoard={handleUpdateBoard}
             onDeleteBoard={handleDeleteBoard}
         />
