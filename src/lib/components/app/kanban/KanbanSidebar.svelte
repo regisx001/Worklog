@@ -270,7 +270,7 @@
             class="kanban-create-board-button"
             onclick={openNewBoardEditor}
         >
-            <PlusIcon class="kanban-create-board-icon" />
+            <PlusIcon size={14} />
             <span>New</span>
         </button>
     </header>
@@ -539,12 +539,6 @@
     .kanban-create-board-button:hover {
         color: var(--pico-color);
         border-color: var(--pico-border-color);
-    }
-
-    .kanban-create-board-icon {
-        width: calc(var(--pico-spacing) * 0.55);
-        height: calc(var(--pico-spacing) * 0.55);
-        flex-shrink: 0;
     }
 
     .kanban-sidebar-body {
