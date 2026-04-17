@@ -1,4 +1,5 @@
 <script lang="ts">
+    import BoardSelectorCard from "./BoardSelectorCard.svelte";
     import { FolderKanbanIcon, PlusIcon } from "@lucide/svelte";
     import AppModal from "../layout/modal/AppModal.svelte";
     import type { BoardSidebarItem } from "./kanban.types.js";
@@ -76,12 +77,6 @@
         contextWindow = {
             boardId,
         };
-    }
-
-    function openContextWindowFromEvent(event: MouseEvent, boardId: string) {
-        event.preventDefault();
-        event.stopPropagation();
-        openContextWindow(boardId);
     }
 
     function openBoardDetailsEditor(boardId: string) {
@@ -224,19 +219,6 @@
         closeContextWindow();
     }
 
-    function handleBoardKeydown(event: KeyboardEvent, boardId: string) {
-        if (event.key === "ContextMenu") {
-            event.preventDefault();
-            openContextWindow(boardId);
-            return;
-        }
-
-        if (event.shiftKey && event.key === "F10") {
-            event.preventDefault();
-            openContextWindow(boardId);
-        }
-    }
-
     function handleSettingsClick() {
         console.info("Settings action is not configured yet.");
     }
@@ -253,12 +235,6 @@
     bind:this={sidebarElement}
 >
     <header class="kanban-workspace-header">
-        <!-- <span class="kanban-workspace-avatar" aria-hidden="true"
-            >{workspaceMonogram}</span
-        >
-        <strong class="kanban-workspace-name" title={workspaceName}
-            >{workspaceName}</strong
-        > -->
         <small class="kanban-section-label"
             ><FolderKanbanIcon />
 
@@ -278,69 +254,15 @@
     <div class="kanban-sidebar-body" aria-label="Boards list">
         <ul class="kanban-board-list" role="list">
             {#each boards as board (board.id)}
-                <li
-                    class="kanban-board-row"
-                    data-active={board.id === activeBoardId}
-                    oncontextmenu={(event) =>
-                        openContextWindowFromEvent(event, board.id)}
-                >
-                    <button
-                        type="button"
-                        class="kanban-board-item"
-                        data-active={board.id === activeBoardId}
-                        onclick={() => {
-                            onOpenBoard(board.id);
-                            closeContextWindow();
-                        }}
-                        onkeydown={(event) =>
-                            handleBoardKeydown(event, board.id)}
-                        aria-current={board.id === activeBoardId
-                            ? "true"
-                            : undefined}
-                    >
-                        <svg
-                            class="kanban-board-icon"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <path
-                                d="M4 6h16v5H4zm0 7h7v5H4zm9 0h7v5h-7z"
-                                fill="currentColor"
-                            ></path>
-                        </svg>
-
-                        <span class="kanban-board-name">{board.name}</span>
-
-                        <kbd class="kanban-board-count">{board.issueCount}</kbd>
-                    </button>
-
-                    {#if contextWindow?.boardId === board.id}
-                        <div class="kanban-board-context-window">
-                            <button
-                                type="button"
-                                class="kanban-context-action"
-                                onclick={() => handleOpen(board.id)}
-                            >
-                                Open
-                            </button>
-                            <button
-                                type="button"
-                                class="kanban-context-action"
-                                onclick={() => openBoardDetailsEditor(board.id)}
-                            >
-                                Edit details
-                            </button>
-                            <button
-                                type="button"
-                                class="kanban-context-action kanban-context-delete"
-                                onclick={() => handleDelete(board.id)}
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    {/if}
-                </li>
+                <BoardSelectorCard
+                    {board}
+                    isActive={board.id === activeBoardId}
+                    showContextWindow={contextWindow?.boardId === board.id}
+                    onOpenBoard={handleOpen}
+                    onRequestContextWindow={openContextWindow}
+                    onEditBoard={openBoardDetailsEditor}
+                    onDeleteBoard={handleDelete}
+                />
             {/each}
         </ul>
     </div>
@@ -468,6 +390,8 @@
         background: var(--pico-card-background-color);
         border-right: var(--pico-border-width) solid
             var(--pico-muted-border-color);
+        border-radius: 0.5rem;
+        margin-right: 1rem;
         overflow: hidden;
     }
 
@@ -480,31 +404,6 @@
         border-bottom: var(--pico-border-width) solid
             var(--pico-muted-border-color);
         flex-shrink: 0;
-    }
-
-    .kanban-workspace-avatar {
-        width: calc(var(--pico-spacing) * 1.5);
-        aspect-ratio: 1;
-        border-radius: var(--pico-border-radius);
-        background: var(--pico-primary);
-        color: var(--pico-background-color);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: var(--pico-font-size-small);
-        font-family: var(--pico-font-family-monospace);
-        font-weight: var(--pico-font-weight-bold);
-        line-height: 1;
-    }
-
-    .kanban-workspace-name {
-        margin: 0;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: var(--pico-font-size-small);
-        font-weight: var(--pico-font-weight-bold);
     }
 
     .kanban-section-label {
@@ -554,122 +453,7 @@
         padding: 0;
         list-style: none;
         display: grid;
-        gap: calc(var(--pico-spacing) * 0.2);
-    }
-
-    .kanban-board-row {
-        position: relative;
-    }
-
-    .kanban-board-item {
-        position: relative;
-        width: 100%;
-        margin: 0;
-        border: 0;
-        border-radius: var(--pico-border-radius);
-        background: transparent;
-        color: var(--pico-muted-color);
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: calc(var(--pico-spacing) * 0.5);
-        padding: calc(var(--pico-spacing) * 0.4)
-            calc(var(--pico-spacing) * 0.75);
-        font-size: var(--pico-font-size-small);
-        text-align: left;
-        transition:
-            background-color 150ms cubic-bezier(0.16, 1, 0.3, 1),
-            color 150ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .kanban-board-item::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: calc(var(--pico-spacing) * 0.2);
-        bottom: calc(var(--pico-spacing) * 0.2);
-        width: calc(var(--pico-spacing) * 0.15);
-        border-radius: var(--pico-border-radius);
-        background: var(--pico-primary);
-        opacity: 0;
-        transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .kanban-board-item:hover {
-        color: var(--pico-color);
-        background: var(--pico-card-sectioning-background-color);
-    }
-
-    .kanban-board-item:focus-visible {
-        outline: var(--pico-border-width) solid var(--pico-primary);
-        outline-offset: 0;
-    }
-
-    .kanban-board-item[data-active="true"] {
-        color: var(--pico-primary);
-        background: color-mix(in oklch, var(--pico-primary) 10%, transparent);
-    }
-
-    .kanban-board-item[data-active="true"]::before {
-        opacity: 1;
-    }
-
-    .kanban-board-icon {
-        width: calc(var(--pico-spacing) * 0.7);
-        height: calc(var(--pico-spacing) * 0.7);
-        flex-shrink: 0;
-        color: inherit;
-    }
-
-    .kanban-board-name {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .kanban-board-count {
-        margin: 0;
-        margin-left: auto;
-        font-size: calc(var(--pico-font-size-small) * 0.85);
-        font-family: var(--pico-font-family-monospace);
-    }
-
-    .kanban-board-context-window {
-        position: absolute;
-        right: 0;
-        top: calc(100% + calc(var(--pico-spacing) * 0.2));
-        z-index: 8;
-        min-width: calc(var(--pico-spacing) * 8);
-        border: var(--pico-border-width) solid var(--pico-muted-border-color);
-        border-radius: var(--pico-border-radius);
-        background: var(--pico-card-background-color);
-        padding: calc(var(--pico-spacing) * 0.25);
-        display: grid;
-        gap: calc(var(--pico-spacing) * 0.2);
-        box-shadow: var(--pico-card-box-shadow);
-    }
-
-    .kanban-context-action {
-        width: 100%;
-        margin: 0;
-        border: var(--pico-border-width) solid var(--pico-muted-border-color);
-        border-radius: var(--pico-border-radius);
-        background: var(--pico-card-sectioning-background-color);
-        color: var(--pico-color);
-        text-align: left;
-        font-size: var(--pico-font-size-small);
-        padding: calc(var(--pico-spacing) * 0.35)
-            calc(var(--pico-spacing) * 0.5);
-    }
-
-    .kanban-context-action:hover {
-        border-color: var(--pico-border-color);
-    }
-
-    .kanban-context-delete {
-        color: var(--pico-del-color);
+        gap: calc(var(--pico-spacing) * 0.25);
     }
 
     .kanban-board-edit-field {
