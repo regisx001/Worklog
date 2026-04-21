@@ -2,18 +2,18 @@
     import type { DragDropState } from "@thisux/sveltednd";
     import { goto } from "$app/navigation";
 
-    import KanbanBoard from "$lib/components/app/kanban/KanbanBoard.svelte";
+    import KanbanBoard from "$lib/components/legacy/app/kanban/KanbanBoard.svelte";
     import type {
         KanbanColumnConfig,
         Task,
         TaskStatus,
-    } from "$lib/components/app/kanban/kanban.types.js";
+    } from "$lib/components/legacy/app/kanban/kanban.types.js";
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
     import { useTickets } from "$lib/hooks/tickets.svelte";
 
-    import type { PageData } from "./$types";
+    type LegacyPageData = { board_id: string };
 
-    let { data }: { data: PageData } = $props();
+    let { data }: { data: LegacyPageData } = $props();
 
     const columns: KanbanColumnConfig[] = [
         { status: "backlog", label: "Backlog", hint: "Backlog" },
