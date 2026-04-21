@@ -16,6 +16,10 @@
     let lastLoadedWorkspacePath = $state<string | null>(null);
     let boardLoadError = $state<string | null>(null);
 
+    function openSettings() {
+        void goto("/workspace/settings");
+    }
+
     $effect(() => {
         if (
             workspace.status === "no_workspace" ||
@@ -48,7 +52,7 @@
 </script>
 
 {#if workspace.status === "ready"}
-    <WorkspaceSidebar />
+    <WorkspaceSidebar onOpenSettings={openSettings} />
 {/if}
 
 <Content class="layout-content">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import "carbon-components-svelte/css/g100.css";
 	import { Loading } from "carbon-components-svelte";
 	import "./layout.css";
@@ -8,6 +9,10 @@
 	let { children } = $props();
 	const workspace = useWorkspace();
 	let hasInitializedWorkspace = $state(false);
+
+	function openSettings() {
+		void goto("/workspace/settings");
+	}
 
 	const handleContextmenu = (event: MouseEvent) => {
 		event.preventDefault();
@@ -31,7 +36,10 @@
 </script>
 
 <div class="layout-shell">
-	<AppToolbar />
+	<AppToolbar
+		showSettings={workspace.status === "ready"}
+		onOpenSettings={openSettings}
+	/>
 	{@render children()}
 
 	{#if workspace.status === "idle" || workspace.status === "loading"}

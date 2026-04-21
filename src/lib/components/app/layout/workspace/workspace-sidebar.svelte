@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { Settings } from "carbon-icons-svelte";
+
     import {
         Button,
         ComposedModal,
@@ -14,6 +16,14 @@
     } from "carbon-components-svelte";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
+
+    interface WorkspaceSidebarProps {
+        onOpenSettings?: () => void;
+    }
+
+    const noop = () => {};
+
+    let { onOpenSettings = noop }: WorkspaceSidebarProps = $props();
 
     const { boardsApi } = getWorkspaceShellContext();
 
@@ -49,6 +59,10 @@
 
     function closeCreateBoardModal() {
         createModalOpen = false;
+    }
+
+    function openSettings() {
+        onOpenSettings();
     }
 
     function handleNameInput(event: Event) {
@@ -100,7 +114,7 @@
     });
 </script>
 
-<SideNav isOpen>
+<SideNav class="workspace-sidebar" isOpen>
     <SideNavItems>
         <header class="workspace-sidebar-header">
             <small>Boards</small>
@@ -138,6 +152,13 @@
             </TileGroup>
         {/if}
     </SideNavItems>
+
+    <footer class="workspace-sidebar-footer">
+        <Button kind="ghost" size="small" onclick={openSettings}>
+            <Settings />
+            <span>Settings</span>
+        </Button>
+    </footer>
 </SideNav>
 
 <ComposedModal
@@ -188,6 +209,16 @@
 </ComposedModal>
 
 <style>
+    :global(.workspace-sidebar.bx--side-nav) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    :global(.workspace-sidebar .bx--side-nav__items) {
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
+
     .workspace-sidebar-header {
         display: flex;
         align-items: center;
@@ -243,5 +274,26 @@
         margin: 0;
         color: var(--color-danger, #fa4d56);
         font-size: 0.8rem;
+    }
+
+    .workspace-sidebar-footer {
+        padding: var(--cds-spacing-03, 0.5rem);
+        border-top: 1px solid
+            color-mix(
+                in srgb,
+                var(--color-border-primary, #525252) 45%,
+                transparent
+            );
+    }
+
+    .workspace-sidebar-footer :global(.bx--btn) {
+        margin: 0;
+        width: 100%;
+        justify-content: flex-start;
+        gap: var(--cds-spacing-03, 0.5rem);
+    }
+
+    .workspace-sidebar-footer :global(.bx--btn svg) {
+        flex-shrink: 0;
     }
 </style>
