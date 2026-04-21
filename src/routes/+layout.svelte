@@ -19,7 +19,13 @@
 
 <div>
 	<AppToolbar />
-	<main>
+	<main id="app-shell">
 		{@render children()}
 	</main>
 </div>
+
+<style>
+	#app-shell {
+		padding-top: 2rem;
+	}
+</style>

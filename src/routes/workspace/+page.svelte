@@ -12,10 +12,7 @@
         Row,
         SkipToContent,
     } from "carbon-components-svelte";
-    import AppToolbar from "$lib/components/app/layout/toolbar/app-toolbar.svelte";
 </script>
-
-<AppToolbar />
 
 <Content>
     <Grid>
