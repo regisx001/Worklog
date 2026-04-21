@@ -22,11 +22,11 @@
 <div class="layout-shell">
 	<AppToolbar />
 
-	<WorkspaceSidebar />
+	<!-- <WorkspaceSidebar />
 
-	<Content class="layout-content">
-		{@render children()}
-	</Content>
+	<Content class="layout-content"> -->
+	{@render children()}
+	<!-- </Content> -->
 </div>
 
 <style>
