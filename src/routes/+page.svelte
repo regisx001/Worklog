@@ -53,7 +53,6 @@
             {/if}
 
             <Button
-                class="workspace-selector-action"
                 onclick={handleOpenWorkspace}
                 kind="ghost"
             >
@@ -106,9 +105,5 @@
         font-size: 0.875rem;
         line-height: 1.4;
         word-break: break-word;
-    }
-
-    .workspace-selector-action {
-        justify-self: start;
     }
 </style>
