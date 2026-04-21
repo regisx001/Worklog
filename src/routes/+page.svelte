@@ -52,10 +52,7 @@
                 </p>
             {/if}
 
-            <Button
-                onclick={handleOpenWorkspace}
-                kind="ghost"
-            >
+            <Button onclick={handleOpenWorkspace} kind="ghost">
                 {openWorkspaceLabel}
             </Button>
         </article>

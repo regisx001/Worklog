@@ -15,7 +15,9 @@
     </main>
 {:else if !activeBoard}
     <main class="workspace-state">
-        <article>Select a board from the sidebar, or create a new board.</article>
+        <article>
+            Select a board from the sidebar, or create a new board.
+        </article>
     </main>
 {:else}
     <main class="workspace-json-view">

@@ -174,7 +174,11 @@
     </ModalBody>
 
     <ModalFooter>
-        <Button kind="secondary" onclick={closeCreateBoardModal} disabled={creatingBoard}>
+        <Button
+            kind="secondary"
+            onclick={closeCreateBoardModal}
+            disabled={creatingBoard}
+        >
             Cancel
         </Button>
         <Button onclick={createBoard} disabled={!canCreateBoard}>

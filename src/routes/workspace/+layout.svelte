@@ -81,9 +81,14 @@
         padding: var(--cds-spacing-04, 0.75rem);
         display: grid;
         gap: var(--cds-spacing-02, 0.25rem);
-        border: 1px solid color-mix(in srgb, var(--color-danger, #fa4d56) 40%, transparent);
+        border: 1px solid
+            color-mix(in srgb, var(--color-danger, #fa4d56) 40%, transparent);
         border-radius: 0.5rem;
-        background: color-mix(in srgb, var(--color-danger, #fa4d56) 12%, transparent);
+        background: color-mix(
+            in srgb,
+            var(--color-danger, #fa4d56) 12%,
+            transparent
+        );
         font-size: 0.875rem;
     }
 </style>
