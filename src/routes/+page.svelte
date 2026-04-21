@@ -30,10 +30,10 @@
         min-height: 100%;
         display: grid;
         place-items: center;
-        padding: var(--pico-spacing);
+        padding: var(--space-3);
     }
 
     .app-state article {
-        width: min(calc(var(--pico-spacing) * 22), 100%);
+        width: min(calc(var(--space-3) * 22), 100%);
     }
 </style>

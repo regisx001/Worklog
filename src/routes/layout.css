@@ -30,86 +30,31 @@
   font-display: swap;
 }
 
-:root {
-  --pico-font-size: 16px;
-  --pico-font-family-sans-serif: "Droid Sans Mono", "Consolas", "Liberation Mono", "Courier New", monospace;
-  --pico-font-family-monospace: "Droid Sans Mono", "Consolas", "Liberation Mono", "Courier New", monospace;
-  --pico-font-family: var(--pico-font-family-sans-serif);
-  --font-display: var(--pico-font-family-sans-serif);
+/* :root {
+  --font-size-base: 16px;
+  --font-display: "Droid Sans Mono", "Consolas", "Liberation Mono", "Courier New", monospace;
+  --font-body: var(--font-display);
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.2rem;
+  --radius-sm: 0.5rem;
   --color-surface-1: rgba(13, 16, 24, 0.82);
   --color-surface-2: rgba(17, 22, 33, 0.7);
   --color-border-soft: rgba(130, 149, 178, 0.24);
   --color-text-muted: rgba(207, 219, 236, 0.78);
-  --worklog-warning: color-mix(in oklch, var(--pico-color) 40%, oklch(0.78 0.18 70));
+  --color-danger: oklch(0.62 0.22 25);
+  --worklog-warning: oklch(0.78 0.18 70);
   --worklog-warning-dim: color-mix(in oklch, var(--worklog-warning) 15%, transparent);
-}
+} */
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(110% 70% at 100% 0%, rgba(72, 95, 140, 0.24), transparent 60%),
-    radial-gradient(100% 90% at 0% 0%, rgba(46, 65, 102, 0.28), transparent 62%),
-    linear-gradient(180deg, #090c12 0%, #05070b 100%);
-  color: rgba(236, 244, 255, 0.95);
-  font-size: var(--pico-font-size);
-  font-family: var(--pico-font-family);
+  font-size: var(--font-size-base);
+  font-family: var(--font-body);
   -webkit-user-select: none; /* Safari, Chrome, and Tauri Webviews */
   -moz-user-select: none;    /* Firefox */
   -ms-user-select: none;     /* IE11/Edge */
   user-select: none;         /* Standard */
-}
-
-.app-shell {
-  height: 100vh;
-  min-height: 100vh;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.app-shell-content {
-  padding: 0.85rem 1rem 1.2rem;
-  min-height: 0;
-  overflow: auto;
-}
-
-/* Re-enable selection for specific elements like input fields */
-input, textarea {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-}
-
-/* Remove visual focus effects from button-like controls. */
-:where(
-  button,
-  [role="button"],
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"]
-):is(:focus, :focus-visible) {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Keep form-field focus visible, but make it compact and subtle. */
-:where(
-  input[type="text"],
-  input[type="search"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="date"],
-  input[type="datetime-local"],
-  input[type="month"],
-  input[type="week"],
-  textarea,
-  select
-):is(:focus, :focus-visible) {
-  outline: 1px solid color-mix(in srgb, var(--pico-primary) 72%, #ffffff 28%);
-  outline-offset: 0;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pico-primary) 22%, transparent);
 }

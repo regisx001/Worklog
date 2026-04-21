@@ -1,5 +1,5 @@
-import type { PageLoad } from "./$types";
+type LegacyLoadArgs = { params: { board_id: string } };
 
-export const load: PageLoad = ({ params }) => ({
+export const load = ({ params }: LegacyLoadArgs) => ({
     board_id: params.board_id,
 });
