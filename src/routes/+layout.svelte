@@ -1,11 +1,13 @@
 <script lang="ts">
 	import "carbon-components-svelte/css/g100.css";
-	import { Content } from "carbon-components-svelte";
+	import { Loading } from "carbon-components-svelte";
 	import "./layout.css";
 	// @ts-ignore
 	import AppToolbar from "$lib/components/app/layout/toolbar/app-toolbar.svelte";
-	import WorkspaceSidebar from "$lib/components/app/layout/workspace/workspace-sidebar.svelte";
+	import { useWorkspace } from "$lib/hooks/workspace.svelte";
 	let { children } = $props();
+	const workspace = useWorkspace();
+	let hasInitializedWorkspace = $state(false);
 
 	const handleContextmenu = (event: MouseEvent) => {
 		event.preventDefault();
@@ -17,16 +19,24 @@
 			document.removeEventListener("contextmenu", handleContextmenu);
 		};
 	});
+
+	$effect(() => {
+		if (hasInitializedWorkspace) {
+			return;
+		}
+
+		hasInitializedWorkspace = true;
+		void workspace.init();
+	});
 </script>
 
 <div class="layout-shell">
 	<AppToolbar />
-
-	<!-- <WorkspaceSidebar />
-
-	<Content class="layout-content"> -->
 	{@render children()}
-	<!-- </Content> -->
+
+	{#if workspace.status === "idle" || workspace.status === "loading"}
+		<Loading />
+	{/if}
 </div>
 
 <style>

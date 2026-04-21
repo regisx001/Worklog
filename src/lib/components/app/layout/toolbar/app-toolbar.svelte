@@ -99,7 +99,7 @@
             {/if}
         </Button>
 
-        <Button onclick={() => runWindowControl("close")} kind="ghost">
+        <Button onclick={() => runWindowControl("close")} kind="danger-ghost">
             <Close />
         </Button>
     </HeaderUtilities>
