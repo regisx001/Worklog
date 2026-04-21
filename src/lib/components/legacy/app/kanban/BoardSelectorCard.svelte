@@ -157,13 +157,15 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: calc(var(--pico-font-size-small) * 0.95);
+        font-weight: bold;
         line-height: 1.2;
         color: currentColor;
     }
 
     .kanban-board-description {
         margin: 0;
-        font-size: calc(var(--pico-font-size-small) * 0.8);
+        font-size: calc(var(--pico-font-size-small) * 0.1);
+        /* font-weight: ; */
         line-height: 1.25;
         color: color-mix(in oklch, var(--pico-muted-color) 88%, transparent);
         letter-spacing: 0.01em;

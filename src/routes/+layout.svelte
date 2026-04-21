@@ -1,6 +1,9 @@
 <script lang="ts">
+	import "carbon-components-svelte/css/g100.css";
+	import { Content } from "carbon-components-svelte";
 	import "./layout.css";
-	import AppToolbar from "$lib/components/app/layout/toolbar/AppToolbar.svelte";
+	// @ts-ignore
+	import AppToolbar from "$lib/components/app/layout/toolbar/app-toolbar.svelte";
 	let { children } = $props();
 
 	const handleContextmenu = (event: MouseEvent) => {
@@ -15,9 +18,10 @@
 	});
 </script>
 
-<div class="app-shell">
+<div>
 	<AppToolbar />
-	<main class="app-shell-content">
+
+	<Content>
 		{@render children()}
-	</main>
+	</Content>
 </div>
