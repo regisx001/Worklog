@@ -1,5 +1,6 @@
 <script lang="ts">
 	import "carbon-components-svelte/css/g100.css";
+	import { Content } from "carbon-components-svelte";
 	import "./layout.css";
 	// @ts-ignore
 	import AppToolbar from "$lib/components/app/layout/toolbar/app-toolbar.svelte";
@@ -19,13 +20,8 @@
 
 <div>
 	<AppToolbar />
-	<main id="app-shell">
-		{@render children()}
-	</main>
-</div>
 
-<style>
-	#app-shell {
-		padding-top: 2rem;
-	}
-</style>
+	<Content>
+		{@render children()}
+	</Content>
+</div>
