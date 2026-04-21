@@ -4,6 +4,7 @@
 	import "./layout.css";
 	// @ts-ignore
 	import AppToolbar from "$lib/components/app/layout/toolbar/app-toolbar.svelte";
+	import WorkspaceSidebar from "$lib/components/app/layout/workspace/workspace-sidebar.svelte";
 	let { children } = $props();
 
 	const handleContextmenu = (event: MouseEvent) => {
@@ -18,10 +19,35 @@
 	});
 </script>
 
-<div>
+<div class="layout-shell">
 	<AppToolbar />
 
-	<Content>
+	<WorkspaceSidebar />
+
+	<Content class="layout-content">
 		{@render children()}
 	</Content>
 </div>
+
+<style>
+	:global(html),
+	:global(body) {
+		height: 100%;
+	}
+
+	:global(body) {
+		overflow: hidden;
+	}
+
+	.layout-shell {
+		height: 100vh;
+	}
+
+	:global(.layout-content.bx--content) {
+		box-sizing: border-box;
+		min-height: 0;
+		height: calc(100vh - var(--cds-spacing-09, 3rem));
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+</style>

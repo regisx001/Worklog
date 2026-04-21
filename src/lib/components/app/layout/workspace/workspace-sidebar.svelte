@@ -17,7 +17,7 @@
     <RadioTile value="plus">Plus plan</RadioTile>
 </TileGroup> -->
 
-<SideNav>
+<SideNav isOpen>
     <SideNavItems>
         <SideNavLink text="Link 1" />
         <SideNavLink text="Link 2" />
