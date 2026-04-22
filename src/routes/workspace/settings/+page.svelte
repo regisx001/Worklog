@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { Button, TextArea, TextInput } from "carbon-components-svelte";
-    import { Theme } from "carbon-components-svelte";
+    // import { Theme } from "carbon-components-svelte";
     import { useWorkspace } from "$lib/hooks/workspace.svelte";
 
     const workspace = useWorkspace();
@@ -51,15 +51,6 @@
             value={workspacePath}
             rows={3}
             readonly
-        />
-
-        <Theme
-            render="dropdown"
-            dropdown={{
-                themes: ["white", "g90", "g100"],
-                labelText: "Select a theme",
-                type: "inline",
-            }}
         />
     </section>
 
