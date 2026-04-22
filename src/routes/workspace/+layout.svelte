@@ -20,6 +20,10 @@
         void goto("/workspace/settings");
     }
 
+    function openBoard(boardId: string) {
+        void goto(`/workspace/${boardId}`);
+    }
+
     $effect(() => {
         if (
             workspace.status === "no_workspace" ||
@@ -52,7 +56,7 @@
 </script>
 
 {#if workspace.status === "ready"}
-    <WorkspaceSidebar onOpenSettings={openSettings} />
+    <WorkspaceSidebar onOpenSettings={openSettings} onOpenBoard={openBoard} />
 {/if}
 
 <Content class="layout-content">

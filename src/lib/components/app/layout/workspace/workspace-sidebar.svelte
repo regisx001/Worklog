@@ -19,11 +19,13 @@
 
     interface WorkspaceSidebarProps {
         onOpenSettings?: () => void;
+        onOpenBoard?: (boardId: string) => void;
     }
 
     const noop = () => {};
 
-    let { onOpenSettings = noop }: WorkspaceSidebarProps = $props();
+    let { onOpenSettings = noop, onOpenBoard = noop }: WorkspaceSidebarProps =
+        $props();
 
     const { boardsApi } = getWorkspaceShellContext();
 
@@ -49,7 +51,9 @@
     }
 
     function handleBoardSelection(event: CustomEvent<string>) {
-        selectBoard(event.detail);
+        const boardId = event.detail;
+        selectBoard(boardId);
+        onOpenBoard(boardId);
     }
 
     function openCreateBoardModal() {
@@ -90,12 +94,13 @@
         createError = null;
 
         try {
-            await boardsApi.create({
+            const createdBoard = await boardsApi.create({
                 name,
                 description: draftDescription.trim(),
             });
 
             closeCreateBoardModal();
+            onOpenBoard(createdBoard.id);
         } catch (error) {
             createError = String(error);
             creatingBoard = false;
