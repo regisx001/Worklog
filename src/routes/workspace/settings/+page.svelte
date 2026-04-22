@@ -1,7 +1,7 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { Button, TextArea, TextInput } from "carbon-components-svelte";
-
+    import { Theme } from "carbon-components-svelte";
     import { useWorkspace } from "$lib/hooks/workspace.svelte";
 
     const workspace = useWorkspace();
@@ -52,6 +52,15 @@
             rows={3}
             readonly
         />
+
+        <Theme
+            render="dropdown"
+            dropdown={{
+                themes: ["white", "g90", "g100"],
+                labelText: "Select a theme",
+                type: "inline",
+            }}
+        />
     </section>
 
     <section class="workspace-settings-actions" aria-label="Settings actions">
@@ -98,11 +107,6 @@
                 var(--color-border-primary, #525252) 45%,
                 transparent
             );
-        background: color-mix(
-            in srgb,
-            var(--color-surface-2, #262626) 45%,
-            transparent
-        );
     }
 
     .workspace-settings-section h2 {

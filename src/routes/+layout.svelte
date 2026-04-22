@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import "carbon-components-svelte/css/g100.css";
+	// import "carbon-components-svelte/css/g100.css";
+
+	import "carbon-components-svelte/css/all.css";
 	import { Loading } from "carbon-components-svelte";
 	import "./layout.css";
 	// @ts-ignore
