@@ -1,5 +1,11 @@
 <script lang="ts">
-    import { Close, Maximize, Minimize, Subtract } from "carbon-icons-svelte";
+    import {
+        Close,
+        Maximize,
+        Minimize,
+        Settings,
+        Subtract,
+    } from "carbon-icons-svelte";
 
     import {
         Header,
@@ -9,6 +15,16 @@
     } from "carbon-components-svelte";
 
     type WindowControlAction = "minimize" | "toggle-maximize" | "close";
+
+    interface AppToolbarProps {
+        showSettings?: boolean;
+        onOpenSettings?: () => void;
+    }
+
+    const noop = () => {};
+
+    let { showSettings = false, onOpenSettings = noop }: AppToolbarProps =
+        $props();
 
     let isMaximized = $state(false);
 
@@ -84,6 +100,16 @@
     ></div>
 
     <HeaderUtilities>
+        {#if showSettings}
+            <Button
+                aria-label="Open settings"
+                onclick={onOpenSettings}
+                kind="ghost"
+            >
+                <Settings />
+            </Button>
+        {/if}
+
         <Button onclick={() => runWindowControl("minimize")} kind="ghost">
             <Subtract />
         </Button>
@@ -99,7 +125,7 @@
             {/if}
         </Button>
 
-        <Button onclick={() => runWindowControl("close")} kind="ghost">
+        <Button onclick={() => runWindowControl("close")} kind="danger-ghost">
             <Close />
         </Button>
     </HeaderUtilities>
