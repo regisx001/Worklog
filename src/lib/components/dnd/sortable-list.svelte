@@ -24,8 +24,8 @@
 
 <section
     use:dndzone={{ items, flipDurationMs, type: "task-list" }}
-    on:consider={handleConsider}
-    on:finalize={handleFinalize}
+    onconsider={handleConsider}
+    onfinalize={handleFinalize}
     class="dnd-container"
 >
     {#each items as item (item.id)}

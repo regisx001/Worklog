@@ -329,7 +329,7 @@
         <ToolbarContent>
             <ToolbarSearch
                 value={searchQuery}
-                on:input={(e: any) => (searchQuery = e.currentTarget.value)}
+                oninput={(e: any) => (searchQuery = e.currentTarget.value)}
                 placeholder="Search tickets…"
                 persistent
             />
