@@ -21,8 +21,8 @@
 
     $effect(() => {
         if (workspace.status === "ready") {
-            // void goto("/workspace", { replaceState: true });
-            void goto("/kanban", { replaceState: true });
+            void goto("/workspace", { replaceState: true });
+            // void goto("/kanban", { replaceState: true });
         }
     });
 </script>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import KanbanBoard from "$lib/components/app/kanban/kanban-board.svelte";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
 
@@ -53,6 +54,7 @@
         </header>
 
         <pre>{boardJson}</pre>
+        <KanbanBoard />
     </main>
 {/if}
 
