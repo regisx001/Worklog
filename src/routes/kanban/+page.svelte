@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
     import { dndzone } from "svelte-dnd-action";
     import { flip } from "svelte/animate";
     import { Tile, Tag } from "carbon-components-svelte";
@@ -94,4 +94,10 @@
         flex-direction: column;
         gap: 0.5rem;
     }
-</style>
+</style> -->
+
+<script>
+    import KanbanBoard from "$lib/components/app/kanban/kanban-board.svelte";
+</script>
+
+<KanbanBoard />
