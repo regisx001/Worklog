@@ -322,6 +322,7 @@
     );
 </script>
 
+<h1>s</h1>
 <!-- ── Board Shell ─────────────────────────────────────────────────────────── -->
 <div class="board-shell">
     <!-- Toolbar -->
@@ -423,19 +424,6 @@
     </div>
 </Modal>
 
-<!-- ── Toast notification ──────────────────────────────────────────────────── -->
-{#if showToast}
-    <div class="toast-anchor">
-        <ToastNotification
-            kind="success"
-            title="Moved"
-            subtitle={toastMessage}
-            timeout={3000}
-            on:close={() => (showToast = false)}
-        />
-    </div>
-{/if}
-
 <style>
     .board-shell {
         display: flex;
@@ -512,13 +500,5 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
-    }
-
-    /* Toast */
-    .toast-anchor {
-        position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        z-index: 9999;
     }
 </style>
