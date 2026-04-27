@@ -8,6 +8,7 @@
         Asleep,
         LightFilled,
         Renew,
+        Search,
     } from "carbon-icons-svelte";
 
     import {
@@ -24,11 +25,12 @@
     interface AppToolbarProps {
         showSettings?: boolean;
         onOpenSettings?: () => void;
+        onOpenPalette?: () => void;
     }
 
     const noop = () => {};
 
-    let { showSettings = false, onOpenSettings = noop }: AppToolbarProps =
+    let { showSettings = false, onOpenSettings = noop, onOpenPalette = noop }: AppToolbarProps =
         $props();
 
     let isMaximized = $state(false);
@@ -94,13 +96,20 @@
     });
 
     let theme: any = $state("white");
-    function toogleTheme() {
+    function toggleTheme() {
         if (theme == "g100") {
             theme = "white";
             return;
         }
         theme = "g100";
     }
+
+    // Listen for theme toggle events from the command palette / shortcuts
+    $effect(() => {
+        const handler = () => toggleTheme();
+        window.addEventListener("worklog:toggle-theme", handler);
+        return () => window.removeEventListener("worklog:toggle-theme", handler);
+    });
 </script>
 
 <Theme bind:theme persist persistKey="__carbon-theme" />
@@ -117,6 +126,14 @@
 
     <HeaderUtilities>
         <Button
+            onclick={onOpenPalette}
+            kind="ghost"
+            aria-label="Open Command Palette"
+        >
+            <Search />
+        </Button>
+
+        <Button
             onclick={() => {
                 window.location.reload();
             }}
@@ -126,7 +143,7 @@
             <Renew />
         </Button>
 
-        <Button onclick={toogleTheme} kind="ghost" aria-label="Open settings">
+        <Button onclick={toggleTheme} kind="ghost" aria-label="Toggle theme">
             {#if theme == "g100"}
                 <LightFilled />
             {:else}

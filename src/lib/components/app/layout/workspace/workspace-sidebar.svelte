@@ -54,10 +54,21 @@
         boardsApi.setActive(board);
     }
 
-    function handleBoardSelection(event: CustomEvent<string>) {
-        const boardId = event.detail;
+    function openBoard(boardId: string) {
         selectBoard(boardId);
         onOpenBoard(boardId);
+    }
+
+    function handleBoardSelection(event: CustomEvent<string>) {
+        openBoard(event.detail);
+    }
+
+    function handleBoardClick(boardId: string) {
+        if (boardId !== selectedBoardId) {
+            return;
+        }
+
+        openBoard(boardId);
     }
 
     function openCreateBoardModal() {
@@ -121,6 +132,14 @@
         createError = null;
         creatingBoard = false;
     });
+
+    // Listen for create-board events from the command palette / shortcuts
+    $effect(() => {
+        const handler = () => openCreateBoardModal();
+        window.addEventListener("worklog:create-board", handler);
+        return () =>
+            window.removeEventListener("worklog:create-board", handler);
+    });
 </script>
 
 <SideNav class="workspace-sidebar" isOpen>
@@ -149,7 +168,10 @@
                 on:select={handleBoardSelection}
             >
                 {#each boardsApi.boards as board (board.id)}
-                    <RadioTile value={board.id}>
+                    <RadioTile
+                        value={board.id}
+                        onclick={() => handleBoardClick(board.id)}
+                    >
                         <span class="workspace-board-name">{board.name}</span>
                         {#if board.description}
                             <span class="workspace-board-description">
@@ -218,15 +240,6 @@
 </ComposedModal>
 
 <style>
-    .backdrop {
-        position: absolute;
-        inset: 0;
-        z-index: 10;
-        background: rgb(20 20 20 / 0.12);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        pointer-events: auto;
-    }
     :global(.workspace-sidebar.bx--side-nav) {
         display: flex;
         flex-direction: column;
