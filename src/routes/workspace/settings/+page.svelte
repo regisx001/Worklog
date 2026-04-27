@@ -25,6 +25,13 @@
         <p>Workspace-level preferences and diagnostics.</p>
     </header>
 
+    <section class="workspace-settings-actions" aria-label="Settings actions">
+        <Button kind="secondary" onclick={goToBoards}>Back to workspace</Button>
+        <Button kind="ghost" onclick={refreshWorkspaceState}>
+            Refresh workspace state
+        </Button>
+    </section>
+
     <section
         class="workspace-settings-section"
         aria-labelledby="workspace-info-title"
@@ -52,13 +59,19 @@
             rows={3}
             readonly
         />
-    </section>
 
-    <section class="workspace-settings-actions" aria-label="Settings actions">
-        <Button kind="secondary" onclick={goToBoards}>Back to workspace</Button>
-        <Button kind="ghost" onclick={refreshWorkspaceState}>
-            Refresh workspace state
-        </Button>
+        <!-- <Theme
+            persistKey="_carbon-theme"
+            persist
+            render="toggle"
+            toggle={{
+                themes: ["g10", "g100"],
+                labelA: "Enable dark mode",
+                labelB: "Enable dark mode",
+                hideLabel: true,
+                size: "sm",
+            }}
+        /> -->
     </section>
 </main>
 
@@ -90,6 +103,7 @@
     .workspace-settings-section {
         display: grid;
         gap: var(--cds-spacing-04, 0.75rem);
+        margin: 2rem 0;
         padding: var(--cds-spacing-05, 1rem);
         border-radius: 0.5rem;
         border: 1px solid
