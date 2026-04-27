@@ -121,6 +121,13 @@
         createError = null;
         creatingBoard = false;
     });
+
+    // Listen for create-board events from the command palette / shortcuts
+    $effect(() => {
+        const handler = () => openCreateBoardModal();
+        window.addEventListener("worklog:create-board", handler);
+        return () => window.removeEventListener("worklog:create-board", handler);
+    });
 </script>
 
 <SideNav class="workspace-sidebar" isOpen>
