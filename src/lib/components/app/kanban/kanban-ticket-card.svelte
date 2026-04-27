@@ -5,10 +5,26 @@
         OverflowMenu,
         OverflowMenuItem,
     } from "carbon-components-svelte";
-    import { Calendar, ChatBot, Draggable } from "carbon-icons-svelte";
+    import {
+        Calendar,
+        ChatBot,
+        Draggable,
+        ArrowUp,
+        ArrowRight,
+        ArrowDown,
+        StarFilled,
+        Debug,
+        SettingsAdjust,
+        ChartLineSmooth,
+        Lightning,
+        Explore,
+    } from "carbon-icons-svelte";
     import {
         type Ticket,
         type TicketPriority,
+        type TicketType,
+        TICKET_TYPE_CONFIG,
+        TICKET_PRIORITY_CONFIG,
     } from "$lib/components/app/types";
 
     let {
@@ -21,14 +37,27 @@
         onDelete?: (id: string) => void;
     } = $props();
 
-    const priorityMap: Record<
-        TicketPriority,
-        { color: "green" | "teal" | "red"; label: string }
-    > = {
-        p3: { color: "green", label: "Low" },
-        p2: { color: "teal", label: "Medium" },
-        p1: { color: "red", label: "High" },
+    // Carbon icon map for ticket types
+    const typeIconMap: Record<TicketType, any> = {
+        feature: StarFilled,
+        bug: Debug,
+        chore: SettingsAdjust,
+        improvement: ChartLineSmooth,
+        epic: Lightning,
+        spike: Explore,
     };
+
+    // Carbon icon map for priorities
+    const priorityIconMap: Record<TicketPriority, any> = {
+        p1: ArrowUp,
+        p2: ArrowRight,
+        p3: ArrowDown,
+    };
+
+    const typeConfig = $derived(TICKET_TYPE_CONFIG[ticket.ticket_type]);
+    const TypeIcon = $derived(typeIconMap[ticket.ticket_type]);
+    const priorityConfig = $derived(TICKET_PRIORITY_CONFIG[ticket.priority]);
+    const PriorityIcon = $derived(priorityIconMap[ticket.priority]);
 </script>
 
 <article class="ticket-card">
@@ -78,9 +107,20 @@
 
         <!-- Footer -->
         <div class="ticket-footer">
-            <Tag size="sm" type={priorityMap[ticket.priority].color}>
-                {priorityMap[ticket.priority].label}
-            </Tag>
+            <div class="ticket-badges">
+                <Tag size="sm" type={priorityConfig.tagColor}>
+                    <span class="tag-with-icon">
+                        <PriorityIcon size={12} />
+                        {priorityConfig.label}
+                    </span>
+                </Tag>
+                <Tag size="sm" type={typeConfig.tagColor}>
+                    <span class="tag-with-icon">
+                        <TypeIcon size={12} />
+                        {typeConfig.label}
+                    </span>
+                </Tag>
+            </div>
 
             <div class="ticket-meta">
                 {#if ticket.comments?.length}
@@ -217,6 +257,22 @@
         margin-top: 0.25rem;
         flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    .ticket-badges {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .tag-with-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .tag-with-icon :global(svg) {
+        flex-shrink: 0;
     }
 
     .ticket-meta {

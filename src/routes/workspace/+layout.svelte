@@ -111,4 +111,10 @@
         );
         font-size: 0.875rem;
     }
+
+    /* Ensure content area fills available height for full-height Kanban columns */
+    :global(.layout-content.bx--content) {
+        display: flex;
+        flex-direction: column;
+    }
 </style>

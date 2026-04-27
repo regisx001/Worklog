@@ -82,7 +82,7 @@
     }
 
     .workspace-board-shell {
-        min-height: 100%;
+        height: 100%;
         padding: var(--cds-spacing-05, 1rem);
         display: flex;
         flex-direction: column;

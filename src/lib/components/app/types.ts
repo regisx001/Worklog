@@ -1,8 +1,54 @@
 export type TicketStatus = "backlog" | "todo" | "in_progress" | "done";
 export type TicketPriority = "p1" | "p2" | "p3";
-export type TicketType = "feature" | "bug" | "chore";
+export type TicketType = "feature" | "bug" | "chore" | "improvement" | "epic" | "spike";
 
 export type SyncState = "up_to_date" | "pending_changes" | "syncing";
+
+// ── Ticket Type Config ─────────────────────────────────────────────────────
+// Centralized display config for ticket types, statuses, and priorities.
+// Carbon icon components are imported by consumers — we reference by string key here.
+
+export interface TicketTypeConfig {
+    label: string;
+    /** Carbon Tag type color */
+    tagColor: "teal" | "blue" | "magenta" | "purple" | "cyan" | "green" | "red" | "warm-gray" | "cool-gray" | "high-contrast";
+}
+
+export const TICKET_TYPE_CONFIG: Record<TicketType, TicketTypeConfig> = {
+    feature:     { label: "Feature",     tagColor: "teal" },
+    bug:         { label: "Bug",         tagColor: "red" },
+    chore:       { label: "Chore",       tagColor: "warm-gray" },
+    improvement: { label: "Improvement", tagColor: "cyan" },
+    epic:        { label: "Epic",        tagColor: "purple" },
+    spike:       { label: "Spike",       tagColor: "magenta" },
+};
+
+export const TICKET_TYPE_OPTIONS: TicketType[] = ["feature", "bug", "chore", "improvement", "epic", "spike"];
+
+export interface TicketStatusConfig {
+    label: string;
+    accentColor: string;
+}
+
+export const TICKET_STATUS_CONFIG: Record<TicketStatus, TicketStatusConfig> = {
+    backlog:     { label: "Backlog",     accentColor: "magenta" },
+    todo:        { label: "To Do",       accentColor: "teal" },
+    in_progress: { label: "In Progress", accentColor: "blue" },
+    done:        { label: "Done",        accentColor: "green" },
+};
+
+export const TICKET_STATUS_ORDER: TicketStatus[] = ["backlog", "todo", "in_progress", "done"];
+
+export interface TicketPriorityConfig {
+    label: string;
+    tagColor: "green" | "teal" | "red";
+}
+
+export const TICKET_PRIORITY_CONFIG: Record<TicketPriority, TicketPriorityConfig> = {
+    p3: { label: "Low",    tagColor: "green" },
+    p2: { label: "Medium", tagColor: "teal" },
+    p1: { label: "High",   tagColor: "red" },
+};
 
 export interface Project {
     id: string;

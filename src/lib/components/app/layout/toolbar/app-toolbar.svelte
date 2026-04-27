@@ -7,6 +7,7 @@
         Subtract,
         Asleep,
         LightFilled,
+        Renew,
     } from "carbon-icons-svelte";
 
     import {
@@ -115,6 +116,16 @@
     ></div>
 
     <HeaderUtilities>
+        <Button
+            onclick={() => {
+                window.location.reload();
+            }}
+            kind="ghost"
+            aria-label="Refresh Application"
+        >
+            <Renew />
+        </Button>
+
         <Button onclick={toogleTheme} kind="ghost" aria-label="Open settings">
             {#if theme == "g100"}
                 <LightFilled />

@@ -3,7 +3,13 @@
     import { dndzone } from "svelte-dnd-action";
     import { flip } from "svelte/animate";
     import { Button, Tag, InlineLoading } from "carbon-components-svelte";
-    import { Add } from "carbon-icons-svelte";
+    import {
+        Add,
+        Pending,
+        TaskComplete,
+        InProgress as InProgressIcon,
+        CheckmarkFilled,
+    } from "carbon-icons-svelte";
     import KanbanTicketCard from "./kanban-ticket-card.svelte";
     import type { Ticket, TicketStatus } from "$lib/components/app/types";
 
@@ -43,9 +49,19 @@
         teal: "var(--cds-support-04)",
     };
 
+    // Status icon map
+    const statusIconMap: Record<TicketStatus, any> = {
+        backlog: Pending,
+        todo: TaskComplete,
+        in_progress: InProgressIcon,
+        done: CheckmarkFilled,
+    };
+
     const headerColor = $derived(
         colorVarMap[accentColor] ?? colorVarMap["blue"],
     );
+
+    const StatusIcon = $derived(statusIconMap[status]);
 
     // dndzone expects the zone list to be updated from event payloads.
     let zoneItems = $state<Ticket[]>(tickets);
@@ -71,7 +87,10 @@
     <!-- Column header -->
     <header class="column-header" style="--accent: {headerColor}">
         <div class="column-title-row">
-            <h3 class="column-label">{label}</h3>
+            <div class="column-title-group">
+                <StatusIcon size={16} class="column-status-icon" />
+                <h3 class="column-label">{label}</h3>
+            </div>
             <Tag size="sm" type="outline">{zoneItems.length}</Tag>
         </div>
         <div class="column-accent-bar"></div>
@@ -80,7 +99,6 @@
     <!-- Drop zone -->
     <div
         class="drop-zone"
-        class:drop-zone--empty={zoneItems.length === 0}
         use:dndzone={{
             items: zoneItems,
             flipDurationMs,
@@ -137,10 +155,12 @@
         flex-direction: column;
         background: var(--cds-ui-background);
         border: 1px solid var(--cds-ui-03);
-        width: 300px;
-        flex: 0 0 300px;
+        width: 340px;
+        flex: 0 0 340px;
         border-radius: 2px;
         overflow: hidden;
+        /* Fill parent height */
+        align-self: stretch;
     }
 
     /* Header */
@@ -155,6 +175,17 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: 0.75rem;
+    }
+
+    .column-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .column-title-group :global(svg) {
+        color: var(--accent);
+        flex-shrink: 0;
     }
 
     .column-label {
@@ -173,7 +204,7 @@
         border-radius: 0;
     }
 
-    /* Drop zone */
+    /* Drop zone — fills remaining height */
     .drop-zone {
         flex: 1;
         display: flex;
@@ -182,23 +213,6 @@
         padding: 0.75rem;
         min-height: 120px;
         overflow-y: auto;
-        max-height: calc(100vh - 280px);
-        transition: background 0.15s ease;
-    }
-
-    /* Subtle highlight while dragging over */
-    .drop-zone:focus-within {
-        background: var(--cds-hover-ui);
-    }
-
-    .drop-zone--empty {
-        background: repeating-linear-gradient(
-            -45deg,
-            transparent,
-            transparent 6px,
-            var(--cds-ui-02) 6px,
-            var(--cds-ui-02) 7px
-        );
     }
 
     .ticket-wrapper {
