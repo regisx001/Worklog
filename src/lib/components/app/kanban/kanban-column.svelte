@@ -99,7 +99,6 @@
     <!-- Drop zone -->
     <div
         class="drop-zone"
-        class:drop-zone--empty={zoneItems.length === 0}
         use:dndzone={{
             items: zoneItems,
             flipDurationMs,
@@ -214,22 +213,6 @@
         padding: 0.75rem;
         min-height: 120px;
         overflow-y: auto;
-        transition: background 0.15s ease;
-    }
-
-    /* Subtle highlight while dragging over */
-    .drop-zone:focus-within {
-        background: var(--cds-hover-ui);
-    }
-
-    .drop-zone--empty {
-        background: repeating-linear-gradient(
-            -45deg,
-            transparent,
-            transparent 6px,
-            var(--cds-ui-02) 6px,
-            var(--cds-ui-02) 7px
-        );
     }
 
     .ticket-wrapper {
