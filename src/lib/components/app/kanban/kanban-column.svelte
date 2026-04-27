@@ -137,8 +137,8 @@
         flex-direction: column;
         background: var(--cds-ui-background);
         border: 1px solid var(--cds-ui-03);
-        width: 300px;
-        flex: 0 0 300px;
+        width: 380px;
+        flex: 0 0 380px;
         border-radius: 2px;
         overflow: hidden;
     }
