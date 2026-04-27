@@ -148,6 +148,69 @@ async function migrate_v4(db: Database): Promise<void> {
     }
 }
 
+async function migrate_v5(db: Database): Promise<void> {
+    // Expand ticket_type CHECK constraint to include: improvement, epic, spike
+    // Uses the same table-recreation approach as v4 for SQLite CHECK constraint changes.
+    await db.execute(`PRAGMA foreign_keys = OFF`);
+    await db.execute(`BEGIN TRANSACTION`);
+
+    try {
+        await db.execute(`ALTER TABLE tickets RENAME TO tickets_v4`);
+
+        await db.execute(`
+            CREATE TABLE tickets (
+                id          TEXT PRIMARY KEY,
+                board_id    TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+                title       TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                status      TEXT NOT NULL DEFAULT 'todo'
+                            CHECK (status IN ('backlog', 'todo', 'in_progress', 'done')),
+                priority    TEXT NOT NULL DEFAULT 'p2'
+                            CHECK (priority IN ('p1', 'p2', 'p3')),
+                ticket_type TEXT NOT NULL DEFAULT 'feature'
+                            CHECK (ticket_type IN ('feature', 'bug', 'chore', 'improvement', 'epic', 'spike')),
+                due_date    TEXT,
+                labels      TEXT NOT NULL DEFAULT '[]',
+                comments    TEXT NOT NULL DEFAULT '[]',
+                created_at  TEXT NOT NULL,
+                updated_at  TEXT NOT NULL
+            )
+        `);
+
+        await db.execute(`
+            INSERT INTO tickets (
+                id, board_id, title, description,
+                status, priority, ticket_type, due_date,
+                labels, comments, created_at, updated_at
+            )
+            SELECT
+                id, board_id, title, description,
+                status, priority,
+                CASE
+                    WHEN ticket_type IN ('feature', 'bug', 'chore', 'improvement', 'epic', 'spike') THEN ticket_type
+                    ELSE 'feature'
+                END,
+                due_date,
+                labels, comments, created_at, updated_at
+            FROM tickets_v4
+        `);
+
+        await db.execute(`DROP TABLE tickets_v4`);
+        await db.execute(`CREATE INDEX IF NOT EXISTS idx_tickets_board_id ON tickets(board_id)`);
+        await db.execute(`CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status)`);
+        await db.execute(`CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority)`);
+        await db.execute(`CREATE INDEX IF NOT EXISTS idx_tickets_ticket_type ON tickets(ticket_type)`);
+        await db.execute(`CREATE INDEX IF NOT EXISTS idx_tickets_due_date ON tickets(due_date)`);
+
+        await db.execute(`COMMIT`);
+    } catch (error) {
+        await db.execute(`ROLLBACK`);
+        throw error;
+    } finally {
+        await db.execute(`PRAGMA foreign_keys = ON`);
+    }
+}
+
 export async function runMigrations(db: Database): Promise<void> {
     const rows = await db.select<{ schema_version: number }[]>(
         `SELECT schema_version FROM workspace_meta WHERE id = 1`
@@ -167,6 +230,10 @@ export async function runMigrations(db: Database): Promise<void> {
 
     if (current < 4) {
         await migrate_v4(db);
+    }
+
+    if (current < 5) {
+        await migrate_v5(db);
     }
 
     await db.execute(

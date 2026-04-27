@@ -11,14 +11,21 @@
         Toolbar,
         ToolbarContent,
         ToolbarSearch,
+        DatePicker,
+        DatePickerInput,
     } from "carbon-components-svelte";
     import KanbanColumn from "./kanban-column.svelte";
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
     import { useTickets } from "$lib/hooks/tickets.svelte";
-    import type {
-        Ticket,
-        TicketStatus,
-        TicketPriority,
+    import {
+        type Ticket,
+        type TicketStatus,
+        type TicketPriority,
+        type TicketType,
+        TICKET_STATUS_CONFIG,
+        TICKET_STATUS_ORDER,
+        TICKET_TYPE_CONFIG,
+        TICKET_TYPE_OPTIONS,
     } from "$lib/components/app/types";
 
     type Column = {
@@ -55,15 +62,12 @@
         })();
     });
 
-    const columnsDef = [
-        { status: "todo" as TicketStatus, label: "To Do", accentColor: "teal" },
-        {
-            status: "in_progress" as TicketStatus,
-            label: "In Progress",
-            accentColor: "blue",
-        },
-        { status: "done" as TicketStatus, label: "Done", accentColor: "green" },
-    ];
+    // ── Column definitions from config ─────────────────────────────────────────
+    const columnsDef = TICKET_STATUS_ORDER.map((status) => ({
+        status,
+        label: TICKET_STATUS_CONFIG[status].label,
+        accentColor: TICKET_STATUS_CONFIG[status].accentColor,
+    }));
 
     let columns = $derived(
         columnsDef.map((def) => ({
@@ -151,12 +155,14 @@
         title: string;
         description: string;
         priority: TicketPriority;
+        ticketType: TicketType;
         dueDate: string;
         tags: string[];
     }>({
         title: "",
         description: "",
         priority: "p2",
+        ticketType: "feature",
         dueDate: "",
         tags: [],
     });
@@ -184,6 +190,7 @@
             title: "",
             description: "",
             priority: "p2",
+            ticketType: "feature",
             dueDate: "",
             tags: [],
         };
@@ -198,6 +205,7 @@
             title: ticket.title,
             description: ticket.description,
             priority: ticket.priority,
+            ticketType: ticket.ticket_type,
             dueDate: ticket.due_date ?? "",
             tags: ticket.labels ?? [],
         };
@@ -218,6 +226,7 @@
                     title: form.title,
                     description: form.description || "",
                     priority: form.priority,
+                    ticket_type: form.ticketType,
                     due_date: form.dueDate || null,
                     labels: form.tags,
                 });
@@ -228,6 +237,7 @@
                     description: form.description || "",
                     status: targetStatus,
                     priority: form.priority,
+                    ticket_type: form.ticketType,
                     due_date: form.dueDate || null,
                     labels: form.tags,
                 });
@@ -250,15 +260,20 @@
         }
     }
 
-    // ── Stats ──────────────────────────────────────────────────────────────────
-    const totalTickets = $derived(
-        columns.reduce((s, c) => s + c.tickets.length, 0),
+    // ── Stats (exclude backlog from progress) ─────────────────────────────────
+    const activeTickets = $derived(
+        columns
+            .filter((c) => c.status !== "backlog")
+            .reduce((s, c) => s + c.tickets.length, 0),
     );
     const doneCount = $derived(
         columns.find((c) => c.status === "done")?.tickets.length ?? 0,
     );
     const progress = $derived(
-        totalTickets > 0 ? Math.round((doneCount / totalTickets) * 100) : 0,
+        activeTickets > 0 ? Math.round((doneCount / activeTickets) * 100) : 0,
+    );
+    const totalTickets = $derived(
+        columns.reduce((s, c) => s + c.tickets.length, 0),
     );
 </script>
 
@@ -274,11 +289,16 @@
                 persistent
             />
             <div class="toolbar-stats">
-                <span class="stats-text">{doneCount} / {totalTickets} done</span
+                <span class="stats-text">{doneCount} / {activeTickets} done</span
                 >
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: {progress}%"></div>
                 </div>
+                {#if totalTickets !== activeTickets}
+                    <span class="stats-text stats-backlog"
+                        >+{totalTickets - activeTickets} backlog</span
+                    >
+                {/if}
             </div>
         </ToolbarContent>
     </Toolbar>
@@ -359,16 +379,28 @@
                 <SelectItem value="p2" text="Medium" />
                 <SelectItem value="p1" text="High" />
             </Select>
+            <Select labelText="Type" bind:selected={form.ticketType}>
+                {#each TICKET_TYPE_OPTIONS as typeKey}
+                    <SelectItem
+                        value={typeKey}
+                        text={TICKET_TYPE_CONFIG[typeKey].label}
+                    />
+                {/each}
+            </Select>
         </div>
         <div class="form-row">
-            <TextInput
-                labelText="Due Date"
-                placeholder="e.g. May 10"
+            <DatePicker
                 bind:value={form.dueDate}
-            />
+                datePickerType="single"
+                dateFormat="Y-m-d"
+            >
+                <DatePickerInput
+                    labelText="Due Date"
+                    placeholder="yyyy-mm-dd"
+                />
+            </DatePicker>
         </div>
         <MultiSelect
-            // titleText="Tags"
             label="Select tags…"
             items={TAG_OPTIONS.map((t) => ({ id: t, text: t }))}
             bind:selectedIds={form.tags}
@@ -392,7 +424,7 @@
         overflow-x: auto;
         overflow-y: hidden;
         flex: 1;
-        align-items: flex-start;
+        min-height: 0;
 
         /* Nice momentum scroll on macOS/iOS */
         -webkit-overflow-scrolling: touch;
@@ -423,6 +455,10 @@
         font-size: 0.75rem;
         color: var(--cds-text-02);
         white-space: nowrap;
+    }
+
+    .stats-backlog {
+        opacity: 0.7;
     }
 
     .progress-bar {
