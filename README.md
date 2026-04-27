@@ -1,4 +1,4 @@
-# Worklog : a local-first desktop project manager 
+# Worklog : Local-first Desktop Project Manager 
 
 [![CI](https://github.com/regisx001/Worklog/actions/workflows/ci.yml/badge.svg)](https://github.com/regisx001/Worklog/actions/workflows/ci.yml)
 [![Publish](https://github.com/regisx001/Worklog/actions/workflows/release.yml/badge.svg)](https://github.com/regisx001/Worklog/actions/workflows/release.yml)
