@@ -81,7 +81,11 @@
     <div
         class="drop-zone"
         class:drop-zone--empty={zoneItems.length === 0}
-        use:dndzone={{ items: zoneItems, flipDurationMs, type: "kanban-ticket" }}
+        use:dndzone={{
+            items: zoneItems,
+            flipDurationMs,
+            type: "kanban-ticket",
+        }}
         onconsider={handleConsider}
         onfinalize={handleFinalize}
         role="list"
