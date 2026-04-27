@@ -275,6 +275,13 @@
     const totalTickets = $derived(
         columns.reduce((s, c) => s + c.tickets.length, 0),
     );
+
+    // Listen for create-ticket events from the command palette / shortcuts
+    $effect(() => {
+        const handler = () => openAddModal("todo");
+        window.addEventListener("worklog:create-ticket", handler);
+        return () => window.removeEventListener("worklog:create-ticket", handler);
+    });
 </script>
 
 <!-- ── Board Shell ─────────────────────────────────────────────────────────── -->
