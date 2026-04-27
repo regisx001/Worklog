@@ -5,6 +5,8 @@
         Minimize,
         Settings,
         Subtract,
+        Asleep,
+        LightFilled,
     } from "carbon-icons-svelte";
 
     import {
@@ -13,6 +15,8 @@
         Button,
         SkipToContent,
     } from "carbon-components-svelte";
+
+    import { Theme } from "carbon-components-svelte";
 
     type WindowControlAction = "minimize" | "toggle-maximize" | "close";
 
@@ -87,7 +91,18 @@
             unlistenResize?.();
         };
     });
+
+    let theme: any = $state("white");
+    function toogleTheme() {
+        if (theme == "g100") {
+            theme = "white";
+            return;
+        }
+        theme = "g100";
+    }
 </script>
+
+<Theme bind:theme persist persistKey="__carbon-theme" />
 
 <Header companyName="WORKLOG" platformName="" isSideNavOpen>
     <svelte:fragment slot="skipToContent"><SkipToContent /></svelte:fragment>
@@ -100,6 +115,14 @@
     ></div>
 
     <HeaderUtilities>
+        <Button onclick={toogleTheme} kind="ghost" aria-label="Open settings">
+            {#if theme == "g100"}
+                <LightFilled />
+            {:else}
+                <Asleep />
+            {/if}
+        </Button>
+
         {#if showSettings}
             <Button
                 aria-label="Open settings"

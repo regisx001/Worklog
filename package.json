@@ -23,7 +23,8 @@
     "@thisux/sveltednd": "^0.4.0",
     "carbon-components-svelte": "^0.106.2",
     "carbon-icons-svelte": "^13.10.0",
-    "mode-watcher": "^1.1.0"
+    "mode-watcher": "^1.1.0",
+    "svelte-dnd-action": "^0.9.69"
   },
   "devDependencies": {
     "@dnd-kit-svelte/svelte": "^0.1.6",

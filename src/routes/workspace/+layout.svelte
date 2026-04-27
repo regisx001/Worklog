@@ -6,6 +6,7 @@
     import { useBoards } from "$lib/hooks/boards.svelte";
     import { setWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
     import { useWorkspace } from "$lib/hooks/workspace.svelte";
+    import { page } from "$app/state";
 
     let { children } = $props();
     const workspace = useWorkspace();
@@ -53,10 +54,21 @@
             lastLoadedWorkspacePath = null;
         });
     });
+
+    const isSettingsRoute = $derived(page.route.id === "/workspace/settings");
 </script>
 
+<!-- <h1>Hello World</h1>
+<h1>Hello World</h1>
+<h1>Hello World</h1>
+<h1>{JSON.stringify(}</h1> -->
+
 {#if workspace.status === "ready"}
-    <WorkspaceSidebar onOpenSettings={openSettings} onOpenBoard={openBoard} />
+    <WorkspaceSidebar
+        isSetting={isSettingsRoute}
+        onOpenSettings={openSettings}
+        onOpenBoard={openBoard}
+    />
 {/if}
 
 <Content class="layout-content">

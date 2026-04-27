@@ -20,12 +20,16 @@
     interface WorkspaceSidebarProps {
         onOpenSettings?: () => void;
         onOpenBoard?: (boardId: string) => void;
+        isSetting?: boolean;
     }
 
     const noop = () => {};
 
-    let { onOpenSettings = noop, onOpenBoard = noop }: WorkspaceSidebarProps =
-        $props();
+    let {
+        onOpenSettings = noop,
+        onOpenBoard = noop,
+        isSetting = false,
+    }: WorkspaceSidebarProps = $props();
 
     const { boardsApi } = getWorkspaceShellContext();
 
@@ -214,6 +218,15 @@
 </ComposedModal>
 
 <style>
+    .backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        background: rgb(20 20 20 / 0.12);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        pointer-events: auto;
+    }
     :global(.workspace-sidebar.bx--side-nav) {
         display: flex;
         flex-direction: column;
