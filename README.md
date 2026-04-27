@@ -1,12 +1,16 @@
-# Worklog
+# Worklog : a local-first desktop project manager 
 
 [![CI](https://github.com/regisx001/Worklog/actions/workflows/ci.yml/badge.svg)](https://github.com/regisx001/Worklog/actions/workflows/ci.yml)
 [![Publish](https://github.com/regisx001/Worklog/actions/workflows/release.yml/badge.svg)](https://github.com/regisx001/Worklog/actions/workflows/release.yml)
 
+<img width="1922" height="818" alt="ChatGPT Image Apr 27, 2026, 04_45_44 PM" src="https://github.com/user-attachments/assets/aee54de1-58de-4bca-a3f4-246ec4dd4713" />
+
+---
+
 Worklog is a local-first desktop project manager for small development teams.
 It is designed for fast, keyboard-driven planning with a Kanban workflow, transparent local data, and no cloud dependency for core usage.
 
-<img width="1577" height="820" alt="Worklog screenshot" src="https://github.com/user-attachments/assets/ed933e6d-9265-4572-99f0-183d2d1681ae" />
+<img width="1920" height="1045" alt="image" src="https://github.com/user-attachments/assets/c8da5403-76b6-4b9b-8915-8ff4805a2a76" />
 
 ## What Worklog Is
 
