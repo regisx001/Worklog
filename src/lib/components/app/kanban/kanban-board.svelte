@@ -7,148 +7,72 @@
         Select,
         SelectItem,
         MultiSelect,
-        Button,
         InlineNotification,
         Toolbar,
         ToolbarContent,
         ToolbarSearch,
-        ToastNotification,
     } from "carbon-components-svelte";
     import KanbanColumn from "./kanban-column.svelte";
-
-    // ── Types ──────────────────────────────────────────────────────────────────
-    type Priority = "low" | "medium" | "high" | "critical";
-    type ColumnStatus = "todo" | "doing" | "done" | "blocked";
-
-    type Ticket = {
-        id: number;
-        title: string;
-        description?: string;
-        priority: Priority;
-        assignee?: string;
-        dueDate?: string;
-        tags?: string[];
-        commentCount?: number;
-    };
+    import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
+    import { useTickets } from "$lib/hooks/tickets.svelte";
+    import type {
+        Ticket,
+        TicketStatus,
+        TicketPriority,
+    } from "$lib/components/app/types";
 
     type Column = {
-        status: ColumnStatus;
+        status: TicketStatus;
         label: string;
         accentColor: string;
         tickets: Ticket[];
     };
 
-    // ── Initial data ───────────────────────────────────────────────────────────
-    let nextId = $state(10);
+    const shell = getWorkspaceShellContext();
+    const getWorkspacePath = () => shell.workspace.path;
+    const getBoardId = () => shell.boardsApi.active?.id ?? null;
 
-    let columns = $state<Column[]>([
+    const ticketsHook = useTickets(getWorkspacePath, getBoardId);
+
+    let loadError = $state<string | null>(null);
+    let actionError = $state<string | null>(null);
+
+    $effect(() => {
+        const workspacePath = getWorkspacePath();
+        const boardId = getBoardId();
+
+        if (!workspacePath || !boardId) {
+            return;
+        }
+
+        void (async () => {
+            try {
+                loadError = null;
+                await ticketsHook.load();
+            } catch (error) {
+                loadError = String(error);
+            }
+        })();
+    });
+
+    const columnsDef = [
+        { status: "todo" as TicketStatus, label: "To Do", accentColor: "teal" },
         {
-            status: "todo",
-            label: "To Do",
-            accentColor: "teal",
-            tickets: [
-                {
-                    id: 1,
-                    title: "Design authentication flow",
-                    description:
-                        "Create wireframes and user flow diagrams for login, registration and password reset screens.",
-                    priority: "high",
-                    assignee: "J. Martin",
-                    dueDate: "May 10",
-                    tags: ["design", "auth"],
-                    commentCount: 3,
-                },
-                {
-                    id: 2,
-                    title: "Set up CI/CD pipeline",
-                    description:
-                        "Configure GitHub Actions for automated testing and deployment to staging.",
-                    priority: "medium",
-                    assignee: "A. Reyes",
-                    dueDate: "May 14",
-                    tags: ["devops"],
-                    commentCount: 1,
-                },
-                {
-                    id: 3,
-                    title: "Write API documentation",
-                    priority: "low",
-                    tags: ["docs"],
-                    commentCount: 0,
-                },
-            ],
-        },
-        {
-            status: "doing",
+            status: "in_progress" as TicketStatus,
             label: "In Progress",
             accentColor: "blue",
-            tickets: [
-                {
-                    id: 4,
-                    title: "Implement Kanban drag & drop",
-                    description:
-                        "Use svelte-dnd-action with Carbon Components to build this board.",
-                    priority: "critical",
-                    assignee: "You",
-                    dueDate: "Apr 30",
-                    tags: ["frontend", "svelte"],
-                    commentCount: 7,
-                },
-                {
-                    id: 5,
-                    title: "Tauri file system integration",
-                    description:
-                        "Hook up native file pickers and OS-level drag-and-drop events.",
-                    priority: "high",
-                    assignee: "L. Chen",
-                    tags: ["tauri", "native"],
-                    commentCount: 2,
-                },
-            ],
         },
-        {
-            status: "done",
-            label: "Done",
-            accentColor: "green",
-            tickets: [
-                {
-                    id: 6,
-                    title: "Project scaffolding",
-                    description:
-                        "SvelteKit + Tauri + Carbon Components initial setup.",
-                    priority: "medium",
-                    assignee: "A. Reyes",
-                    dueDate: "Apr 20",
-                    tags: ["setup"],
-                    commentCount: 4,
-                },
-                {
-                    id: 7,
-                    title: "Define ticket data model",
-                    priority: "low",
-                    dueDate: "Apr 22",
-                    commentCount: 1,
-                },
-            ],
-        },
-        {
-            status: "blocked",
-            label: "Blocked",
-            accentColor: "red",
-            tickets: [
-                {
-                    id: 8,
-                    title: "Integrate with backend API",
-                    description:
-                        "Blocked on backend team delivering the REST endpoints.",
-                    priority: "critical",
-                    assignee: "J. Martin",
-                    tags: ["api", "blocked"],
-                    commentCount: 5,
-                },
-            ],
-        },
-    ]);
+        { status: "done" as TicketStatus, label: "Done", accentColor: "green" },
+    ];
+
+    let columns = $derived(
+        columnsDef.map((def) => ({
+            ...def,
+            tickets: ticketsHook.tickets.filter(
+                (ticket) => ticket.status === def.status,
+            ),
+        })),
+    );
 
     // ── Search / filter ────────────────────────────────────────────────────────
     let searchQuery = $state("");
@@ -165,7 +89,7 @@
                           t.description
                               ?.toLowerCase()
                               .includes(searchQuery.toLowerCase()) ||
-                          t.tags?.some((tag) =>
+                          t.labels?.some((tag) =>
                               tag
                                   .toLowerCase()
                                   .includes(searchQuery.toLowerCase()),
@@ -176,18 +100,42 @@
     );
 
     // ── DnD handlers ───────────────────────────────────────────────────────────
-    function makeHandlers(targetStatus: ColumnStatus) {
+    function makeHandlers(targetStatus: TicketStatus) {
         return {
-            consider(e: CustomEvent) {
-                const idx = columns.findIndex((c) => c.status === targetStatus);
-                if (idx !== -1) columns[idx].tickets = e.detail.items;
+            consider(_e: CustomEvent) {
+                actionError = null;
             },
             finalize(e: CustomEvent) {
-                const idx = columns.findIndex((c) => c.status === targetStatus);
-                if (idx !== -1) columns[idx].tickets = e.detail.items;
-                showToast = true;
-                toastMessage = `Ticket moved to "${columns[idx]?.label}"`;
-                setTimeout(() => (showToast = false), 3000);
+                void (async () => {
+                    try {
+                        const detail = e.detail as {
+                            info?: { id?: string };
+                            items?: Array<{ id?: string }>;
+                        };
+                        const movedTicketId = detail.info?.id;
+
+                        if (!movedTicketId) {
+                            return;
+                        }
+
+                        // finalize fires on multiple zones; only destination should persist.
+                        const movedIntoThisColumn =
+                            detail.items?.some(
+                                (item) => item?.id === movedTicketId,
+                            ) ?? false;
+
+                        if (!movedIntoThisColumn) {
+                            return;
+                        }
+
+                        actionError = null;
+                        await ticketsHook.update(movedTicketId, {
+                            status: targetStatus,
+                        });
+                    } catch (error) {
+                        actionError = String(error);
+                    }
+                })();
             },
         };
     }
@@ -195,21 +143,20 @@
     // ── Modal state (Add / Edit) ───────────────────────────────────────────────
     let modalOpen = $state(false);
     let isEditing = $state(false);
-    let targetStatus = $state<ColumnStatus>("todo");
+    let targetStatus = $state<TicketStatus>("todo");
+    let submitting = $state(false);
 
     let form = $state<{
-        id?: number;
+        id?: string;
         title: string;
         description: string;
-        priority: Priority;
-        assignee: string;
+        priority: TicketPriority;
         dueDate: string;
         tags: string[];
     }>({
         title: "",
         description: "",
-        priority: "medium",
-        assignee: "",
+        priority: "p2",
         dueDate: "",
         tags: [],
     });
@@ -229,14 +176,14 @@
         "blocked",
     ];
 
-    function openAddModal(status: ColumnStatus) {
+    function openAddModal(status: TicketStatus) {
         isEditing = false;
         targetStatus = status;
+        actionError = null;
         form = {
             title: "",
             description: "",
-            priority: "medium",
-            assignee: "",
+            priority: "p2",
             dueDate: "",
             tags: [],
         };
@@ -245,70 +192,63 @@
 
     function openEditModal(ticket: Ticket) {
         isEditing = true;
+        actionError = null;
         form = {
             id: ticket.id,
             title: ticket.title,
-            description: ticket.description ?? "",
+            description: ticket.description,
             priority: ticket.priority,
-            assignee: ticket.assignee ?? "",
-            dueDate: ticket.dueDate ?? "",
-            tags: ticket.tags ?? [],
+            dueDate: ticket.due_date ?? "",
+            tags: ticket.labels ?? [],
         };
         modalOpen = true;
     }
 
-    function handleSubmit() {
+    async function handleSubmit() {
         if (!form.title.trim()) return;
+        const board_id = getBoardId();
+        if (!board_id) return;
 
-        if (isEditing && form.id !== undefined) {
-            // Update existing ticket across all columns
-            for (const col of columns) {
-                const idx = col.tickets.findIndex((t) => t.id === form.id);
-                if (idx !== -1) {
-                    col.tickets[idx] = {
-                        ...col.tickets[idx],
-                        title: form.title,
-                        description: form.description || undefined,
-                        priority: form.priority,
-                        assignee: form.assignee || undefined,
-                        dueDate: form.dueDate || undefined,
-                        tags: form.tags.length ? form.tags : undefined,
-                    };
-                    break;
-                }
-            }
-        } else {
-            const col = columns.find((c) => c.status === targetStatus);
-            if (col) {
-                col.tickets.push({
-                    id: nextId++,
+        try {
+            submitting = true;
+            actionError = null;
+
+            if (isEditing && form.id !== undefined) {
+                await ticketsHook.update(form.id, {
                     title: form.title,
-                    description: form.description || undefined,
+                    description: form.description || "",
                     priority: form.priority,
-                    assignee: form.assignee || undefined,
-                    dueDate: form.dueDate || undefined,
-                    tags: form.tags.length ? form.tags : undefined,
-                    commentCount: 0,
+                    due_date: form.dueDate || null,
+                    labels: form.tags,
+                });
+            } else {
+                await ticketsHook.create({
+                    board_id,
+                    title: form.title,
+                    description: form.description || "",
+                    status: targetStatus,
+                    priority: form.priority,
+                    due_date: form.dueDate || null,
+                    labels: form.tags,
                 });
             }
-        }
 
-        modalOpen = false;
-    }
-
-    function deleteTicket(id: number) {
-        for (const col of columns) {
-            const idx = col.tickets.findIndex((t) => t.id === id);
-            if (idx !== -1) {
-                col.tickets.splice(idx, 1);
-                break;
-            }
+            modalOpen = false;
+        } catch (error) {
+            actionError = String(error);
+        } finally {
+            submitting = false;
         }
     }
 
-    // ── Toast ──────────────────────────────────────────────────────────────────
-    let showToast = $state(false);
-    let toastMessage = $state("");
+    async function deleteTicket(id: string) {
+        try {
+            actionError = null;
+            await ticketsHook.remove(id);
+        } catch (error) {
+            actionError = String(error);
+        }
+    }
 
     // ── Stats ──────────────────────────────────────────────────────────────────
     const totalTickets = $derived(
@@ -322,7 +262,6 @@
     );
 </script>
 
-<h1>s</h1>
 <!-- ── Board Shell ─────────────────────────────────────────────────────────── -->
 <div class="board-shell">
     <!-- Toolbar -->
@@ -353,6 +292,24 @@
         />
     {/if}
 
+    {#if loadError}
+        <InlineNotification
+            kind="error"
+            title="Unable to load tickets"
+            subtitle={loadError}
+            hideCloseButton
+        />
+    {/if}
+
+    {#if actionError}
+        <InlineNotification
+            kind="error"
+            title="Ticket action failed"
+            subtitle={actionError}
+            hideCloseButton
+        />
+    {/if}
+
     <!-- Columns -->
     <div class="board-columns" role="main" aria-label="Kanban board">
         {#each filteredColumns as col (col.status)}
@@ -362,6 +319,7 @@
                 status={col.status}
                 tickets={col.tickets}
                 accentColor={col.accentColor}
+                isLoading={ticketsHook.loading}
                 onconsider={handlers.consider}
                 onfinalize={handlers.finalize}
                 onAddTicket={openAddModal}
@@ -380,7 +338,7 @@
     secondaryButtonText="Cancel"
     on:click:button--primary={handleSubmit}
     on:click:button--secondary={() => (modalOpen = false)}
-    primaryButtonDisabled={!form.title.trim()}
+    primaryButtonDisabled={!form.title.trim() || submitting}
     size="sm"
 >
     <div class="modal-form">
@@ -397,16 +355,10 @@
         />
         <div class="form-row">
             <Select labelText="Priority" bind:selected={form.priority}>
-                <SelectItem value="low" text="Low" />
-                <SelectItem value="medium" text="Medium" />
-                <SelectItem value="high" text="High" />
-                <SelectItem value="critical" text="Critical" />
+                <SelectItem value="p3" text="Low" />
+                <SelectItem value="p2" text="Medium" />
+                <SelectItem value="p1" text="High" />
             </Select>
-            <TextInput
-                labelText="Assignee"
-                placeholder="Name or initials"
-                bind:value={form.assignee}
-            />
         </div>
         <div class="form-row">
             <TextInput

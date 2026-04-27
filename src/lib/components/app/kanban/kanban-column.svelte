@@ -5,19 +5,7 @@
     import { Button, Tag, InlineLoading } from "carbon-components-svelte";
     import { Add } from "carbon-icons-svelte";
     import KanbanTicketCard from "./kanban-ticket-card.svelte";
-
-    type Ticket = {
-        id: number;
-        title: string;
-        description?: string;
-        priority: "low" | "medium" | "high" | "critical";
-        assignee?: string;
-        dueDate?: string;
-        tags?: string[];
-        commentCount?: number;
-    };
-
-    type ColumnStatus = "todo" | "doing" | "done" | "blocked";
+    import type { Ticket, TicketStatus } from "$lib/components/app/types";
 
     let {
         label,
@@ -32,15 +20,15 @@
         onDeleteTicket,
     }: {
         label: string;
-        status: ColumnStatus;
+        status: TicketStatus;
         tickets: Ticket[];
         accentColor?: string;
         isLoading?: boolean;
         onconsider: (e: CustomEvent) => void;
         onfinalize: (e: CustomEvent) => void;
-        onAddTicket?: (status: ColumnStatus) => void;
+        onAddTicket?: (status: TicketStatus) => void;
         onEditTicket?: (ticket: Ticket) => void;
-        onDeleteTicket?: (id: number) => void;
+        onDeleteTicket?: (id: string) => void;
     } = $props();
 
     const flipDurationMs = 180;
@@ -58,6 +46,25 @@
     const headerColor = $derived(
         colorVarMap[accentColor] ?? colorVarMap["blue"],
     );
+
+    // dndzone expects the zone list to be updated from event payloads.
+    let zoneItems = $state<Ticket[]>(tickets);
+
+    $effect(() => {
+        zoneItems = tickets;
+    });
+
+    function handleConsider(e: CustomEvent) {
+        const detail = e.detail as { items?: Ticket[] };
+        zoneItems = detail.items ?? zoneItems;
+        onconsider(e);
+    }
+
+    function handleFinalize(e: CustomEvent) {
+        const detail = e.detail as { items?: Ticket[] };
+        zoneItems = detail.items ?? zoneItems;
+        onfinalize(e);
+    }
 </script>
 
 <section class="kanban-column" aria-label="{label} column">
@@ -65,7 +72,7 @@
     <header class="column-header" style="--accent: {headerColor}">
         <div class="column-title-row">
             <h3 class="column-label">{label}</h3>
-            <Tag size="sm" type="outline">{tickets.length}</Tag>
+            <Tag size="sm" type="outline">{zoneItems.length}</Tag>
         </div>
         <div class="column-accent-bar"></div>
     </header>
@@ -73,10 +80,10 @@
     <!-- Drop zone -->
     <div
         class="drop-zone"
-        class:drop-zone--empty={tickets.length === 0}
-        use:dndzone={{ items: tickets, flipDurationMs, type: "kanban-ticket" }}
-        on:consider={onconsider}
-        on:finalize={onfinalize}
+        class:drop-zone--empty={zoneItems.length === 0}
+        use:dndzone={{ items: zoneItems, flipDurationMs, type: "kanban-ticket" }}
+        onconsider={handleConsider}
+        onfinalize={handleFinalize}
         role="list"
         aria-label="Tickets in {label}"
     >
@@ -85,7 +92,7 @@
                 <InlineLoading description="Loading tickets…" />
             </div>
         {:else}
-            {#each tickets as ticket (ticket.id)}
+            {#each zoneItems as ticket (ticket.id)}
                 <div
                     animate:flip={{ duration: flipDurationMs }}
                     class="ticket-wrapper"
@@ -99,7 +106,7 @@
                 </div>
             {/each}
 
-            {#if tickets.length === 0}
+            {#if zoneItems.length === 0}
                 <div class="empty-state" aria-hidden="true">
                     <span class="empty-state-text">No tickets</span>
                 </div>
@@ -126,10 +133,8 @@
         flex-direction: column;
         background: var(--cds-ui-background);
         border: 1px solid var(--cds-ui-03);
-        min-width: 280px;
-        max-width: 320px;
-        width: 100%;
-        flex-shrink: 0;
+        width: 300px;
+        flex: 0 0 300px;
         border-radius: 2px;
         overflow: hidden;
     }

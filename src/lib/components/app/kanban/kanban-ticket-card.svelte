@@ -5,18 +5,11 @@
         OverflowMenu,
         OverflowMenuItem,
     } from "carbon-components-svelte";
-    import { User, Calendar, ChatBot, Draggable } from "carbon-icons-svelte";
-
-    type Ticket = {
-        id: number;
-        title: string;
-        description?: string;
-        priority: "low" | "medium" | "high" | "critical";
-        assignee?: string;
-        dueDate?: string;
-        tags?: string[];
-        commentCount?: number;
-    };
+    import { Calendar, ChatBot, Draggable } from "carbon-icons-svelte";
+    import {
+        type Ticket,
+        type TicketPriority,
+    } from "$lib/components/app/types";
 
     let {
         ticket,
@@ -25,17 +18,16 @@
     }: {
         ticket: Ticket;
         onEdit?: (ticket: Ticket) => void;
-        onDelete?: (id: number) => void;
+        onDelete?: (id: string) => void;
     } = $props();
 
     const priorityMap: Record<
-        Ticket["priority"],
-        { color: string; label: string }
+        TicketPriority,
+        { color: "green" | "teal" | "red"; label: string }
     > = {
-        low: { color: "green", label: "Low" },
-        medium: { color: "teal", label: "Medium" },
-        high: { color: "magenta", label: "High" },
-        critical: { color: "red", label: "Critical" },
+        p3: { color: "green", label: "Low" },
+        p2: { color: "teal", label: "Medium" },
+        p1: { color: "red", label: "High" },
     };
 </script>
 
@@ -76,9 +68,9 @@
         {/if}
 
         <!-- Tags -->
-        {#if ticket.tags?.length}
+        {#if ticket.labels?.length}
             <div class="ticket-tags">
-                {#each ticket.tags as tag}
+                {#each ticket.labels as tag}
                     <Tag size="sm" type="cool-gray">{tag}</Tag>
                 {/each}
             </div>
@@ -91,22 +83,16 @@
             </Tag>
 
             <div class="ticket-meta">
-                {#if ticket.commentCount !== undefined}
+                {#if ticket.comments?.length}
                     <span class="meta-item">
                         <ChatBot size={14} />
-                        <span>{ticket.commentCount}</span>
+                        <span>{ticket.comments.length}</span>
                     </span>
                 {/if}
-                {#if ticket.dueDate}
+                {#if ticket.due_date}
                     <span class="meta-item">
                         <Calendar size={14} />
-                        <span>{ticket.dueDate}</span>
-                    </span>
-                {/if}
-                {#if ticket.assignee}
-                    <span class="meta-item">
-                        <User size={14} />
-                        <span>{ticket.assignee}</span>
+                        <span>{ticket.due_date}</span>
                     </span>
                 {/if}
             </div>
@@ -118,6 +104,8 @@
     .ticket-card {
         position: relative;
         display: flex;
+        margin: 0;
+        padding: 0;
         background: var(--cds-ui-01);
         border: 1px solid var(--cds-ui-03);
         border-radius: 2px;
@@ -158,16 +146,13 @@
         flex-shrink: 0;
     }
 
-    .priority-stripe--low {
+    .priority-stripe--p3 {
         background: var(--cds-support-02);
     }
-    .priority-stripe--medium {
+    .priority-stripe--p2 {
         background: var(--cds-support-04);
     }
-    .priority-stripe--high {
-        background: #e5399e;
-    }
-    .priority-stripe--critical {
+    .priority-stripe--p1 {
         background: var(--cds-support-01);
     }
 
@@ -213,6 +198,7 @@
         line-height: 1.4;
         margin: 0;
         display: -webkit-box;
+        line-clamp: 2;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;

@@ -13,7 +13,6 @@
     const board = $derived(
         boardsApi.boards.find((item) => item.id === data.boardId) ?? null,
     );
-    const boardJson = $derived(board ? JSON.stringify(board, null, 2) : "");
 
     function goToWorkspaceRoot() {
         void goto("/workspace");
@@ -47,14 +46,14 @@
         </article>
     </main>
 {:else}
-    <main class="workspace-json-view">
-        <header>
+    <main class="workspace-board-shell">
+        <header class="workspace-board-header">
             <h1>{board.name}</h1>
-            <small>Board JSON</small>
         </header>
 
-        <pre>{boardJson}</pre>
-        <KanbanBoard />
+        <section class="workspace-board-content" aria-label="Board content">
+            <KanbanBoard />
+        </section>
     </main>
 {/if}
 
@@ -82,28 +81,20 @@
         justify-self: start;
     }
 
-    .workspace-json-view {
+    .workspace-board-shell {
         min-height: 100%;
         padding: var(--cds-spacing-05, 1rem);
-        display: grid;
+        display: flex;
+        flex-direction: column;
         gap: var(--cds-spacing-04, 0.75rem);
-        align-content: start;
     }
 
-    .workspace-json-view header h1,
-    .workspace-json-view header small {
+    .workspace-board-header h1 {
         margin: 0;
     }
 
-    .workspace-json-view pre {
-        margin: 0;
-        padding: var(--cds-spacing-05, 1rem);
-        border-radius: 0.5rem;
-        border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-        background: color-mix(in srgb, currentColor 4%, transparent);
-        overflow: auto;
-        font-family: var(--font-display, "Droid Sans Mono", monospace);
-        font-size: 0.875rem;
-        line-height: 1.5;
+    .workspace-board-content {
+        flex: 1;
+        min-height: 0;
     }
 </style>
