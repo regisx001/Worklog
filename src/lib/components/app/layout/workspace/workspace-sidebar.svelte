@@ -16,6 +16,7 @@
         ContextMenu,
         ContextMenuOption,
         ContextMenuDivider,
+        Modal,
     } from "carbon-components-svelte";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
@@ -155,11 +156,23 @@
         }
     }
 
-    async function deleteBoard(id: string) {
+    let deleteBoardId = $state<string | null>(null);
+    let deleteModalOpen = $state(false);
+
+    function promptDeleteBoard(id: string) {
+        deleteBoardId = id;
+        deleteModalOpen = true;
+    }
+
+    async function confirmDeleteBoard() {
+        if (!deleteBoardId) return;
         try {
-            await boardsApi.remove(id);
+            await boardsApi.remove(deleteBoardId);
         } catch (error) {
             console.error("Failed to delete board:", error);
+        } finally {
+            deleteModalOpen = false;
+            deleteBoardId = null;
         }
     }
 
@@ -233,7 +246,7 @@
                             kind="danger"
                             labelText="Delete Board"
                             icon={TrashCan}
-                            on:click={() => deleteBoard(board.id)}
+                            on:click={() => promptDeleteBoard(board.id)}
                         />
                     </ContextMenu>
                 {/each}
@@ -295,6 +308,22 @@
         </Button>
     </ModalFooter>
 </ComposedModal>
+
+<Modal
+    danger
+    size="xs"
+    bind:open={deleteModalOpen}
+    modalHeading="Delete board"
+    primaryButtonText="Delete"
+    secondaryButtonText="Cancel"
+    on:click:button--secondary={() => (deleteModalOpen = false)}
+    on:click:button--primary={confirmDeleteBoard}
+>
+    <p>
+        Are you sure you want to delete this board? This action cannot be
+        undone.
+    </p>
+</Modal>
 
 <style>
     :global(.workspace-sidebar.bx--side-nav) {
