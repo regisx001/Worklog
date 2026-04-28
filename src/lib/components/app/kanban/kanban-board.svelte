@@ -8,6 +8,7 @@
         SelectItem,
         MultiSelect,
         InlineNotification,
+        Dropdown,
         Toolbar,
         ToolbarContent,
         ToolbarSearch,
@@ -280,7 +281,8 @@
     $effect(() => {
         const handler = () => openAddModal("todo");
         window.addEventListener("worklog:create-ticket", handler);
-        return () => window.removeEventListener("worklog:create-ticket", handler);
+        return () =>
+            window.removeEventListener("worklog:create-ticket", handler);
     });
 </script>
 
@@ -296,7 +298,8 @@
                 persistent
             />
             <div class="toolbar-stats">
-                <span class="stats-text">{doneCount} / {activeTickets} done</span
+                <span class="stats-text"
+                    >{doneCount} / {activeTickets} done</span
                 >
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: {progress}%"></div>
@@ -381,19 +384,25 @@
             bind:value={form.description}
         />
         <div class="form-row">
-            <Select labelText="Priority" bind:selected={form.priority}>
-                <SelectItem value="p3" text="Low" />
-                <SelectItem value="p2" text="Medium" />
-                <SelectItem value="p1" text="High" />
-            </Select>
-            <Select labelText="Type" bind:selected={form.ticketType}>
-                {#each TICKET_TYPE_OPTIONS as typeKey}
-                    <SelectItem
-                        value={typeKey}
-                        text={TICKET_TYPE_CONFIG[typeKey].label}
-                    />
-                {/each}
-            </Select>
+            <Dropdown
+                labelText="Priority"
+                bind:selectedId={form.priority}
+                items={[
+                    { id: "p3", text: "Low" },
+                    { id: "p2", text: "Medium" },
+                    { id: "p1", text: "High" },
+                ]}
+            />
+
+            <Dropdown
+                labelText="Type"
+                bind:selectedId={form.ticketType}
+                items={TICKET_TYPE_OPTIONS.map((typeKey) => ({
+                    id: typeKey,
+                    text: TICKET_TYPE_CONFIG[typeKey].label,
+                }))}
+            />
+            x
         </div>
         <div class="form-row">
             <DatePicker
