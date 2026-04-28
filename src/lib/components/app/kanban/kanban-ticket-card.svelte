@@ -4,6 +4,9 @@
         Tag,
         OverflowMenu,
         OverflowMenuItem,
+        ContextMenu,
+        ContextMenuOption,
+        ContextMenuDivider,
     } from "carbon-components-svelte";
     import {
         Calendar,
@@ -18,6 +21,9 @@
         ChartLineSmooth,
         Lightning,
         Explore,
+        CopyFile,
+        Edit,
+        TrashCan,
     } from "carbon-icons-svelte";
     import {
         type Ticket,
@@ -58,9 +64,25 @@
     const TypeIcon = $derived(typeIconMap[ticket.ticket_type]);
     const priorityConfig = $derived(TICKET_PRIORITY_CONFIG[ticket.priority]);
     const PriorityIcon = $derived(priorityIconMap[ticket.priority]);
+
+    let cardElement = $state<HTMLElement>();
+
+    function copyToClipboard(text: string) {
+        if (navigator.clipboard) {
+            void navigator.clipboard.writeText(text);
+        }
+    }
 </script>
 
-<article class="ticket-card">
+<article class="ticket-card" bind:this={cardElement}>
+    <ContextMenu target={cardElement ? [cardElement] : []}>
+        <ContextMenuOption labelText="Copy Ticket ID" icon={CopyFile} on:click={() => copyToClipboard(ticket.id)} />
+        <ContextMenuOption labelText="Copy Title" icon={CopyFile} on:click={() => copyToClipboard(ticket.title)} />
+        <ContextMenuDivider />
+        <ContextMenuOption labelText="Edit Ticket" icon={Edit} on:click={() => onEdit?.(ticket)} />
+        <ContextMenuOption kind="danger" labelText="Delete Ticket" icon={TrashCan} on:click={() => onDelete?.(ticket.id)} />
+    </ContextMenu>
+
     <!-- Drag handle -->
     <div class="drag-handle" aria-hidden="true">
         <Draggable size={16} />
