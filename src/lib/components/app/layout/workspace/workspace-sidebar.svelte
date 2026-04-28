@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Settings } from "carbon-icons-svelte";
+    import { Settings, CopyFile, Launch, TrashCan } from "carbon-icons-svelte";
 
     import {
         Button,
@@ -13,6 +13,9 @@
         TextArea,
         TextInput,
         TileGroup,
+        ContextMenu,
+        ContextMenuOption,
+        ContextMenuDivider,
     } from "carbon-components-svelte";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
@@ -133,6 +136,33 @@
         creatingBoard = false;
     });
 
+    let boardRefs = $state<Record<string, HTMLElement | null>>({});
+
+    function captureRef(node: HTMLElement, boardId: string) {
+        boardRefs[boardId] = node.closest(".bx--tile") as HTMLElement;
+        return {
+            destroy() {
+                if (boardRefs[boardId] === node.closest(".bx--tile")) {
+                    delete boardRefs[boardId];
+                }
+            },
+        };
+    }
+
+    function copyToClipboard(text: string) {
+        if (navigator.clipboard) {
+            void navigator.clipboard.writeText(text);
+        }
+    }
+
+    async function deleteBoard(id: string) {
+        try {
+            await boardsApi.remove(id);
+        } catch (error) {
+            console.error("Failed to delete board:", error);
+        }
+    }
+
     // Listen for create-board events from the command palette / shortcuts
     $effect(() => {
         const handler = () => openCreateBoardModal();
@@ -172,13 +202,40 @@
                         value={board.id}
                         onclick={() => handleBoardClick(board.id)}
                     >
-                        <span class="workspace-board-name">{board.name}</span>
+                        <span
+                            class="workspace-board-name"
+                            use:captureRef={board.id}>{board.name}</span
+                        >
                         {#if board.description}
                             <span class="workspace-board-description">
                                 {board.description}
                             </span>
                         {/if}
                     </RadioTile>
+
+                    <ContextMenu
+                        target={boardRefs[board.id]
+                            ? [boardRefs[board.id]]
+                            : []}
+                    >
+                        <ContextMenuOption
+                            labelText="Open Board"
+                            icon={Launch}
+                            on:click={() => openBoard(board.id)}
+                        />
+                        <ContextMenuOption
+                            labelText="Copy Board ID"
+                            icon={CopyFile}
+                            on:click={() => copyToClipboard(board.id)}
+                        />
+                        <ContextMenuDivider />
+                        <ContextMenuOption
+                            kind="danger"
+                            labelText="Delete Board"
+                            icon={TrashCan}
+                            on:click={() => deleteBoard(board.id)}
+                        />
+                    </ContextMenu>
                 {/each}
             </TileGroup>
         {/if}
