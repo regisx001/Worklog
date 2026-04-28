@@ -168,6 +168,7 @@
     /* Drag handle — hidden until hover */
     .drag-handle {
         position: absolute;
+        padding: 0.5rem;
         top: 0.5rem;
         right: 2rem;
         color: var(--cds-text-placeholder);
