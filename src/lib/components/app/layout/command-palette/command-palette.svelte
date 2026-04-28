@@ -139,6 +139,7 @@
                             class:palette-item--selected={i ===
                                 palette.selectedIndex}
                             role="option"
+                            tabindex="-1"
                             aria-selected={i === palette.selectedIndex}
                             onmouseenter={() => palette.setSelectedIndex(i)}
                             onclick={() => palette.runAction(action)}
