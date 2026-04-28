@@ -1,6 +1,9 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import KanbanBoard from "$lib/components/app/kanban/kanban-board.svelte";
+    import TableView from "$lib/components/app/kanban/table-view.svelte";
+    import { Tabs, Tab, TabContent } from "carbon-components-svelte";
+    import { Dashboard, Table } from "carbon-icons-svelte";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
 
@@ -52,7 +55,18 @@
         </header>
 
         <section class="workspace-board-content" aria-label="Board content">
-            <KanbanBoard />
+            <Tabs autoWidth>
+                <Tab label="Board" icon={Dashboard} />
+                <Tab label="Table" icon={Table} />
+                <svelte:fragment slot="content">
+                    <TabContent>
+                        <KanbanBoard />
+                    </TabContent>
+                    <TabContent>
+                        <TableView />
+                    </TabContent>
+                </svelte:fragment>
+            </Tabs>
         </section>
     </main>
 {/if}
@@ -96,5 +110,18 @@
     .workspace-board-content {
         flex: 1;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Make Tabs container take full height */
+    :global(.workspace-board-content > .bx--tabs) {
+        flex-shrink: 0;
+    }
+
+    :global(.workspace-board-content > .bx--tab-content) {
+        flex: 1;
+        min-height: 0;
+        padding: 0 !important;
     }
 </style>
