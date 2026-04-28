@@ -110,6 +110,7 @@ export interface Ticket {
     status: TicketStatus;
     priority: TicketPriority;
     ticket_type: TicketType;
+    position: number;
     due_date: string | null;
     labels: string[];
     comments: Comment[];
@@ -123,7 +124,7 @@ export type CreateTicketInput = Pick<
     Ticket,
     "board_id" | "title" | "description" | "labels"
 > &
-    Partial<Pick<Ticket, "status" | "priority" | "ticket_type" | "due_date">>;
+    Partial<Pick<Ticket, "status" | "priority" | "ticket_type" | "position" | "due_date">>;
 export type UpdateTicketInput = Partial<
     Pick<
         Ticket,
@@ -132,6 +133,7 @@ export type UpdateTicketInput = Partial<
         | "status"
         | "priority"
         | "ticket_type"
+        | "position"
         | "due_date"
         | "labels"
         | "comments"

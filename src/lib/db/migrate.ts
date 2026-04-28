@@ -211,6 +211,12 @@ async function migrate_v5(db: Database): Promise<void> {
     }
 }
 
+async function migrate_v6(db: Database): Promise<void> {
+    // Add position column for ticket sorting
+    await db.execute(`ALTER TABLE tickets ADD COLUMN position REAL NOT NULL DEFAULT 0`);
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_tickets_position ON tickets(position)`);
+}
+
 export async function runMigrations(db: Database): Promise<void> {
     const rows = await db.select<{ schema_version: number }[]>(
         `SELECT schema_version FROM workspace_meta WHERE id = 1`
@@ -234,6 +240,10 @@ export async function runMigrations(db: Database): Promise<void> {
 
     if (current < 5) {
         await migrate_v5(db);
+    }
+
+    if (current < 6) {
+        await migrate_v6(db);
     }
 
     await db.execute(

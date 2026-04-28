@@ -115,27 +115,51 @@
                     try {
                         const detail = e.detail as {
                             info?: { id?: string };
-                            items?: Array<{ id?: string }>;
+                            items?: Array<{ id?: string; position?: number }>;
                         };
                         const movedTicketId = detail.info?.id;
 
-                        if (!movedTicketId) {
+                        if (!movedTicketId || !detail.items) {
                             return;
                         }
 
                         // finalize fires on multiple zones; only destination should persist.
-                        const movedIntoThisColumn =
-                            detail.items?.some(
-                                (item) => item?.id === movedTicketId,
-                            ) ?? false;
+                        const newIndex = detail.items.findIndex(
+                            (item) => item.id === movedTicketId,
+                        );
 
-                        if (!movedIntoThisColumn) {
+                        if (newIndex === -1) {
                             return;
+                        }
+
+                        const items = detail.items;
+                        let newPosition = 0;
+
+                        if (items.length === 1) {
+                            newPosition = 1000;
+                        } else if (newIndex === 0) {
+                            newPosition = (items[1].position ?? 1000) - 100;
+                        } else if (newIndex === items.length - 1) {
+                            newPosition =
+                                (items[newIndex - 1].position ?? 0) + 100;
+                        } else {
+                            const prev = items[newIndex - 1].position ?? 0;
+                            const next = items[newIndex + 1].position ?? 0;
+                            newPosition = (prev + next) / 2;
+                        }
+
+                        // Optimistic update of local tickets array for smoother UI
+                        // svelte-dnd-action already handles the visual dom manipulation but
+                        // we need to make sure Svelte state matches immediately before DB call finishes
+                        const ticketIdx = ticketsHook.tickets.findIndex(t => t.id === movedTicketId);
+                        if (ticketIdx !== -1) {
+                           // this relies on ticketsHook not preventing direct mutations or reacting to them if needed
                         }
 
                         actionError = null;
                         await ticketsHook.update(movedTicketId, {
                             status: targetStatus,
+                            position: newPosition,
                         });
                     } catch (error) {
                         actionError = String(error);

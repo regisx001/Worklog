@@ -16,7 +16,7 @@ function deserialize(row: any): Ticket {
 
 export async function listTickets(db: Database, board_id: string): Promise<Ticket[]> {
     const rows = await db.select<any[]>(
-        `SELECT * FROM tickets WHERE board_id = ? ORDER BY created_at ASC`,
+        `SELECT * FROM tickets WHERE board_id = ? ORDER BY position ASC, created_at ASC`,
         [board_id]
     );
     return rows.map(deserialize);
@@ -30,6 +30,16 @@ export async function getTicketById(db: Database, id: string): Promise<Ticket | 
 }
 
 export async function createTicket(db: Database, input: CreateTicketInput): Promise<Ticket> {
+    let position = input.position;
+    if (position === undefined) {
+        const rows = await db.select<{maxPos: number | null}[]>(
+            `SELECT MAX(position) as maxPos FROM tickets WHERE board_id = ? AND status = ?`,
+            [input.board_id, input.status ?? 'todo']
+        );
+        const maxPos = rows[0]?.maxPos ?? 0;
+        position = maxPos + 1000;
+    }
+
     const ticket: Ticket = {
         id: generateId('TKT'),
         board_id: input.board_id,
@@ -38,6 +48,7 @@ export async function createTicket(db: Database, input: CreateTicketInput): Prom
         status: input.status ?? 'todo',
         priority: input.priority ?? 'p2',
         ticket_type: input.ticket_type ?? 'feature',
+        position,
         due_date: input.due_date ?? null,
         labels: input.labels ?? [],
         comments: [],
@@ -46,13 +57,14 @@ export async function createTicket(db: Database, input: CreateTicketInput): Prom
     };
 
     await db.execute(
-        `INSERT INTO tickets (id, board_id, title, description, status, priority, ticket_type, due_date, labels, comments, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tickets (id, board_id, title, description, status, priority, ticket_type, position, due_date, labels, comments, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             ticket.id, ticket.board_id, ticket.title, ticket.description,
             ticket.status,
             ticket.priority,
             ticket.ticket_type,
+            ticket.position,
             ticket.due_date,
             JSON.stringify(ticket.labels),
             JSON.stringify(ticket.comments),
@@ -75,12 +87,13 @@ export async function updateTicket(db: Database, id: string, input: UpdateTicket
 
     await db.execute(
         `UPDATE tickets
-     SET title = ?, description = ?, status = ?, priority = ?, ticket_type = ?, due_date = ?, labels = ?, comments = ?, updated_at = ?
+     SET title = ?, description = ?, status = ?, priority = ?, ticket_type = ?, position = ?, due_date = ?, labels = ?, comments = ?, updated_at = ?
      WHERE id = ?`,
         [
             updated.title, updated.description, updated.status,
             updated.priority,
             updated.ticket_type,
+            updated.position,
             updated.due_date,
             JSON.stringify(updated.labels),
             JSON.stringify(updated.comments),
