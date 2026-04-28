@@ -64,7 +64,7 @@
     const StatusIcon = $derived(statusIconMap[status]);
 
     // dndzone expects the zone list to be updated from event payloads.
-    let zoneItems = $state<Ticket[]>(tickets);
+    let zoneItems = $state<Ticket[]>([]);
 
     $effect(() => {
         zoneItems = tickets;

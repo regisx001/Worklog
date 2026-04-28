@@ -39,7 +39,7 @@ export function useTickets(
         const workspacePath = requireWorkspacePath();
         const db = await getDb(workspacePath);
         const ticket = await TicketRepo.createTicket(db, input);
-        _tickets = [..._tickets, ticket];       // ← state update
+        _tickets = [..._tickets, ticket].sort((a, b) => a.position - b.position);       // ← state update
         return ticket;
     }
 
@@ -48,7 +48,7 @@ export function useTickets(
         requireBoardId();
         const db = await getDb(workspacePath);
         const ticket = await TicketRepo.updateTicket(db, id, input);
-        _tickets = _tickets.map(t => t.id === id ? ticket : t); // ← state update
+        _tickets = _tickets.map(t => t.id === id ? ticket : t).sort((a, b) => a.position - b.position); // ← state update
         return ticket;
     }
 

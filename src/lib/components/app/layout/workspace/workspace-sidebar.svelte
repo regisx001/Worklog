@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Settings } from "carbon-icons-svelte";
+    import { Settings, CopyFile, Launch, TrashCan } from "carbon-icons-svelte";
 
     import {
         Button,
@@ -13,6 +13,10 @@
         TextArea,
         TextInput,
         TileGroup,
+        ContextMenu,
+        ContextMenuOption,
+        ContextMenuDivider,
+        Modal,
     } from "carbon-components-svelte";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
@@ -133,6 +137,45 @@
         creatingBoard = false;
     });
 
+    let boardRefs = $state<Record<string, HTMLElement | null>>({});
+
+    function captureRef(node: HTMLElement, boardId: string) {
+        boardRefs[boardId] = node.closest(".bx--tile") as HTMLElement;
+        return {
+            destroy() {
+                if (boardRefs[boardId] === node.closest(".bx--tile")) {
+                    delete boardRefs[boardId];
+                }
+            },
+        };
+    }
+
+    function copyToClipboard(text: string) {
+        if (navigator.clipboard) {
+            void navigator.clipboard.writeText(text);
+        }
+    }
+
+    let deleteBoardId = $state<string | null>(null);
+    let deleteModalOpen = $state(false);
+
+    function promptDeleteBoard(id: string) {
+        deleteBoardId = id;
+        deleteModalOpen = true;
+    }
+
+    async function confirmDeleteBoard() {
+        if (!deleteBoardId) return;
+        try {
+            await boardsApi.remove(deleteBoardId);
+        } catch (error) {
+            console.error("Failed to delete board:", error);
+        } finally {
+            deleteModalOpen = false;
+            deleteBoardId = null;
+        }
+    }
+
     // Listen for create-board events from the command palette / shortcuts
     $effect(() => {
         const handler = () => openCreateBoardModal();
@@ -172,13 +215,40 @@
                         value={board.id}
                         onclick={() => handleBoardClick(board.id)}
                     >
-                        <span class="workspace-board-name">{board.name}</span>
+                        <span
+                            class="workspace-board-name"
+                            use:captureRef={board.id}>{board.name}</span
+                        >
                         {#if board.description}
                             <span class="workspace-board-description">
                                 {board.description}
                             </span>
                         {/if}
                     </RadioTile>
+
+                    <ContextMenu
+                        target={boardRefs[board.id]
+                            ? [boardRefs[board.id]]
+                            : []}
+                    >
+                        <ContextMenuOption
+                            labelText="Open Board"
+                            icon={Launch}
+                            on:click={() => openBoard(board.id)}
+                        />
+                        <ContextMenuOption
+                            labelText="Copy Board ID"
+                            icon={CopyFile}
+                            on:click={() => copyToClipboard(board.id)}
+                        />
+                        <ContextMenuDivider />
+                        <ContextMenuOption
+                            kind="danger"
+                            labelText="Delete Board"
+                            icon={TrashCan}
+                            on:click={() => promptDeleteBoard(board.id)}
+                        />
+                    </ContextMenu>
                 {/each}
             </TileGroup>
         {/if}
@@ -238,6 +308,22 @@
         </Button>
     </ModalFooter>
 </ComposedModal>
+
+<Modal
+    danger
+    size="xs"
+    bind:open={deleteModalOpen}
+    modalHeading="Delete board"
+    primaryButtonText="Delete"
+    secondaryButtonText="Cancel"
+    on:click:button--secondary={() => (deleteModalOpen = false)}
+    on:click:button--primary={confirmDeleteBoard}
+>
+    <p>
+        Are you sure you want to delete this board? This action cannot be
+        undone.
+    </p>
+</Modal>
 
 <style>
     :global(.workspace-sidebar.bx--side-nav) {
