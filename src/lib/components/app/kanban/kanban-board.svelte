@@ -252,12 +252,24 @@
         }
     }
 
-    async function deleteTicket(id: string) {
+    let deleteTicketId = $state<string | null>(null);
+    let deleteTicketModalOpen = $state(false);
+
+    function promptDeleteTicket(id: string) {
+        deleteTicketId = id;
+        deleteTicketModalOpen = true;
+    }
+
+    async function confirmDeleteTicket() {
+        if (!deleteTicketId) return;
         try {
             actionError = null;
-            await ticketsHook.remove(id);
+            await ticketsHook.remove(deleteTicketId);
         } catch (error) {
             actionError = String(error);
+        } finally {
+            deleteTicketModalOpen = false;
+            deleteTicketId = null;
         }
     }
 
@@ -354,7 +366,7 @@
                 onfinalize={handlers.finalize}
                 onAddTicket={openAddModal}
                 onEditTicket={openEditModal}
-                onDeleteTicket={deleteTicket}
+                onDeleteTicket={promptDeleteTicket}
             />
         {/each}
     </div>
@@ -422,6 +434,22 @@
             bind:selectedIds={form.tags}
         />
     </div>
+</Modal>
+
+<Modal
+    danger
+    bind:open={deleteTicketModalOpen}
+    modalHeading="Delete Ticket"
+    primaryButtonText="Delete"
+    size="xs"
+    secondaryButtonText="Cancel"
+    on:click:button--secondary={() => (deleteTicketModalOpen = false)}
+    on:click:button--primary={confirmDeleteTicket}
+>
+    <p>
+        Are you sure you want to delete this ticket? This action cannot be
+        undone.
+    </p>
 </Modal>
 
 <style>
