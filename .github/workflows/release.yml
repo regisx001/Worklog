@@ -89,13 +89,26 @@ jobs:
         working-directory: packages/worklog
         run: bun run build
 
-      # Tauri build + signed artifacts + updater JSON
+      # Release bundles only. Updater artifacts require a valid minisign private
+      # key in TAURI_SIGNING_PRIVATE_KEY, so keep them disabled in CI unless the
+      # signing secret is intentionally reintroduced.
+      - name: disable updater artifacts for CI bundle
+        working-directory: packages/worklog
+        shell: pwsh
+        run: |
+          @'
+          {
+            "bundle": {
+              "createUpdaterArtifacts": false
+            }
+          }
+          '@ | Set-Content -Path tauri.ci.conf.json -Encoding utf8
+
+      # Tauri build + release artifacts
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SCCACHE_GHA_ENABLED: "true"
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: packages/worklog
           tagName: ${{ github.ref_name }}
@@ -103,5 +116,17 @@ jobs:
           releaseBody: See the assets to download this version and install.
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
-          includeUpdaterJson: true
+          args: ${{ matrix.args }} --config tauri.ci.conf.json
+          includeUpdaterJson: false
+
+      - name: upload Windows portable executable
+        if: matrix.platform == 'windows-latest'
+        working-directory: packages/worklog
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $config = Get-Content -Raw src-tauri/tauri.conf.json | ConvertFrom-Json
+          $assetName = "$($config.productName)_$($config.version)_x64_portable.exe"
+          Copy-Item src-tauri/target/release/worklog.exe $assetName -Force
+          gh release upload "${{ github.ref_name }}" $assetName --clobber

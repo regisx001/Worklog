@@ -3,7 +3,8 @@
 	"sourceLanguageTag": "en",
 	"languageTags": [
 		"en",
-		"fr"
+		"fr",
+		"zh-CN"
 	],
 	"modules": [
 		"https://cdn.jsdelivr.net/npm/@inlang/plugin-message-format@4/dist/index.js"

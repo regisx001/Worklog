@@ -2,13 +2,14 @@
     import { Button } from "carbon-components-svelte";
     import { goto } from "$app/navigation";
     import { getWorkspace } from "$lib/hooks/workspace.svelte";
+    import * as m from "$lib/paraglide/messages.js";
 
     const workspace = getWorkspace();
 
     const openWorkspaceLabel = $derived(
         workspace.status === "error"
-            ? "Retry Opening Workspace Folder"
-            : "Open Workspace Folder",
+            ? m.workspace_selector_retry_open()
+            : m.workspace_selector_open_folder(),
     );
 
     const showWorkspaceSelector = $derived(
@@ -28,10 +29,10 @@
 </script>
 
 <svelte:head>
-    <title>Worklog | Workspace</title>
+    <title>{m.workspace_selector_page_title()}</title>
     <meta
         name="description"
-        content="Select a local workspace and continue with your Worklog boards."
+        content={m.workspace_selector_meta_description()}
     />
 </svelte:head>
 
@@ -41,9 +42,9 @@
             aria-labelledby="workspace-selector-title"
             class="workspace-selector-card"
         >
-            <h1 id="workspace-selector-title">Select Workspace</h1>
+            <h1 id="workspace-selector-title">{m.workspace_selector_title()}</h1>
             <p>
-                Worklog is local-first. Choose a folder to store
+                {m.workspace_selector_description_prefix()}
                 <code>.worklog/worklog.db</code>.
             </p>
 
@@ -60,7 +61,7 @@
     </main>
 {:else}
     <main class="app-state">
-        <article aria-busy="true">Opening workspace...</article>
+        <article aria-busy="true">{m.workspace_opening()}</article>
     </main>
 {/if}
 

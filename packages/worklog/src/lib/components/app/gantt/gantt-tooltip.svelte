@@ -8,6 +8,8 @@
     } from "$lib/components/app/types";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
+    import * as m from "$lib/paraglide/messages.js";
+    import { formatDate } from "$lib/utils/date-format";
 
     const state = getGanttState();
     const context = getWorkspaceShellContext();
@@ -24,13 +26,13 @@
     >
         <strong>{state.hoveredTicket.title}</strong>
         <div class="tip-row">
-            <span class="tip-label">Status</span>
+            <span class="tip-label">{m.preview_status()}</span>
             <Tag type="gray" size="sm"
                 >{TICKET_STATUS_CONFIG[state.hoveredTicket.status].label}</Tag
             >
         </div>
         <div class="tip-row">
-            <span class="tip-label">Type</span>
+            <span class="tip-label">{m.modal_type()}</span>
             <Tag
                 style="background-color: {customType?.color ||
                     '#525252'}; color: white;"
@@ -40,7 +42,7 @@
             </Tag>
         </div>
         <div class="tip-row">
-            <span class="tip-label">Priority</span>
+            <span class="tip-label">{m.modal_priority()}</span>
             <Tag
                 type={TICKET_PRIORITY_CONFIG[
                     state.hoveredTicket
@@ -55,7 +57,7 @@
             </Tag>
         </div>
         <div class="tip-row">
-            <span class="tip-label">Timeline</span>
+            <span class="tip-label">{m.board_tab_timeline()}</span>
             <span
                 class="tip-val"
                 class:tip-overdue={state.isOverdue(state.hoveredTicket)}
@@ -65,11 +67,9 @@
         {#if state.hoveredTicket.start_date}
             <div class="tip-row">
                 <Calendar size={12} />
-                <span class="tip-label">Start</span>
+                <span class="tip-label">{m.gantt_start()}</span>
                 <span class="tip-val"
-                    >{new Date(
-                        state.hoveredTicket.start_date,
-                    ).toLocaleDateString("en-US", {
+                    >{formatDate(new Date(state.hoveredTicket.start_date), {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -80,12 +80,13 @@
         {#if state.hoveredTicket.due_date}
             <div class="tip-row">
                 <Calendar size={12} />
-                <span class="tip-label">Due</span>
+                <span class="tip-label">{m.gantt_due()}</span>
                 <span class="tip-val"
-                    >{new Date(state.hoveredTicket.due_date).toLocaleDateString(
-                        "en-US",
-                        { month: "short", day: "numeric", year: "numeric" },
-                    )}</span
+                    >{formatDate(new Date(state.hoveredTicket.due_date), {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                    })}</span
                 >
             </div>
         {/if}

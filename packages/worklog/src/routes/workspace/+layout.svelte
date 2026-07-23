@@ -20,6 +20,7 @@
         destroySyncScheduler,
     } from "$lib/sync/sync-scheduler.svelte";
     import { onDestroy } from "svelte";
+    import * as m from "$lib/paraglide/messages.js";
 
     let { children } = $props();
     const workspace = getWorkspace();
@@ -91,12 +92,13 @@
     $effect(() => {
         // Read the reactive dependency
         const boards = boardsApi.boards;
+        getReactiveLocale();
 
         // Build new board actions (or empty list if no boards)
         const boardActions: CommandAction[] = boards.map((board) => ({
             id: `switch-board-${board.id}`,
-            label: `Switch to: ${board.name}`,
-            subtitle: board.description || "Open this board",
+            label: m.command_switch_to_board({ name: board.name }),
+            subtitle: board.description || m.command_open_this_board(),
             shortcut: "",
             category: "Boards",
             icon: Dashboard,
@@ -126,11 +128,6 @@
     });
 </script>
 
-<!-- <h1>Hello World</h1>
-<h1>Hello World</h1>
-<h1>Hello World</h1>
-<h1>{JSON.stringify(}</h1> -->
-
 {#if workspace.status === "ready"}
     <WorkspaceSidebar
         isSetting={isSettingsRoute}
@@ -146,7 +143,7 @@
     {#if workspace.status === "ready"}
         {#if boardLoadError}
             <aside class="workspace-load-error" role="alert">
-                <strong>Unable to load boards.</strong>
+                <strong>{m.workspace_unable_to_load_boards()}</strong>
                 <span>{boardLoadError}</span>
             </aside>
         {/if}
@@ -154,7 +151,7 @@
         {@render children()}
     {:else}
         <main class="workspace-state">
-            <article aria-busy="true">Opening workspace...</article>
+            <article aria-busy="true">{m.workspace_opening()}</article>
         </main>
     {/if}
 </Content>

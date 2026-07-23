@@ -1,5 +1,6 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
+    import * as m from "$lib/paraglide/messages.js";
 
     $effect(() => {
         void goto("/workspace", { replaceState: true });
@@ -7,7 +8,7 @@
 </script>
 
 <main class="kanban-redirect">
-    <article aria-busy="true">Redirecting to workspace...</article>
+    <article aria-busy="true">{m.workspace_redirecting()}</article>
 </main>
 
 <style>

@@ -9,6 +9,7 @@
     } from "$lib/hooks/command-palette.svelte";
     import type { PaletteMode } from "$lib/hooks/command-palette.svelte";
     import type { CommandAction } from "$lib/components/app/types";
+    import * as m from "$lib/paraglide/messages.js";
 
     const palette = getCommandPalette();
 
@@ -183,18 +184,37 @@
     const filtered = $derived(scored.map((s) => s.action));
 
     // ── Mode label map ─────────────────────────────────────────────────────
-    const MODE_LABEL: Record<PaletteMode, { badge: string; hint: string }> = {
-        commands: {
-            badge: "",
-            hint: "Type ? for shortcuts, # for boards, / to navigate",
-        },
-        shortcuts: {
-            badge: "?",
-            hint: "Keyboard shortcuts reference — press Esc to go back",
-        },
-        boards: { badge: "#", hint: "Board & workspace commands" },
-        navigate: { badge: "/", hint: "Navigation commands" },
-    };
+    function modeLabel(mode: PaletteMode): { badge: string; hint: string } {
+        switch (mode) {
+            case "shortcuts":
+                return { badge: "?", hint: m.palette_mode_shortcuts_hint() };
+            case "boards":
+                return { badge: "#", hint: m.palette_mode_boards_hint() };
+            case "navigate":
+                return { badge: "/", hint: m.palette_mode_navigate_hint() };
+            default:
+                return { badge: "", hint: m.palette_mode_commands_hint() };
+        }
+    }
+
+    function categoryLabel(category: string): string {
+        switch (category) {
+            case "Application":
+                return m.command_category_application();
+            case "Navigation":
+                return m.command_category_navigation();
+            case "Workspace":
+                return m.command_category_workspace();
+            case "Boards":
+                return m.command_category_boards();
+            case "Actions":
+                return m.command_category_actions();
+            case "Commands":
+                return m.command_category_commands();
+            default:
+                return category;
+        }
+    }
 
     // ── Resolve match data for a flat index ────────────────────────────────
     function getMatchData(flatIndex: number) {
@@ -293,14 +313,14 @@
         <div
             class="palette-container"
             role="dialog"
-            aria-label="Command palette"
+            aria-label={m.palette_aria_label()}
         >
             <!-- Search input -->
             <div class="palette-search">
                 <Search size={20} class="palette-search-icon" />
                 {#if activeMode !== "commands"}
                     <span class="palette-mode-badge"
-                        >{MODE_LABEL[activeMode].badge}</span
+                        >{modeLabel(activeMode).badge}</span
                     >
                 {/if}
                 <input
@@ -309,8 +329,8 @@
                     class="palette-input"
                     class:palette-input--has-mode={activeMode !== "commands"}
                     placeholder={activeMode === "commands"
-                        ? "Type a command..."
-                        : MODE_LABEL[activeMode].hint}
+                        ? m.palette_placeholder()
+                        : modeLabel(activeMode).hint}
                     value={palette.query}
                     oninput={(e) =>
                         palette.setQuery(
@@ -326,13 +346,13 @@
             <div class="palette-results" role="listbox">
                 {#if filtered.length === 0}
                     <div class="palette-empty">
-                        <span>No commands found</span>
+                        <span>{m.palette_no_commands()}</span>
                     </div>
                 {:else}
                     {#each grouped as group}
                         <div class="palette-group">
                             <div class="palette-group-header">
-                                {group.category}
+                                {categoryLabel(group.category)}
                             </div>
                             {#each group.actions as { action, flatIndex } (action.id)}
                                 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -424,18 +444,18 @@
                 <div class="palette-hint">
                     <Keyboard size={14} />
                     {#if activeMode === "shortcuts"}
-                        <span><kbd>Esc</kbd> go back</span>
+                        <span><kbd>Esc</kbd> {m.palette_footer_go_back()}</span>
                     {:else if activeMode === "commands"}
                         <span
-                            ><kbd>↑↓</kbd> navigate &middot;
-                            <kbd>Enter</kbd> run &middot;
-                            <kbd>Esc</kbd> close</span
+                            ><kbd>↑↓</kbd> {m.palette_footer_navigate()} &middot;
+                            <kbd>Enter</kbd> {m.palette_footer_run()} &middot;
+                            <kbd>Esc</kbd> {m.palette_footer_close()}</span
                         >
                     {:else}
                         <span
-                            ><kbd>↑↓</kbd> navigate &middot;
-                            <kbd>Enter</kbd> run &middot;
-                            <kbd>Esc</kbd> go back</span
+                            ><kbd>↑↓</kbd> {m.palette_footer_navigate()} &middot;
+                            <kbd>Enter</kbd> {m.palette_footer_run()} &middot;
+                            <kbd>Esc</kbd> {m.palette_footer_go_back()}</span
                         >
                     {/if}
                 </div>

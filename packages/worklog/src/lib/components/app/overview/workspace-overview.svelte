@@ -1,6 +1,8 @@
 <script lang="ts">
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
     import { getWorkspaceOverview } from "$lib/hooks/workspace-overview.svelte";
+    import { getReactiveLocale } from "$lib/hooks/locale.svelte";
+    import { formatDate } from "$lib/utils/date-format";
     import * as m from "$lib/paraglide/messages.js";
 
     const shell = getWorkspaceShellContext();
@@ -59,7 +61,7 @@
         const past = new Date(now);
         past.setDate(past.getDate() - 30);
         const fmt = (d: Date) =>
-            d.toLocaleDateString("en-US", {
+            formatDate(d, {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
@@ -84,10 +86,65 @@
     };
 
     const PRIORITY_COLORS: Record<string, string> = {
-        High: "var(--cds-support-01, #da1e28)",
-        Medium: "var(--cds-support-03, #f1c21b)",
-        Low: "var(--cds-support-02, #24a148)",
+        p1: "var(--cds-support-01, #da1e28)",
+        p2: "var(--cds-support-03, #f1c21b)",
+        p3: "var(--cds-support-02, #24a148)",
     };
+
+    function formatStatus(status: string): string {
+        const labels: Record<string, () => string> = {
+            backlog: m.status_backlog,
+            todo: m.status_todo,
+            in_progress: m.status_in_progress,
+            done: m.status_done,
+        };
+        return labels[status]?.() ?? status;
+    }
+
+    function formatPriority(priority: string): string {
+        const labels: Record<string, () => string> = {
+            p1: m.modal_priority_high,
+            p2: m.modal_priority_medium,
+            p3: m.modal_priority_low,
+        };
+        return labels[priority]?.() ?? priority;
+    }
+
+    function formatRelativeTime(iso: string): string {
+        getReactiveLocale();
+        const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+        if (minutes < 1) return m.overview_time_just_now();
+        if (minutes < 60) return m.overview_time_minutes_ago({ count: minutes });
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return m.overview_time_hours_ago({ count: hours });
+        const days = Math.floor(hours / 24);
+        if (days < 7) return m.overview_time_days_ago({ count: days });
+        if (days < 30) return m.overview_time_weeks_ago({ count: Math.floor(days / 7) });
+        return formatDate(new Date(iso), { month: "short", day: "numeric", year: "numeric" });
+    }
+
+    function formatActivity(eventType: string, payload: Record<string, unknown>): string {
+        const title = typeof payload.title === "string" && payload.title ? payload.title : m.overview_ticket_fallback();
+        const boardName = typeof payload.name === "string" ? payload.name : "";
+        const targetStatus = typeof payload.to === "string" ? formatStatus(payload.to) : m.overview_status_fallback();
+
+        switch (eventType) {
+            case "ticket_created":
+                return m.overview_activity_ticket_created({ title });
+            case "ticket_moved":
+                return m.overview_activity_ticket_moved({ title, status: targetStatus });
+            case "ticket_updated":
+                return m.overview_activity_ticket_updated({ title });
+            case "ticket_deleted":
+                return m.overview_activity_ticket_deleted({ title });
+            case "board_created":
+                return m.overview_activity_board_created({ name: boardName });
+            case "board_archived":
+                return m.overview_activity_board_archived({ name: boardName });
+            default:
+                return m.overview_activity_unknown();
+        }
+    }
 </script>
 
 <div class="overview-layout">
@@ -114,7 +171,7 @@
         </div>
         <div class="overview-header-right">
             <div class="board-selector">
-                <span>All boards</span>
+                <span>{m.overview_all_boards()}</span>
                 <svg
                     width="12"
                     height="12"
@@ -126,9 +183,9 @@
     </header>
 
     {#if overview.loading && !overview.data}
-        <div class="loading-state">Loading workspace data...</div>
+        <div class="loading-state">{m.overview_loading()}</div>
     {:else if overview.error}
-        <div class="error-state">Failed to load: {overview.error}</div>
+        <div class="error-state">{m.overview_load_failed({ error: overview.error })}</div>
     {:else if overview.data}
         {@const d = overview.data}
 
@@ -161,9 +218,9 @@
                         <span class="metric-val metric-val--overdue"
                             >{d.metrics.overdueCount}</span
                         >
-                        <span class="metric-label">Overdue Tickets</span>
+                        <span class="metric-label">{m.overview_overdue_tickets()}</span>
                         <span class="metric-trend metric-trend--down"
-                            >⚠ {d.metrics.overdueCount} overdue</span
+                            >⚠ {m.overview_overdue_count({ count: d.metrics.overdueCount })}</span
                         >
                     </div>
                 </div>
@@ -179,7 +236,7 @@
                                 class="status-dot"
                                 style="background:{STATUS_ACCENTS[item.status]}"
                             ></span>
-                            <span class="status-label">{item.label}</span>
+                            <span class="status-label">{formatStatus(item.status)}</span>
                             <div class="status-track">
                                 <div
                                     class="status-fill"
@@ -213,7 +270,7 @@
                                     >
                                 </div>
                                 <span class="board-count"
-                                    >{item.openCount} open</span
+                                >{m.overview_open_count({ count: item.openCount })}</span
                                 >
                             </div>
                         {/each}
@@ -225,7 +282,7 @@
 
             <!-- ═══ Progress Over Time ═══ -->
             <div class="widget chart-widget">
-                <h3>Progress Over Time</h3>
+                <h3>{m.overview_progress_over_time()}</h3>
                 {#if d.progressTimeline.length > 0}
                     {@const chartMax = Math.max(
                         1,
@@ -348,26 +405,25 @@
                                 style="left:{chartTooltip.x}px; top:{chartTooltip.y}px"
                             >
                                 <div class="chart-tooltip-date">
-                                    {chartTooltip.date}
+                                    {formatDate(new Date(chartTooltip.date), { month: "short", day: "numeric", year: "numeric" })}
                                 </div>
                                 <div class="chart-tooltip-row">
                                     <span
                                         class="chart-tooltip-dot"
                                         style="background:var(--cds-support-02)"
                                     ></span>
-                                    Completed: {chartTooltip.completed}
+                                    {m.overview_completed_count({ count: chartTooltip.completed })}
                                 </div>
                                 <div class="chart-tooltip-row">
                                     <span
                                         class="chart-tooltip-dot"
                                         style="background:var(--cds-support-01)"
                                     ></span>
-                                    Created: {chartTooltip.created}
+                                    {m.overview_created_count({ count: chartTooltip.created })}
                                 </div>
                                 {#if chartTooltip.created + chartTooltip.completed > 0}
                                     <div class="chart-tooltip-total">
-                                        Total: {chartTooltip.created +
-                                            chartTooltip.completed}
+                                        {m.overview_total_count({ count: chartTooltip.created + chartTooltip.completed })}
                                     </div>
                                 {/if}
                             </div>
@@ -377,34 +433,34 @@
                                 ><span
                                     class="legend-dot"
                                     style="background:var(--cds-support-01)"
-                                ></span> Created</span
+                                ></span> {m.overview_created()}</span
                             >
                             <span class="legend-item"
                                 ><span
                                     class="legend-dot"
                                     style="background:var(--cds-support-02)"
-                                ></span> Completed</span
+                                ></span> {m.overview_completed()}</span
                             >
                         </div>
                     </div>
                 {:else}
-                    <p class="empty-text">No timeline data yet.</p>
+                    <p class="empty-text">{m.overview_no_timeline_data()}</p>
                 {/if}
             </div>
 
             <!-- ═══ Overdue Tickets ═══ -->
             <div class="widget overdue-widget">
-                <h3>Overdue Tickets</h3>
+                <h3>{m.overview_overdue_tickets()}</h3>
                 <div class="overdue-total">
                     <span class="overdue-total-val"
                         >{d.metrics.overdueCount}</span
                     >
-                    <span class="overdue-total-label">Total overdue</span>
+                    <span class="overdue-total-label">{m.overview_total_overdue()}</span>
                 </div>
                 <div class="overdue-bars">
                     {#each d.overdueBreakdown as item}
                         <div class="overdue-row">
-                            <span class="overdue-label">{item.priority}</span>
+                            <span class="overdue-label">{formatPriority(item.priority)}</span>
                             <div class="overdue-track">
                                 <div
                                     class="overdue-fill"
@@ -425,7 +481,7 @@
 
             <!-- ═══ Top Labels ═══ -->
             <div class="widget labels-widget">
-                <h3>Top Labels</h3>
+                <h3>{m.overview_top_labels()}</h3>
                 {#if d.topLabels.length > 0}
                     <div class="labels-list">
                         {#each d.topLabels as item}
@@ -449,13 +505,13 @@
                         {/each}
                     </div>
                 {:else}
-                    <p class="empty-text">No labels used yet.</p>
+                    <p class="empty-text">{m.overview_no_labels()}</p>
                 {/if}
             </div>
 
             <!-- ═══ Upcoming Deadlines ═══ -->
             <div class="widget deadlines-widget">
-                <h3>Upcoming Deadlines</h3>
+                <h3>{m.overview_upcoming_deadlines()}</h3>
                 {#if d.upcomingDeadlines.length > 0}
                     <div class="deadlines-list">
                         {#each d.upcomingDeadlines.slice(0, 5) as item}
@@ -471,31 +527,31 @@
                                         >{item.title}</span
                                     >
                                     <span class="deadline-meta">
-                                        {#if item.priority === "p1"}High{:else if item.priority === "p2"}Medium{:else if item.priority === "p3"}Low{/if}
-                                        · {item.dueDate.slice(0, 10)}
+                                        {formatPriority(item.priority)}
+                                        · {formatDate(new Date(item.dueDate), { month: "short", day: "numeric", year: "numeric" })}
                                     </span>
                                 </div>
                             </div>
                         {/each}
                     </div>
                 {:else}
-                    <p class="empty-text">No upcoming deadlines.</p>
+                    <p class="empty-text">{m.overview_no_upcoming_deadlines()}</p>
                 {/if}
             </div>
 
             <!-- ═══ Recent Activity ═══ -->
             <div class="widget activity-widget">
-                <h3>Recent Activity</h3>
+                <h3>{m.overview_recent_activity()}</h3>
                 <div class="activity-feed">
                     {#each d.recentActivity.slice(0, 8) as item}
                         <div class="activity-item">
                             <div class="activity-dot"></div>
                             <div class="activity-body">
                                 <span class="activity-desc"
-                                    >{item.description}</span
+                                    >{formatActivity(item.eventType, item.payload)}</span
                                 >
                                 <span class="activity-time"
-                                    >{item.relativeTime}</span
+                                    >{formatRelativeTime(item.timestamp)}</span
                                 >
                             </div>
                         </div>

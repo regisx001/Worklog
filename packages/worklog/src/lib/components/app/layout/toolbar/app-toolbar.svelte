@@ -185,7 +185,7 @@
             disabled={!undoRedo.canUndo}
             onclick={onUndo}
             kind="ghost"
-            aria-label="Undo"
+            aria-label={m.command_undo()}
         >
             <Undo />
         </Button>
@@ -194,7 +194,7 @@
             disabled={!undoRedo.canRedo}
             onclick={onRedo}
             kind="ghost"
-            aria-label="Redo"
+            aria-label={m.command_redo()}
         >
             <Redo />
         </Button>

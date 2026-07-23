@@ -1,5 +1,6 @@
 import { getCommandPalette } from "$lib/hooks/command-palette.svelte";
 import type { CommandAction } from "$lib/components/app/types";
+import * as m from "$lib/paraglide/messages.js";
 import {
     Search,
     Add,
@@ -87,8 +88,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
     return [
         {
             id: "open-command-palette",
-            label: "Command Palette",
-            subtitle: "Search and run commands",
+            label: m.command_palette_label(),
+            subtitle: m.command_palette_subtitle(),
             shortcut: formatShortcut({ key: "k", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Application",
             icon: Search,
@@ -96,8 +97,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "create-ticket",
-            label: "Create Ticket",
-            subtitle: "Add a new ticket to the active board",
+            label: m.command_create_ticket(),
+            subtitle: m.command_create_ticket_subtitle(),
             shortcut: formatShortcut({ key: "n", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Actions",
             icon: Add,
@@ -105,8 +106,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "create-board",
-            label: "Create Board",
-            subtitle: "Create a new board in the workspace",
+            label: m.command_create_board(),
+            subtitle: m.command_create_board_subtitle(),
             shortcut: formatShortcut({ key: "b", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Actions",
             icon: Dashboard,
@@ -114,8 +115,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "open-settings",
-            label: "Open Settings",
-            subtitle: "Workspace preferences and diagnostics",
+            label: m.command_open_settings(),
+            subtitle: m.command_open_settings_subtitle(),
             shortcut: formatShortcut({ key: ",", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Navigation",
             icon: Settings,
@@ -123,8 +124,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "go-to-workspace",
-            label: "Go to Workspace",
-            subtitle: "Navigate to the workspace board list",
+            label: m.command_go_to_workspace(),
+            subtitle: m.command_go_to_workspace_subtitle(),
             shortcut: formatShortcut({ key: "h", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Navigation",
             icon: Home,
@@ -132,8 +133,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "toggle-theme",
-            label: "Toggle Theme",
-            subtitle: "Switch between light and dark mode",
+            label: m.command_toggle_theme(),
+            subtitle: m.command_toggle_theme_subtitle(),
             shortcut: formatShortcut({ key: "j", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Application",
             icon: Asleep,
@@ -141,8 +142,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "refresh-app",
-            label: "Refresh Application",
-            subtitle: "Reload the application window",
+            label: m.command_refresh_app(),
+            subtitle: m.command_refresh_app_subtitle(),
             shortcut: formatShortcut({ key: "r", ctrlOrCmd: true, shift: true, label: "", run: () => { } }),
             category: "Application",
             icon: Renew,
@@ -150,8 +151,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "close-workspace",
-            label: "Close Workspace",
-            subtitle: "Close the current workspace and return to selector",
+            label: m.command_close_workspace(),
+            subtitle: m.command_close_workspace_subtitle(),
             shortcut: formatShortcut({ key: "w", ctrlOrCmd: true, shift: true, label: "", run: () => { } }),
             category: "Workspace",
             icon: Close,
@@ -159,8 +160,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "open-workspace",
-            label: "Open Workspace",
-            subtitle: "Open a different workspace folder",
+            label: m.command_open_workspace(),
+            subtitle: m.command_open_workspace_subtitle(),
             shortcut: formatShortcut({ key: "o", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Workspace",
             icon: FolderOpen,
@@ -168,8 +169,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "export-data",
-            label: "Export Data",
-            subtitle: "Export all workspace data to a JSON file",
+            label: m.command_export_data(),
+            subtitle: m.command_export_data_subtitle(),
             shortcut: formatShortcut({ key: "e", ctrlOrCmd: true, shift: true, label: "", run: () => { } }),
             category: "Actions",
             icon: Download,
@@ -177,8 +178,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "import-data",
-            label: "Import Data",
-            subtitle: "Import workspace data from a JSON or CSV file",
+            label: m.command_import_data(),
+            subtitle: m.command_import_data_subtitle(),
             shortcut: "",
             category: "Actions",
             icon: Upload,
@@ -186,8 +187,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "undo",
-            label: "Undo",
-            subtitle: "Revert the last action",
+            label: m.command_undo(),
+            subtitle: m.command_undo_subtitle(),
             shortcut: formatShortcut({ key: "z", ctrlOrCmd: true, label: "", run: () => { } }),
             category: "Actions",
             icon: Undo,
@@ -195,8 +196,8 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
         },
         {
             id: "redo",
-            label: "Redo",
-            subtitle: "Restore a reverted action",
+            label: m.command_redo(),
+            subtitle: m.command_redo_subtitle(),
             shortcut: formatShortcut({ key: "z", ctrlOrCmd: true, shift: true, label: "", run: () => { } }),
             category: "Actions",
             icon: Redo,
@@ -210,18 +211,18 @@ export function buildCommandActions(callbacks: AppCallbacks): CommandAction[] {
 
 export function buildShortcuts(callbacks: AppCallbacks & { openCommandPalette: () => void }): ShortcutDef[] {
     return [
-        { key: "k", ctrlOrCmd: true, label: "Open Command Palette", run: callbacks.openCommandPalette },
-        { key: "n", ctrlOrCmd: true, label: "Create Ticket", run: callbacks.createTicket },
-        { key: "b", ctrlOrCmd: true, label: "Create Board", run: callbacks.createBoard },
-        { key: ",", ctrlOrCmd: true, label: "Open Settings", run: callbacks.openSettings },
-        { key: "h", ctrlOrCmd: true, label: "Go to Workspace", run: callbacks.goToWorkspace },
-        { key: "j", ctrlOrCmd: true, label: "Toggle Theme", run: callbacks.toggleTheme },
-        { key: "r", ctrlOrCmd: true, shift: true, label: "Refresh Application", run: callbacks.refreshApp },
-        { key: "w", ctrlOrCmd: true, shift: true, label: "Close Workspace", run: callbacks.closeWorkspace },
-        { key: "o", ctrlOrCmd: true, label: "Open Workspace", run: callbacks.openWorkspace },
-        { key: "e", ctrlOrCmd: true, shift: true, label: "Export Data", run: callbacks.exportData },
-        { key: "z", ctrlOrCmd: true, label: "Undo", run: callbacks.undo },
-        { key: "z", ctrlOrCmd: true, shift: true, label: "Redo", run: callbacks.redo },
+        { key: "k", ctrlOrCmd: true, label: m.toolbar_open_command_palette(), run: callbacks.openCommandPalette },
+        { key: "n", ctrlOrCmd: true, label: m.command_create_ticket(), run: callbacks.createTicket },
+        { key: "b", ctrlOrCmd: true, label: m.command_create_board(), run: callbacks.createBoard },
+        { key: ",", ctrlOrCmd: true, label: m.command_open_settings(), run: callbacks.openSettings },
+        { key: "h", ctrlOrCmd: true, label: m.command_go_to_workspace(), run: callbacks.goToWorkspace },
+        { key: "j", ctrlOrCmd: true, label: m.command_toggle_theme(), run: callbacks.toggleTheme },
+        { key: "r", ctrlOrCmd: true, shift: true, label: m.command_refresh_app(), run: callbacks.refreshApp },
+        { key: "w", ctrlOrCmd: true, shift: true, label: m.command_close_workspace(), run: callbacks.closeWorkspace },
+        { key: "o", ctrlOrCmd: true, label: m.command_open_workspace(), run: callbacks.openWorkspace },
+        { key: "e", ctrlOrCmd: true, shift: true, label: m.command_export_data(), run: callbacks.exportData },
+        { key: "z", ctrlOrCmd: true, label: m.command_undo(), run: callbacks.undo },
+        { key: "z", ctrlOrCmd: true, shift: true, label: m.command_redo(), run: callbacks.redo },
     ];
 }
 

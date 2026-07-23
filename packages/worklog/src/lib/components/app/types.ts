@@ -4,6 +4,8 @@ export type TicketType = "feature" | "bug" | "chore" | "improvement" | "epic" | 
 
 export type SyncState = "up_to_date" | "pending_changes" | "syncing";
 
+import * as m from "$lib/paraglide/messages.js";
+
 // ── Ticket Type Config ─────────────────────────────────────────────────────
 // Centralized display config for ticket types, statuses, and priorities.
 // Carbon icon components are imported by consumers — we reference by string key here.
@@ -15,18 +17,18 @@ export interface TicketTypeConfig {
 }
 
 export const TICKET_TYPE_CONFIG: Record<TicketType, TicketTypeConfig> = {
-    feature: { label: "Feature", tagColor: "teal" },
-    bug: { label: "Bug", tagColor: "red" },
-    chore: { label: "Chore", tagColor: "warm-gray" },
-    improvement: { label: "Improvement", tagColor: "cyan" },
-    epic: { label: "Epic", tagColor: "purple" },
-    spike: { label: "Spike", tagColor: "magenta" },
-    story: { label: "Story", tagColor: "blue" },
-    task: { label: "Task", tagColor: "cool-gray" },
-    subtask: { label: "Subtask", tagColor: "cool-gray" },
-    incident: { label: "Incident", tagColor: "high-contrast" },
-    design: { label: "Design", tagColor: "magenta" },
-    documentation: { label: "Docs", tagColor: "green" },
+    feature: { get label() { return m.ticket_type_feature(); }, tagColor: "teal" },
+    bug: { get label() { return m.ticket_type_bug(); }, tagColor: "red" },
+    chore: { get label() { return m.ticket_type_chore(); }, tagColor: "warm-gray" },
+    improvement: { get label() { return m.ticket_type_improvement(); }, tagColor: "cyan" },
+    epic: { get label() { return m.ticket_type_epic(); }, tagColor: "purple" },
+    spike: { get label() { return m.ticket_type_spike(); }, tagColor: "magenta" },
+    story: { get label() { return m.ticket_type_story(); }, tagColor: "blue" },
+    task: { get label() { return m.ticket_type_task(); }, tagColor: "cool-gray" },
+    subtask: { get label() { return m.ticket_type_subtask(); }, tagColor: "cool-gray" },
+    incident: { get label() { return m.ticket_type_incident(); }, tagColor: "high-contrast" },
+    design: { get label() { return m.ticket_type_design(); }, tagColor: "magenta" },
+    documentation: { get label() { return m.ticket_type_documentation(); }, tagColor: "green" },
 };
 
 export const TICKET_TYPE_OPTIONS: TicketType[] = ["feature", "bug", "chore", "improvement", "epic", "spike", "story", "task", "subtask", "incident", "design", "documentation"];
@@ -37,10 +39,10 @@ export interface TicketStatusConfig {
 }
 
 export const TICKET_STATUS_CONFIG: Record<TicketStatus, TicketStatusConfig> = {
-    backlog: { label: "Backlog", accentColor: "magenta" },
-    todo: { label: "To Do", accentColor: "teal" },
-    in_progress: { label: "In Progress", accentColor: "blue" },
-    done: { label: "Done", accentColor: "green" },
+    backlog: { get label() { return m.status_backlog(); }, accentColor: "magenta" },
+    todo: { get label() { return m.status_todo(); }, accentColor: "teal" },
+    in_progress: { get label() { return m.status_in_progress(); }, accentColor: "blue" },
+    done: { get label() { return m.status_done(); }, accentColor: "green" },
 };
 
 export const TICKET_STATUS_ORDER: TicketStatus[] = ["backlog", "todo", "in_progress", "done"];
@@ -51,9 +53,9 @@ export interface TicketPriorityConfig {
 }
 
 export const TICKET_PRIORITY_CONFIG: Record<TicketPriority, TicketPriorityConfig> = {
-    p3: { label: "Low", tagColor: "green" },
-    p2: { label: "Medium", tagColor: "teal" },
-    p1: { label: "High", tagColor: "red" },
+    p3: { get label() { return m.modal_priority_low(); }, tagColor: "green" },
+    p2: { get label() { return m.modal_priority_medium(); }, tagColor: "teal" },
+    p1: { get label() { return m.modal_priority_high(); }, tagColor: "red" },
 };
 
 export interface Project {

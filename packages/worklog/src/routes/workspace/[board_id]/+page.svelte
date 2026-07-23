@@ -177,7 +177,7 @@
         table: () => m.board_tab_table(),
         timeline: () => m.board_tab_timeline(),
         calendar: () => m.board_tab_calendar(),
-        docs: () => "Docs",
+        docs: () => m.board_tab_docs(),
     };
 
     function selectTab(tab: TabType) {
@@ -253,7 +253,7 @@
             <!-- ── Controls Bar: tabs left, search+sort right ─────────────────── -->
             <div class="board-controls-bar">
                 <!-- Tab buttons (dynamic from DB config) -->
-                <div class="board-tabs" role="tablist" aria-label="Board views">
+                <div class="board-tabs" role="tablist" aria-label={m.board_views_aria()}>
                     {#each boardTabsApi.enabledTabs as tab}
                         <button
                             bind:this={tabBtnRefs[tab]}

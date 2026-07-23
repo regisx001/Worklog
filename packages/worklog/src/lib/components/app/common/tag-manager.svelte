@@ -1,11 +1,12 @@
 <script lang="ts">
     import { Tag, TextInput, Button } from "carbon-components-svelte";
     import { Add } from "carbon-icons-svelte";
+    import * as m from "$lib/paraglide/messages.js";
 
     let {
         selectedTags = $bindable([]),
         availableTags = [],
-        label = "Tags",
+        label,
     }: {
         selectedTags: string[];
         availableTags: string[];
@@ -51,7 +52,7 @@
 </script>
 
 <div class="tag-manager">
-    <label class="tag-label" for="tag-input">{label}</label>
+    <label class="tag-label" for="tag-input">{label ?? m.modal_tags()}</label>
 
     <div class="tag-input-container" class:focused={isFocused}>
         <div class="selected-tags">
@@ -63,7 +64,7 @@
             <input
                 id="tag-input"
                 type="text"
-                placeholder={selectedTags.length === 0 ? "Add tags..." : ""}
+                placeholder={selectedTags.length === 0 ? m.tags_add_placeholder() : ""}
                 bind:value={inputValue}
                 onkeydown={handleKeydown}
                 onfocus={() => (isFocused = true)}
@@ -95,7 +96,7 @@
                         onclick={() => addTag(inputValue)}
                     >
                         <Add size={16} />
-                        <span>Create "{inputValue}"</span>
+                        <span>{m.tags_create({ tag: inputValue })}</span>
                     </button>
                 {/if}
             </div>

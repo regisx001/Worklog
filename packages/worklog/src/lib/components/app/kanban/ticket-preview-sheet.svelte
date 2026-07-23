@@ -259,7 +259,7 @@
 <aside
     class="ticket-sheet"
     class:ticket-sheet--open={open && ticket !== null}
-    aria-label="Ticket details"
+    aria-label={m.ticket_details_aria()}
     aria-hidden={!open || !ticket}
 >
     {#if ticket}

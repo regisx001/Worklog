@@ -23,6 +23,7 @@
         docsDir,
         type DocFileEntry,
     } from "$lib/hooks/board-docs.svelte";
+    import * as m from "$lib/paraglide/messages.js";
 
     interface Props {
         workspacePath: string;
@@ -57,50 +58,50 @@
     }
 
     // ── Formatting toolbar & slash commands ─────────────────────────────────
-    const FORMAT_ACTIONS = [
+    const FORMAT_ACTIONS = $derived([
         {
             id: "bold",
             label: "B",
-            title: "Bold (Ctrl+B)",
+            title: m.markdown_toolbar_bold(),
             action: () => insertWrap("**", "**"),
         },
         {
             id: "h1",
             label: "H1",
-            title: "Heading 1",
+            title: m.markdown_toolbar_heading_1(),
             action: () => insertLine("# "),
         },
         {
             id: "h2",
             label: "H2",
-            title: "Heading 2",
+            title: m.markdown_toolbar_heading_2(),
             action: () => insertLine("## "),
         },
         {
             id: "h3",
             label: "H3",
-            title: "Heading 3",
+            title: m.markdown_toolbar_heading_3(),
             action: () => insertLine("### "),
         },
         {
             id: "bullet",
             label: "\u2022",
-            title: "Bullet list",
+            title: m.markdown_toolbar_bullet_list(),
             action: () => insertLine("- "),
         },
         {
             id: "numbered",
             label: "1.",
-            title: "Numbered list",
+            title: m.markdown_toolbar_numbered_list(),
             action: () => insertLine("1. "),
         },
         {
             id: "codeblock",
             label: "<>",
-            title: "Code block",
+            title: m.markdown_toolbar_code_block(),
             action: () => insertCodeBlock(),
         },
-    ] as const;
+    ] as const);
 
     interface SlashCmd {
         id: string;
@@ -109,50 +110,50 @@
         action: () => void;
     }
 
-    const SLASH_COMMANDS: SlashCmd[] = [
+    const SLASH_COMMANDS: SlashCmd[] = $derived([
         {
             id: "bold",
-            label: "Bold",
+            label: m.markdown_toolbar_bold_label(),
             match: "bold b",
             action: () => insertWrap("**", "**"),
         },
         {
             id: "h1",
-            label: "Heading 1",
+            label: m.markdown_toolbar_heading_1(),
             match: "h1 heading 1",
             action: () => insertLine("# "),
         },
         {
             id: "h2",
-            label: "Heading 2",
+            label: m.markdown_toolbar_heading_2(),
             match: "h2 heading 2",
             action: () => insertLine("## "),
         },
         {
             id: "h3",
-            label: "Heading 3",
+            label: m.markdown_toolbar_heading_3(),
             match: "h3 heading 3",
             action: () => insertLine("### "),
         },
         {
             id: "bullet",
-            label: "Bullet list",
+            label: m.markdown_toolbar_bullet_list(),
             match: "bullet ul -",
             action: () => insertLine("- "),
         },
         {
             id: "numbered",
-            label: "Numbered list",
+            label: m.markdown_toolbar_numbered_list(),
             match: "numbered ol 1.",
             action: () => insertLine("1. "),
         },
         {
             id: "codeblock",
-            label: "Code block",
+            label: m.markdown_toolbar_code_block(),
             match: "code block ```",
             action: () => insertCodeBlock(),
         },
-    ];
+    ]);
 
     // Slash menu state
     let slashOpen = $state(false);
@@ -275,7 +276,7 @@
         if (!ta) return;
         const start = ta.selectionStart;
         const end = ta.selectionEnd;
-        const selected = draftContent.slice(start, end) || "text";
+        const selected = draftContent.slice(start, end) || m.markdown_placeholder_text();
         const replacement = `${before}${selected}${after}`;
         draftContent =
             draftContent.slice(0, start) +
@@ -313,7 +314,7 @@
         if (!ta) return;
         const start = ta.selectionStart;
         const end = ta.selectionEnd;
-        const selected = draftContent.slice(start, end) || "code";
+        const selected = draftContent.slice(start, end) || m.markdown_placeholder_code();
         const replacement = "```\n" + selected + "\n```";
         draftContent =
             draftContent.slice(0, start) +
@@ -401,7 +402,7 @@
                 );
                 fileContent = content;
             } catch (e) {
-                fileContent = `*Error reading file: ${e}*`;
+                fileContent = `*${m.docs_error_reading_file({ error: String(e) })}*`;
             }
         })();
     });
@@ -449,7 +450,7 @@
                 }
             } else {
                 showError(
-                    "Failed to create file. Check that Tauri FS can write to the workspace and try again.",
+                    m.docs_create_file_failed(),
                 );
             }
         } catch (e) {
@@ -643,7 +644,9 @@
     async function confirmDelete(entry: DocFileEntry) {
         if (editing) return;
         const confirmed = window.confirm(
-            `Delete "${entry.name}"?${entry.isDir ? " This will also remove all files inside." : ""}`,
+            entry.isDir
+                ? m.docs_delete_folder_confirm({ name: entry.name })
+                : m.docs_delete_file_confirm({ name: entry.name }),
         );
         if (!confirmed) return;
 
@@ -819,13 +822,13 @@
 <div class="board-docs">
     {#if loading}
         <div class="board-docs-loading">
-            <span>Loading docs...</span>
+            <span>{m.docs_loading()}</span>
         </div>
     {:else if !hasDocsDir && files.length === 0}
         <div class="board-docs-empty">
             <Notebook size={48} />
-            <h2>No docs yet</h2>
-            <p>Create your first markdown note for this board.</p>
+            <h2>{m.docs_empty_title()}</h2>
+            <p>{m.docs_empty_description()}</p>
             {#if actionError}
                 <p class="board-docs-error-msg">{actionError}</p>
             {/if}
@@ -836,11 +839,11 @@
                         bind:this={newFileInputEl}
                         type="text"
                         class="board-docs-inline-input"
-                        placeholder="filename.md"
+                        placeholder={m.docs_filename_placeholder()}
                         bind:value={newFileName}
                         onkeydown={handleNewFileKeydown}
                         onblur={confirmCreateFile}
-                        aria-label="New file name"
+                        aria-label={m.docs_new_file_name()}
                     />
                 </div>
             {:else}
@@ -849,7 +852,7 @@
                     icon={DocumentAdd}
                     onclick={startCreateFile}
                 >
-                    New Note
+                    {m.docs_new_note()}
                 </Button>
             {/if}
         </div>
@@ -858,21 +861,21 @@
             <!-- ── File Tree Sidebar ─────────────────────────────────────── -->
             <aside class="board-docs-tree">
                 <div class="board-docs-tree-header">
-                    <span class="board-docs-tree-title">Docs</span>
+                    <span class="board-docs-tree-title">{m.board_tab_docs()}</span>
                     <div class="board-docs-tree-toolbar">
                         <button
                             class="board-docs-tree-toolbar-btn"
                             onclick={startCreateFolder}
-                            aria-label="Create new folder"
-                            title="New folder"
+                            aria-label={m.docs_create_new_folder()}
+                            title={m.docs_new_folder()}
                         >
                             <FolderAdd size={14} />
                         </button>
                         <button
                             class="board-docs-tree-toolbar-btn"
                             onclick={startCreateFile}
-                            aria-label="Create new note"
-                            title="New note"
+                            aria-label={m.docs_create_new_note()}
+                            title={m.docs_new_note()}
                         >
                             <DocumentAdd size={14} />
                         </button>
@@ -881,7 +884,7 @@
                 {#if actionError}
                     <div class="board-docs-error-bar">{actionError}</div>
                 {/if}
-                <nav class="board-docs-tree-list" aria-label="Document files">
+                <nav class="board-docs-tree-list" aria-label={m.docs_document_files()}>
                     {#if creatingFile}
                         <div class="tree-create-input">
                             <Document size={14} />
@@ -889,11 +892,11 @@
                                 bind:this={newFileInputEl}
                                 type="text"
                                 class="tree-inline-input"
-                                placeholder="filename.md"
+                                placeholder={m.docs_filename_placeholder()}
                                 bind:value={newFileName}
                                 onkeydown={handleNewFileKeydown}
                                 onblur={confirmCreateFile}
-                                aria-label="New file name"
+                                aria-label={m.docs_new_file_name()}
                             />
                         </div>
                     {/if}
@@ -904,11 +907,11 @@
                                 bind:this={newFolderInputEl}
                                 type="text"
                                 class="tree-inline-input"
-                                placeholder="folder name"
+                                placeholder={m.docs_folder_name_placeholder()}
                                 bind:value={newFolderValue}
                                 onkeydown={handleNewFolderKeydown}
                                 onblur={confirmCreateFolder}
-                                aria-label="New folder name"
+                                aria-label={m.docs_new_folder_name()}
                             />
                         </div>
                     {/if}
@@ -936,7 +939,7 @@
                                             onkeydown={handleRenameKeydown}
                                             onblur={confirmRename}
                                             onclick={(e) => e.stopPropagation()}
-                                            aria-label="Rename folder"
+                                            aria-label={m.docs_rename_folder()}
                                         />
                                     {:else}
                                         <span>{entry.name}</span>
@@ -972,7 +975,7 @@
                                                             onblur={confirmRename}
                                                             onclick={(e) =>
                                                                 e.stopPropagation()}
-                                                            aria-label="Rename file"
+                                                            aria-label={m.docs_rename_file()}
                                                         />
                                                     {:else}
                                                         <span>{child.name}</span
@@ -984,8 +987,8 @@
                                                         class="tree-action-btn"
                                                         onclick={() =>
                                                             startRename(child)}
-                                                        aria-label="Rename"
-                                                        title="Rename"
+                                                        aria-label={m.docs_rename()}
+                                                        title={m.docs_rename()}
                                                     >
                                                         <Edit size={12} />
                                                     </button>
@@ -997,8 +1000,8 @@
                                                             )}
                                                         disabled={deletingPath ===
                                                             child.relativePath}
-                                                        aria-label="Delete"
-                                                        title="Delete"
+                                                        aria-label={m.table_delete()}
+                                                        title={m.table_delete()}
                                                     >
                                                         <TrashCan size={12} />
                                                     </button>
@@ -1030,7 +1033,7 @@
                                             onkeydown={handleRenameKeydown}
                                             onblur={confirmRename}
                                             onclick={(e) => e.stopPropagation()}
-                                            aria-label="Rename file"
+                                            aria-label={m.docs_rename_file()}
                                         />
                                     {:else}
                                         <span>{entry.name}</span>
@@ -1040,8 +1043,8 @@
                                     <button
                                         class="tree-action-btn"
                                         onclick={() => startRename(entry)}
-                                        aria-label="Rename"
-                                        title="Rename"
+                                        aria-label={m.docs_rename()}
+                                        title={m.docs_rename()}
                                     >
                                         <Edit size={12} />
                                     </button>
@@ -1050,8 +1053,8 @@
                                         onclick={() => confirmDelete(entry)}
                                         disabled={deletingPath ===
                                             entry.relativePath}
-                                        aria-label="Delete"
-                                        title="Delete"
+                                        aria-label={m.table_delete()}
+                                        title={m.table_delete()}
                                     >
                                         <TrashCan size={12} />
                                     </button>
@@ -1067,11 +1070,11 @@
                 {#if !selectedPath}
                     <div class="board-docs-content-empty">
                         <Notebook size={40} />
-                        <p>Select a file from the tree to preview it</p>
+                        <p>{m.docs_select_file()}</p>
                     </div>
                 {:else if fileContent === null}
                     <div class="board-docs-content-loading">
-                        <span>Loading...</span>
+                        <span>{m.settings_loading()}</span>
                     </div>
                 {:else if !editing}
                     <!-- ── Read-Only Preview ────────────────────────────── -->
@@ -1083,11 +1086,11 @@
                             <button
                                 class="board-docs-edit-btn"
                                 onclick={enterEditMode}
-                                aria-label="Edit file"
-                                title="Edit (E)"
+                                aria-label={m.docs_edit_file()}
+                                title={m.docs_edit_shortcut()}
                             >
                                 <Edit size={14} />
-                                <span>Edit</span>
+                                <span>{m.docs_edit()}</span>
                             </button>
                         </div>
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -1122,11 +1125,11 @@
                             <div class="board-docs-editor-actions">
                                 {#if saving}
                                     <span class="board-docs-editor-saving"
-                                        >Saving...</span
+                                        >{m.modal_board_saving()}</span
                                     >
                                 {:else if savedIndicator}
                                     <span class="board-docs-editor-saved"
-                                        >Saved</span
+                                        >{m.docs_saved()}</span
                                     >
                                 {/if}
                                 <button
@@ -1134,7 +1137,7 @@
                                     onclick={exitEditMode}
                                     disabled={saving}
                                 >
-                                    Done
+                                    {m.docs_done()}
                                 </button>
                             </div>
                         </div>
@@ -1158,7 +1161,7 @@
                                         bind:this={slashMenuEl}
                                         class="slash-menu"
                                         role="listbox"
-                                        aria-label="Slash commands"
+                                        aria-label={m.docs_slash_commands()}
                                     >
                                         {#each slashFiltered as cmd, i (cmd.id)}
                                             <button
@@ -1196,7 +1199,7 @@
                                         }
                                     }}
                                     spellcheck="false"
-                                    aria-label="Markdown editor"
+                                    aria-label={m.docs_markdown_editor()}
                                 ></textarea>
                             </div>
                             <div class="board-docs-editor-preview">

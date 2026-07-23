@@ -11,6 +11,7 @@
     // Modals
     import TicketAddEditModal from "../kanban/ticket-add-edit-modal.svelte";
     import TicketDeleteConfirm from "../kanban/ticket-delete-confirm.svelte";
+    import * as m from "$lib/paraglide/messages.js";
 
     let { searchQuery = "" }: { searchQuery?: string } = $props();
 
@@ -92,8 +93,8 @@
         <div class="table-empty-state">
             <InlineNotification
                 kind="info"
-                title="No results"
-                subtitle="No tickets match '{searchQuery}'."
+                title={m.kanban_no_results_title()}
+                subtitle={m.kanban_no_results_subtitle({ query: searchQuery })}
                 hideCloseButton
             />
         </div>

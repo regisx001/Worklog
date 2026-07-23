@@ -420,7 +420,7 @@
 
                 {#if loadingMore}
                     <div class="sidebar-loading-more">
-                        <InlineLoading description="Loading more..." />
+                        <InlineLoading description={m.kanban_column_loading_more()} />
                     </div>
                 {/if}
             </TileGroup>

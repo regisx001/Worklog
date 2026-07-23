@@ -6,6 +6,7 @@ import type { SyncConfig, SyncResult } from './types';
 import { extractSnapshot } from '$lib/db/mappers/extract';
 import { snapshotToFolderJsonFiles } from '$lib/db/mappers/serialize-json';
 import { importFromFolder } from '$lib/db/mappers/import-file';
+import * as m from "$lib/paraglide/messages.js";
 
 /**
  * Core sync orchestration layer.
@@ -92,8 +93,8 @@ export class SyncEngine {
             return {
                 status: 'success',
                 message: committed
-                    ? 'Changes pushed successfully.'
-                    : 'No changes to push.',
+                    ? m.sync_changes_pushed()
+                    : m.sync_no_changes_push(),
                 timestamp,
             };
         } catch (error) {
@@ -123,7 +124,7 @@ export class SyncEngine {
                 if (msg.includes('CONFLICT') || msg.includes('Merge conflict')) {
                     return {
                         status: 'conflict',
-                        message: 'Merge conflict detected. Use force pull to overwrite local data.',
+                        message: m.sync_merge_conflict_message(),
                         timestamp: new Date().toISOString(),
                     };
                 }
@@ -136,7 +137,12 @@ export class SyncEngine {
             const timestamp = new Date().toISOString();
             return {
                 status: 'success',
-                message: `Pulled successfully. Boards: +${result.boardsCreated} ~${result.boardsUpdated}. Tickets: +${result.ticketsCreated} ~${result.ticketsUpdated}.`,
+                message: m.sync_pull_success_message({
+                    boardsCreated: result.boardsCreated,
+                    boardsUpdated: result.boardsUpdated,
+                    ticketsCreated: result.ticketsCreated,
+                    ticketsUpdated: result.ticketsUpdated,
+                }),
                 timestamp,
             };
         } catch (error) {
@@ -173,7 +179,7 @@ export class SyncEngine {
 
             return {
                 status: 'success',
-                message: 'Force pushed successfully. Remote overwritten.',
+                message: m.sync_force_push_success(),
                 timestamp: new Date().toISOString(),
             };
         } catch (error) {
@@ -198,7 +204,10 @@ export class SyncEngine {
 
             return {
                 status: 'success',
-                message: `Force pulled successfully. Imported ${result.boardsCreated} boards, ${result.ticketsCreated} tickets.`,
+                message: m.sync_force_pull_success({
+                    boards: result.boardsCreated,
+                    tickets: result.ticketsCreated,
+                }),
                 timestamp: new Date().toISOString(),
             };
         } catch (error) {

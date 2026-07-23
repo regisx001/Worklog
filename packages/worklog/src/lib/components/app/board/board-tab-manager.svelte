@@ -28,7 +28,7 @@
         table: () => m.board_tab_table(),
         timeline: () => m.board_tab_timeline(),
         calendar: () => m.board_tab_calendar(),
-        docs: () => "Docs",
+        docs: () => m.board_tab_docs(),
     };
 
     function toggle() {

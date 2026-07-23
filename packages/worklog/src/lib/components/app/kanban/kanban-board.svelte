@@ -8,7 +8,6 @@
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
     import { getTickets } from "$lib/hooks/tickets.svelte";
     import { getTicketSort } from "$lib/hooks/ticket-sort.svelte";
-    import { SortAscending, SortDescending } from "carbon-icons-svelte";
     import {
         type Ticket,
         type TicketStatus,
@@ -34,15 +33,6 @@
 
     const ticketsHook = getTickets(getWorkspacePath, getBoardId);
     const sortHook = getTicketSort();
-
-    const sortItems = [
-        { id: "position", text: "Manual Order" },
-        { id: "priority", text: "Priority" },
-        { id: "due_date", text: "Due Date" },
-        { id: "created_at", text: "Date Created" },
-        { id: "title", text: "Title" },
-        { id: "ticket_type", text: "Ticket Type" },
-    ];
 
     let loadError = $state<string | null>(null);
     let actionError = $state<string | null>(null);
@@ -370,7 +360,7 @@
         class="board-columns"
         class:scroll-locked={previewOpen}
         role="main"
-        aria-label="Kanban board"
+        aria-label={m.kanban_board_aria()}
     >
         {#each filteredColumns as col (col.status)}
             {@const handlers = makeHandlers(col.status)}

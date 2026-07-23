@@ -1,6 +1,7 @@
 import type { WorkspaceMeta } from '$lib/components/app/types';
 import { getDb, closeDb, WorkspaceRepo } from '$lib/db';
 import { runMigrations } from '$lib/db/migrate';
+import * as m from "$lib/paraglide/messages.js";
 
 const WORKSPACE_PATH_KEY = 'last_workspace_path';
 let initInFlight: Promise<void> | null = null;
@@ -57,7 +58,7 @@ function classifyWorkspaceError(raw: string): string {
         raw.includes('tauri::fs') ||
         raw.includes('not permitted')
     ) {
-        return 'The workspace folder is not accessible. It may be in a restricted system directory or on a removable drive that is no longer available. Please choose a different folder.';
+        return m.workspace_folder_not_accessible();
     }
     return raw;
 }
@@ -144,7 +145,7 @@ export function getWorkspace() {
             const path = normalizePath(rawPath);
             const db = await getDb(path);
             await runMigrations(db);
-            await WorkspaceRepo.initWorkspace(db, path.split('/').pop() ?? 'My Workspace');
+            await WorkspaceRepo.initWorkspace(db, path.split('/').pop() ?? m.workspace_default_name());
 
             _meta = await WorkspaceRepo.getWorkspaceMeta(db);
             _path = path;

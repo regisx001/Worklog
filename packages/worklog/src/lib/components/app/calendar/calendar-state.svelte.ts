@@ -1,6 +1,7 @@
 import { getContext, setContext } from 'svelte';
 import { type Ticket } from "$lib/components/app/types";
 import { getTicketSort } from "$lib/hooks/ticket-sort.svelte";
+import { formatDate } from "$lib/utils/date-format";
 
 export type CalendarDay = {
     date: Date;
@@ -110,16 +111,19 @@ export class CalendarState {
 
     get displayTitle(): string {
         if (this.viewMode === "month") {
-            return this.currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+            return formatDate(this.currentDate, { month: "long", year: "numeric" });
         }
         const days = this.weekDays;
         const first = days[0].date;
         const last = days[6].date;
-        return `${first.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${last.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+        return `${formatDate(first, { month: "short", day: "numeric" })} – ${formatDate(last, { month: "short", day: "numeric", year: "numeric" })}`;
     }
 
     get weekdayHeaders(): string[] {
-        return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        return Array.from({ length: 7 }, (_, i) => {
+            const monday = new Date(2025, 0, 6 + i);
+            return formatDate(monday, { weekday: "short" });
+        });
     }
 
     prevPeriod() {

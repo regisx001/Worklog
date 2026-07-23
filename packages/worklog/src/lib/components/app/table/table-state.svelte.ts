@@ -31,6 +31,8 @@ import {
     ColorPalette,
     Document,
 } from "carbon-icons-svelte";
+import * as m from "$lib/paraglide/messages.js";
+import { formatDate } from "$lib/utils/date-format";
 
 export const statusIconMap: Record<TicketStatus, any> = {
     backlog: Pending,
@@ -130,11 +132,11 @@ export class TableState {
         const diffMs = now.getTime() - date.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 0) return "Today";
-        if (diffDays === 1) return "Yesterday";
-        if (diffDays < 7) return `${diffDays}d ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-        return date.toLocaleDateString("en-US", {
+        if (diffDays === 0) return m.table_today();
+        if (diffDays === 1) return m.table_yesterday();
+        if (diffDays < 7) return m.table_days_ago({ count: diffDays });
+        if (diffDays < 30) return m.table_weeks_ago({ count: Math.floor(diffDays / 7) });
+        return formatDate(date, {
             month: "short",
             day: "numeric",
         });
@@ -152,14 +154,14 @@ export class TableState {
 
         if (diffDays < 0)
             return {
-                text: `${Math.abs(diffDays)}d overdue`,
+                text: m.gantt_days_overdue({ count: Math.abs(diffDays) }),
                 overdue: !isDone,
             };
-        if (diffDays === 0) return { text: "Due today", overdue: false };
-        if (diffDays === 1) return { text: "Tomorrow", overdue: false };
-        if (diffDays < 7) return { text: `In ${diffDays}d`, overdue: false };
+        if (diffDays === 0) return { text: m.table_due_today(), overdue: false };
+        if (diffDays === 1) return { text: m.table_tomorrow(), overdue: false };
+        if (diffDays < 7) return { text: m.table_in_days({ count: diffDays }), overdue: false };
         return {
-            text: date.toLocaleDateString("en-US", {
+            text: formatDate(date, {
                 month: "short",
                 day: "numeric",
             }),

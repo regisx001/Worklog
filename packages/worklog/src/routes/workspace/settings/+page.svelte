@@ -118,11 +118,19 @@
     const syncConfig = getSyncConfig();
     const appZoom = getAppZoom();
     const appAppearance = useAppAppearance();
+    const languageOptions = [
+        { label: "English", value: "en" },
+        { label: "Français", value: "fr" },
+        { label: "简体中文", value: "zh-CN" },
+    ] as const;
 
-    const workspaceName = $derived(workspace.meta?.name ?? "Workspace");
-    const workspacePath = $derived(workspace.path ?? "Not available");
+    const workspaceName = $derived(workspace.meta?.name ?? m.settings_default_workspace());
+    const workspacePath = $derived(workspace.path ?? m.settings_not_available());
     const workspaceStatus = $derived(workspace.status);
-    const schemaVersion = $derived(workspace.meta?.schema_version ?? "Unknown");
+    const schemaVersion = $derived(workspace.meta?.schema_version ?? m.settings_unknown());
+    const workspaceStatusLabel = $derived.by(() =>
+        workspaceStatus === "ready" ? m.settings_workspace_status_ready() : workspaceStatus,
+    );
 
     let exportFormat = $state<ExportFormat>("json");
     let exportMode = $state<ExportMode>("single-file");
@@ -226,14 +234,14 @@
             await syncConfig.save(db);
             notifications.add({
                 kind: "success",
-                title: "Sync Settings Saved",
-                subtitle: "Your Git sync configuration has been updated.",
+                title: m.settings_sync_saved_title(),
+                subtitle: m.settings_sync_saved_subtitle(),
                 timeout: 3000,
             });
         } catch (error) {
             notifications.add({
                 kind: "error",
-                title: "Save Failed",
+                title: m.settings_save_failed(),
                 subtitle: String(error),
                 timeout: 5000,
             });
@@ -243,7 +251,7 @@
     async function handleSyncPush() {
         if (!workspace.path) return;
         syncLoading = true;
-        syncLoadingMessage = "Pushing to remote...";
+        syncLoadingMessage = m.settings_pushing_remote();
         syncConfig.setStatus("pushing");
         try {
             const db = await getDb(workspace.path);
@@ -256,14 +264,14 @@
                 await syncConfig.save(db);
                 notifications.add({
                     kind: "success",
-                    title: "Push Successful",
+                    title: m.sync_push_success(),
                     subtitle: result.message,
                     timeout: 3000,
                 });
             } else {
                 notifications.add({
                     kind: "error",
-                    title: "Push Failed",
+                    title: m.sync_push_failed(),
                     subtitle: result.message,
                     timeout: 5000,
                 });
@@ -274,7 +282,7 @@
         } catch (error) {
             notifications.add({
                 kind: "error",
-                title: "Push Failed",
+                title: m.sync_push_failed(),
                 subtitle: String(error),
                 timeout: 5000,
             });
@@ -288,7 +296,7 @@
     async function handleSyncPull() {
         if (!workspace.path) return;
         syncLoading = true;
-        syncLoadingMessage = "Pulling from remote...";
+        syncLoadingMessage = m.settings_pulling_remote();
         syncConfig.setStatus("pulling");
         try {
             const db = await getDb(workspace.path);
@@ -301,7 +309,7 @@
                 await syncConfig.save(db);
                 notifications.add({
                     kind: "success",
-                    title: "Pull Successful",
+                    title: m.sync_pull_success(),
                     subtitle: result.message,
                     timeout: 3000,
                 });
@@ -309,7 +317,7 @@
             } else if (result.status === "conflict") {
                 notifications.add({
                     kind: "warning",
-                    title: "Merge Conflict",
+                    title: m.settings_merge_conflict(),
                     subtitle: result.message,
                     timeout: 8000,
                 });
@@ -317,7 +325,7 @@
             } else {
                 notifications.add({
                     kind: "error",
-                    title: "Pull Failed",
+                    title: m.sync_pull_failed(),
                     subtitle: result.message,
                     timeout: 5000,
                 });
@@ -326,7 +334,7 @@
         } catch (error) {
             notifications.add({
                 kind: "error",
-                title: "Pull Failed",
+                title: m.sync_pull_failed(),
                 subtitle: String(error),
                 timeout: 5000,
             });
@@ -359,16 +367,16 @@
             if (success) {
                 notifications.add({
                     kind: "success",
-                    title: "Export Successful",
-                    subtitle: `Workspace exported as ${exportFormat.toUpperCase()} (${exportMode}).`,
+                    title: m.settings_export_successful(),
+                    subtitle: m.settings_export_success_msg({ format: exportFormat.toUpperCase(), mode: exportModeLabel() }),
                     timeout: 3000,
                 });
             }
         } catch (error) {
-            console.error("Failed to export data", error);
+            console.error(m.settings_export_failed_log(), error);
             notifications.add({
                 kind: "error",
-                title: "Export Failed",
+                title: m.settings_export_failed(),
                 subtitle: String(error),
                 timeout: 5000,
             });
@@ -383,17 +391,17 @@
             if (result) {
                 notifications.add({
                     kind: "success",
-                    title: "Import Successful",
-                    subtitle: `Created ${result.boardsCreated} boards, ${result.ticketsCreated} tickets. Updated ${result.ticketsUpdated} tickets.`,
+                    title: m.settings_import_successful(),
+                    subtitle: m.settings_import_success_msg({ boards: result.boardsCreated, tickets: result.ticketsCreated, updated: result.ticketsUpdated }),
                     timeout: 5000,
                 });
                 window.location.reload();
             }
         } catch (error) {
-            console.error("Failed to import data", error);
+            console.error(m.settings_import_failed_log(), error);
             notifications.add({
                 kind: "error",
-                title: "Import Failed",
+                title: m.settings_import_failed(),
                 subtitle: String(error),
                 timeout: 5000,
             });
@@ -411,6 +419,12 @@
         await openUrl(RELEASES_URL);
     }
 
+    function exportModeLabel(): string {
+        return exportMode === "single-file"
+            ? m.settings_export_mode_single_file()
+            : m.settings_export_mode_folder();
+    }
+
     function formatBytes(bytes: number): string {
         if (bytes === 0) return "0 B";
         const k = 1024;
@@ -425,12 +439,12 @@
     );
     const syncStatusLabel = $derived.by(() => {
         const s = syncConfig.status;
-        if (s === "not_configured") return "Not configured";
-        if (s === "idle") return "Ready";
-        if (s === "pushing") return "Pushing…";
-        if (s === "pulling") return "Pulling…";
-        if (s === "conflict") return "Conflict";
-        if (s === "error") return "Error";
+        if (s === "not_configured") return m.settings_sync_status_not_configured();
+        if (s === "idle") return m.settings_sync_status_ready();
+        if (s === "pushing") return m.settings_sync_status_pushing();
+        if (s === "pulling") return m.settings_sync_status_pulling();
+        if (s === "conflict") return m.settings_sync_status_conflict();
+        if (s === "error") return m.sync_error();
         return s;
     });
     const syncStatusColor = $derived.by(
@@ -450,23 +464,22 @@
             const db = await getDb(workspace.path);
             notifications.add({
                 kind: "info",
-                title: "Seeding...",
-                subtitle:
-                    "Creating 200 performance test tickets. This may take a moment.",
+                title: m.settings_seeding(),
+                subtitle: m.settings_seeding_subtitle(),
                 timeout: 3000,
             });
             await seedLazyLoadingTest(db);
             notifications.add({
                 kind: "success",
-                title: "Seeding Complete",
-                subtitle: "Performance test board and 200 tickets created.",
+                title: m.settings_seeding_complete(),
+                subtitle: m.settings_seeding_complete_subtitle(),
                 timeout: 5000,
             });
             void workspace.init(); // Refresh workspace state
         } catch (e) {
             notifications.add({
                 kind: "error",
-                title: "Seeding Failed",
+                title: m.settings_seeding_failed(),
                 subtitle: String(e),
                 timeout: 5000,
             });
@@ -547,11 +560,11 @@
         <header class="sidebar-header">
             <Button
                 kind="ghost"
-                iconDescription="Back"
+                iconDescription={m.board_back_to_workspace()}
                 icon={ArrowLeft}
                 onclick={goToBoards}
             />
-            <span>Settings</span>
+            <span>{m.sidebar_settings()}</span>
         </header>
 
         <nav class="sidebar-nav">
@@ -577,7 +590,7 @@
                 icon={Renew}
                 onclick={refreshWorkspaceState}
             >
-                Refresh
+                {m.settings_refresh()}
             </Button>
         </footer>
     </aside>
@@ -589,12 +602,12 @@
                 <Search size={16} />
                 <input
                     type="text"
-                    placeholder="Search settings..."
+                    placeholder={m.settings_search_placeholder()}
                     bind:value={searchQuery}
                 />
             </div>
             <div class="breadcrumbs">
-                Settings &gt; {categories.find((c) => c.id === activeCategory)
+                {m.sidebar_settings()} &gt; {categories.find((c) => c.id === activeCategory)
                     ?.label}
             </div>
         </header>
@@ -610,32 +623,32 @@
                                 <div class="settings-grid">
                                     <TextInput
                                         id="workspace-name"
-                                        labelText="Workspace name"
+                                        labelText={m.settings_workspace_name()}
                                         value={workspaceName}
                                         readonly
                                     />
                                     <TextInput
                                         id="workspace-status"
-                                        labelText="Workspace status"
-                                        value={workspaceStatus}
+                                        labelText={m.settings_workspace_status()}
+                                        value={workspaceStatusLabel}
                                         readonly
                                     />
                                     <TextInput
                                         id="workspace-schema"
-                                        labelText="Database schema version"
+                                        labelText={m.settings_database_schema_version()}
                                         value={schemaVersion}
                                         readonly
                                     />
                                     <TextArea
                                         id="workspace-path"
-                                        labelText="Workspace path"
+                                        labelText={m.settings_workspace_path()}
                                         value={workspacePath}
                                         rows={3}
                                         readonly
                                     />
                                     <TextInput
                                         id="app-version"
-                                        labelText="Worklog version"
+                                        labelText={m.settings_worklog_version()}
                                         value={version}
                                         readonly
                                     />
@@ -648,8 +661,7 @@
                         <section class="settings-section">
                             <h2>{m.settings_app_updates()}</h2>
                             <p class="section-desc">
-                                Check for updates and relaunch after the install
-                                completes.
+                                {m.settings_updates_desc()}
                             </p>
 
                             <div class="settings-card updater-card">
@@ -658,7 +670,7 @@
                                     <div class="updater-idle">
                                         <div class="updater-current">
                                             <span class="updater-label"
-                                                >Current version</span
+                                                >{m.settings_current_version()}</span
                                             >
                                             <span class="updater-version"
                                                 >v{version}</span
@@ -669,14 +681,14 @@
                                             icon={Renew}
                                             onclick={handleCheckForUpdates}
                                         >
-                                            Check for updates
+                                            {m.settings_check_for_updates()}
                                         </Button>
                                     </div>
                                 {:else if updateState.status === "checking"}
                                     <!-- Checking: spinner -->
                                     <div class="updater-status-row">
                                         <InlineLoading
-                                            description="Checking for updates…"
+                                            description={m.settings_checking_updates()}
                                         />
                                     </div>
                                 {:else if updateState.status === "no-update"}
@@ -686,10 +698,9 @@
                                     >
                                         <CheckmarkOutline size={20} />
                                         <div class="updater-status-text">
-                                            <strong>You're up to date!</strong>
+                                            <strong>{m.settings_up_to_date()}</strong>
                                             <span
-                                                >Worklog v{version} is the latest
-                                                version.</span
+                                                >{m.settings_latest_version({ version })}</span
                                             >
                                         </div>
                                         <Button
@@ -698,7 +709,7 @@
                                             icon={Renew}
                                             onclick={handleCheckForUpdates}
                                         >
-                                            Check again
+                                            {m.settings_check_again()}
                                         </Button>
                                     </div>
                                 {:else if updateState.status === "update-available"}
@@ -707,7 +718,7 @@
                                         <div class="updater-available-header">
                                             <div class="updater-version-badge">
                                                 <Tag type="green" size="sm"
-                                                    >New version</Tag
+                                                    >{m.settings_new_version()}</Tag
                                                 >
                                                 <span
                                                     class="updater-new-version"
@@ -734,7 +745,7 @@
                                             <div class="updater-notes">
                                                 <span
                                                     class="updater-notes-label"
-                                                    >Release notes</span
+                                                    >{m.settings_release_notes()}</span
                                                 >
                                                 <p class="updater-notes-body">
                                                     {updateState.info.body}
@@ -747,7 +758,7 @@
                                                 icon={Launch}
                                                 onclick={openReleasesPage}
                                             >
-                                                Go to Download Page
+                                                {m.settings_go_to_download_page()}
                                             </Button>
                                             <Button
                                                 kind="ghost"
@@ -765,7 +776,7 @@
                                                     };
                                                 }}
                                             >
-                                                Dismiss
+                                                {m.settings_dismiss()}
                                             </Button>
                                         </div>
                                     </div>
@@ -778,7 +789,7 @@
                                             <WarningAlt size={20} />
                                             <div class="updater-status-text">
                                                 <strong
-                                                    >Auto-update unavailable</strong
+                                                    >{m.settings_auto_update_unavailable()}</strong
                                                 >
                                                 <span
                                                     >{updateState.errorMessage}</span
@@ -791,7 +802,7 @@
                                                 icon={Launch}
                                                 onclick={openReleasesPage}
                                             >
-                                                Download manually
+                                                {m.settings_download_manually()}
                                             </Button>
                                             <Button
                                                 kind="ghost"
@@ -809,7 +820,7 @@
                                                     };
                                                 }}
                                             >
-                                                Dismiss
+                                                {m.settings_dismiss()}
                                             </Button>
                                         </div>
                                     </div>
@@ -820,10 +831,10 @@
                                     >
                                         <WarningAlt size={20} />
                                         <div class="updater-status-text">
-                                            <strong>Update failed</strong>
+                                            <strong>{m.settings_update_failed()}</strong>
                                             <span
                                                 >{updateState.errorMessage ??
-                                                    "An unknown error occurred."}</span
+                                                    m.settings_unknown_error()}</span
                                             >
                                         </div>
                                         <Button
@@ -832,7 +843,7 @@
                                             icon={Renew}
                                             onclick={handleCheckForUpdates}
                                         >
-                                            Retry
+                                            {m.settings_retry()}
                                         </Button>
                                     </div>
                                 {/if}
@@ -845,7 +856,7 @@
             <!-- ── Appearance Category ────────────────────────────────── -->
             {#if activeCategory === "appearance"}
                 <div class="category-view">
-                    {#if matchesSearch("Language Locale English French")}
+                    {#if matchesSearch("Language Locale English French Chinese Simplified Chinese 中文 简体中文")}
                         <section class="settings-section">
                             <h2>{m.settings_language()}</h2>
                             <p class="section-desc">
@@ -853,13 +864,19 @@
                             </p>
                             <div class="settings-card">
                                 <ContentSwitcher
-                                    selectedIndex={getReactiveLocale() === "fr"
-                                        ? 1
-                                        : 0}
+                                    selectedIndex={Math.max(
+                                        languageOptions.findIndex(
+                                            (option) =>
+                                                option.value ===
+                                                getReactiveLocale(),
+                                        ),
+                                        0,
+                                    )}
                                     on:change={(e) => {
                                         const index = e.detail;
                                         const newLang =
-                                            index === 1 ? "fr" : "en";
+                                            languageOptions[index]?.value ??
+                                            "en";
                                         setReactiveLocale(newLang);
                                         localStorage.setItem(
                                             "app_lang",
@@ -867,8 +884,9 @@
                                         );
                                     }}
                                 >
-                                    <Switch text="English" />
-                                    <Switch text="Français" />
+                                    {#each languageOptions as option}
+                                        <Switch text={option.label} />
+                                    {/each}
                                 </ContentSwitcher>
                             </div>
                         </section>
@@ -878,7 +896,7 @@
                         <section class="settings-section">
                             <h2>{m.settings_theme()}</h2>
                             <p class="section-desc">
-                                Choose the visual theme for the application.
+                                {m.settings_theme_desc()}
                             </p>
                             <div class="settings-card">
                                 <div class="theme-selector">
@@ -890,7 +908,7 @@
                                             (appAppearance.theme = "light")}
                                     >
                                         <Sun size={24} />
-                                        <span>Light</span>
+                                        <span>{m.settings_theme_light()}</span>
                                     </button>
                                     <button
                                         class="theme-card"
@@ -900,7 +918,7 @@
                                             (appAppearance.theme = "dark")}
                                     >
                                         <Moon size={24} />
-                                        <span>Dark</span>
+                                        <span>{m.settings_theme_dark()}</span>
                                     </button>
                                     <button
                                         class="theme-card"
@@ -910,7 +928,7 @@
                                             (appAppearance.theme = "system")}
                                     >
                                         <Screen size={24} />
-                                        <span>System</span>
+                                        <span>{m.settings_theme_system()}</span>
                                     </button>
                                 </div>
                             </div>
@@ -921,8 +939,7 @@
                         <section class="settings-section">
                             <h2>{m.settings_accent_color()}</h2>
                             <p class="section-desc">
-                                Select a primary color for interactive elements
-                                and active states.
+                                {m.settings_accent_color_desc()}
                             </p>
                             <div class="settings-card">
                                 <div class="accent-palette">
@@ -949,7 +966,7 @@
                                             type="color"
                                             bind:value={appAppearance.accent}
                                             class="color-input-sm"
-                                            title="Custom color"
+                                            title={m.settings_custom_color()}
                                         />
                                     </div>
                                 </div>
@@ -961,7 +978,7 @@
                         <section class="settings-section">
                             <h2>{m.settings_typography()}</h2>
                             <p class="section-desc">
-                                Adjust the base font size for the application.
+                                {m.settings_typography_desc()}
                             </p>
                             <div class="settings-card">
                                 <ContentSwitcher
@@ -980,9 +997,9 @@
                                         else appAppearance.fontSize = "default";
                                     }}
                                 >
-                                    <Switch text="Small" />
-                                    <Switch text="Default" />
-                                    <Switch text="Large" />
+                                    <Switch text={m.settings_font_small()} />
+                                    <Switch text={m.settings_font_default()} />
+                                    <Switch text={m.settings_font_large()} />
                                 </ContentSwitcher>
                             </div>
                         </section>
@@ -992,13 +1009,12 @@
                         <section class="settings-section">
                             <div class="header-with-tag">
                                 <h2>{m.settings_app_zoom()}</h2>
-                                <Tag type="teal" size="sm">Experimental</Tag>
+                                <Tag type="teal" size="sm">{m.settings_experimental()}</Tag>
                             </div>
                             <p class="section-desc">
-                                Adjust the global scale of the application
-                                interface. You can also use <kbd>Ctrl</kbd> +
-                                <kbd>+</kbd> and <kbd>Ctrl</kbd> + <kbd>-</kbd>
-                                anywhere.
+                                {m.settings_app_zoom_desc_prefix()} <kbd>Ctrl</kbd> +
+                                <kbd>+</kbd> {m.settings_app_zoom_desc_and()} <kbd>Ctrl</kbd> + <kbd>-</kbd>
+                                {m.settings_app_zoom_desc_suffix()}
                             </p>
                             <div class="settings-card">
                                 <div class="control-box">
@@ -1017,9 +1033,7 @@
                         <section class="settings-section">
                             <h2>{m.settings_ticket_types()}</h2>
                             <p class="section-desc">
-                                Manage the types of tickets available in your
-                                workspace. Each type can have its own color and
-                                icon.
+                                {m.settings_ticket_types_desc()}
                             </p>
                             <div class="settings-card">
                                 <div class="type-management-list">
@@ -1047,7 +1061,7 @@
                                                         size="small"
                                                         kind="ghost"
                                                         icon={Checkmark}
-                                                        iconDescription="Save"
+                                                        iconDescription={m.modal_save_changes()}
                                                         onclick={() =>
                                                             handleUpdateType(
                                                                 type.id,
@@ -1057,7 +1071,7 @@
                                                         size="small"
                                                         kind="ghost"
                                                         icon={Close}
-                                                        iconDescription="Cancel"
+                                                        iconDescription={m.modal_cancel()}
                                                         onclick={() =>
                                                             (editingTypeId =
                                                                 null)}
@@ -1076,7 +1090,7 @@
                                                         <Tag
                                                             size="sm"
                                                             type="blue"
-                                                            >Default</Tag
+                                                            >{m.settings_default()}</Tag
                                                         >
                                                     {/if}
                                                 </div>
@@ -1090,14 +1104,14 @@
                                                                     type.id,
                                                                 )}
                                                         >
-                                                            Set Default
+                                                            {m.settings_set_default()}
                                                         </Button>
                                                     {/if}
                                                     <Button
                                                         size="small"
                                                         kind="ghost"
                                                         icon={Code}
-                                                        iconDescription="Edit"
+                                                        iconDescription={m.ticket_ctx_edit()}
                                                         onclick={() => {
                                                             editingTypeId =
                                                                 type.id;
@@ -1111,7 +1125,7 @@
                                                         size="small"
                                                         kind="ghost"
                                                         icon={TrashCan}
-                                                        iconDescription="Delete"
+                                                        iconDescription={m.table_delete()}
                                                         onclick={() =>
                                                             handleDeleteType(
                                                                 type.id,
@@ -1124,16 +1138,16 @@
                                 </div>
 
                                 <div class="add-type-form">
-                                    <h3>Add New Type</h3>
+                                    <h3>{m.settings_add_new_type()}</h3>
                                     <div class="add-type-inputs">
                                         <TextInput
-                                            labelText="Name"
-                                            placeholder="e.g. Research"
+                                            labelText={m.modal_board_name()}
+                                            placeholder={m.settings_ticket_type_name_placeholder()}
                                             bind:value={newTypeName}
                                         />
                                         <div class="color-picker-group">
                                             <label for="new-type-color"
-                                                >Color</label
+                                                >{m.settings_color()}</label
                                             >
                                             <input
                                                 id="new-type-color"
@@ -1146,7 +1160,7 @@
                                             icon={Add}
                                             onclick={handleAddType}
                                         >
-                                            Add Type
+                                            {m.settings_add_type()}
                                         </Button>
                                     </div>
                                 </div>
@@ -1163,11 +1177,11 @@
                         <section class="settings-section">
                             <h2>{m.settings_export_data()}</h2>
                             <p class="section-desc">
-                                Download a copy of your boards and tickets.
+                                {m.settings_export_desc()}
                             </p>
 
                             <div class="settings-card">
-                                <h3>Format</h3>
+                                <h3>{m.settings_export_format()}</h3>
                                 <div class="theme-selector">
                                     <button
                                         class="export-card"
@@ -1178,8 +1192,7 @@
                                         <div class="export-card-text">
                                             <span>JSON</span>
                                             <small
-                                                >Machine-readable, preserves
-                                                full fidelity (recommended)</small
+                                                >{m.settings_export_json_desc()}</small
                                             >
                                         </div>
                                     </button>
@@ -1192,14 +1205,13 @@
                                         <div class="export-card-text">
                                             <span>CSV</span>
                                             <small
-                                                >Spreadsheet-compatible, boards
-                                                and tickets only</small
+                                                >{m.settings_export_csv_desc()}</small
                                             >
                                         </div>
                                     </button>
                                 </div>
 
-                                <h3>Mode</h3>
+                                <h3>{m.settings_export_mode()}</h3>
                                 <div class="theme-selector">
                                     <button
                                         class="export-card"
@@ -1210,10 +1222,9 @@
                                     >
                                         <Document size={24} />
                                         <div class="export-card-text">
-                                            <span>Single file</span>
+                                            <span>{m.settings_export_mode_single_file()}</span>
                                             <small
-                                                >All boards combined into one
-                                                file</small
+                                                >{m.settings_export_single_file_desc()}</small
                                             >
                                         </div>
                                     </button>
@@ -1224,29 +1235,25 @@
                                     >
                                         <Folder size={24} />
                                         <div class="export-card-text">
-                                            <span>Per-board folder</span>
+                                            <span>{m.settings_export_mode_folder()}</span>
                                             <small
-                                                >A separate file for each board</small
+                                                >{m.settings_export_folder_desc()}</small
                                             >
                                         </div>
                                     </button>
                                 </div>
 
                                 <div class="export-preview">
-                                    <strong>📦 You are about to export:</strong>
+                                    <strong>{m.settings_export_preview_heading()}</strong>
                                     {exportFormat.toUpperCase()} &middot; {exportMode ===
                                     "single-file"
-                                        ? "Single file"
-                                        : "Per-board folder"}<br />
+                                        ? m.settings_export_mode_single_file()
+                                        : m.settings_export_mode_folder()}<br />
                                     <span class="preview-muted">
                                         {#if exportMode === "single-file"}
-                                            This will download one
-                                            `worklog-export.{exportFormat}` file
-                                            with all boards and tickets.
+                                            {m.settings_export_single_file_preview({ format: exportFormat })}
                                         {:else}
-                                            This will create a folder containing
-                                            separate `.{exportFormat}` files for
-                                            each board.
+                                            {m.settings_export_folder_preview({ format: exportFormat })}
                                         {/if}
                                     </span>
                                 </div>
@@ -1256,7 +1263,7 @@
                                     icon={Download}
                                     onclick={handleExport}
                                 >
-                                    Export Data
+                                    {m.settings_export_data_button()}
                                 </Button>
                             </div>
                         </section>
@@ -1264,14 +1271,13 @@
                         <section class="settings-section">
                             <h2>{m.settings_import_data()}</h2>
                             <p class="section-desc">
-                                Import boards and tickets from a previous
-                                export.
+                                {m.settings_import_desc()}
                             </p>
                             <div class="settings-card">
                                 <InlineNotification
                                     kind="warning"
-                                    title="Warning:"
-                                    subtitle="Importing merges data. Existing tickets with the same ID will be overwritten."
+                                    title={m.settings_warning()}
+                                    subtitle={m.settings_import_warning()}
                                     hideCloseButton
                                 />
                                 <Button
@@ -1279,7 +1285,7 @@
                                     icon={Upload}
                                     onclick={handleImport}
                                 >
-                                    Import Data
+                                    {m.settings_import_data_button()}
                                 </Button>
                             </div>
                         </section>
@@ -1295,7 +1301,7 @@
                             <div class="header-with-status">
                                 <div class="header-with-tag">
                                     <h2>{m.settings_git_sync()}</h2>
-                                    <Tag type="teal" size="sm">Experimental</Tag
+                                    <Tag type="teal" size="sm">{m.settings_experimental()}</Tag
                                     >
                                 </div>
                                 <Tag type={syncStatusColor} size="sm"
@@ -1303,17 +1309,14 @@
                                 >
                             </div>
                             <p class="section-desc">
-                                Sync your workspace to a private GitHub
-                                repository using a Personal Access Token.
+                                {m.settings_git_sync_desc()}
                             </p>
                             <div class="settings-card">
                                 {#if gitAvailable === false}
                                     <aside class="git-warning" role="alert">
-                                        <strong>Git not found.</strong>
+                                        <strong>{m.settings_git_not_found()}</strong>
                                         <span>
-                                            The <code>git</code> command was not
-                                            found on your system. Install Git to
-                                            use this feature.
+                                            {m.settings_git_not_found_desc_prefix()} <code>git</code> {m.settings_git_not_found_desc_suffix()}
                                         </span>
                                     </aside>
                                 {/if}
@@ -1321,7 +1324,7 @@
                                 <div class="sync-form">
                                     <TextInput
                                         id="sync-remote-url"
-                                        labelText="Remote URL"
+                                        labelText={m.settings_remote_url()}
                                         placeholder="https://github.com/user/repo.git"
                                         bind:value={syncRemoteUrl}
                                         disabled={gitAvailable === false}
@@ -1329,7 +1332,7 @@
 
                                     <PasswordInput
                                         id="sync-access-token"
-                                        labelText="Access Token"
+                                        labelText={m.settings_access_token()}
                                         placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                                         bind:value={syncAccessToken}
                                         disabled={gitAvailable === false}
@@ -1338,7 +1341,7 @@
                                     <div class="settings-grid">
                                         <TextInput
                                             id="sync-branch"
-                                            labelText="Branch"
+                                            labelText={m.settings_branch()}
                                             placeholder="main"
                                             bind:value={syncBranch}
                                             disabled={gitAvailable === false}
@@ -1346,15 +1349,15 @@
 
                                         <TextInput
                                             id="sync-git-name"
-                                            labelText="Git Name"
-                                            placeholder="Worklog User"
+                                            labelText={m.settings_git_name()}
+                                            placeholder={m.settings_git_name_placeholder()}
                                             bind:value={syncGitName}
                                             disabled={gitAvailable === false}
                                         />
 
                                         <TextInput
                                             id="sync-git-email"
-                                            labelText="Git Email"
+                                            labelText={m.settings_git_email()}
                                             placeholder="user@example.com"
                                             bind:value={syncGitEmail}
                                             disabled={gitAvailable === false}
@@ -1364,9 +1367,9 @@
                                     <div class="sync-options">
                                         <Toggle
                                             id="sync-auto-sync"
-                                            labelText="Auto-sync"
-                                            labelA="Off"
-                                            labelB="On"
+                                            labelText={m.settings_auto_sync()}
+                                            labelA={m.settings_off()}
+                                            labelB={m.settings_on()}
                                             bind:toggled={syncAutoSync}
                                             disabled={gitAvailable === false}
                                         />
@@ -1374,7 +1377,7 @@
                                         {#if syncAutoSync}
                                             <Select
                                                 id="sync-auto-sync-interval"
-                                                labelText="Sync Interval"
+                                                labelText={m.settings_sync_interval()}
                                                 bind:selected={
                                                     syncAutoSyncInterval
                                                 }
@@ -1383,31 +1386,31 @@
                                             >
                                                 <SelectItem
                                                     value={1}
-                                                    text="Every 1 minutes"
+                                                    text={m.settings_every_1_minute()}
                                                 />
                                                 <SelectItem
                                                     value={5}
-                                                    text="Every 5 minutes"
+                                                    text={m.settings_every_5_minutes()}
                                                 />
                                                 <SelectItem
                                                     value={15}
-                                                    text="Every 15 minutes"
+                                                    text={m.settings_every_15_minutes()}
                                                 />
                                                 <SelectItem
                                                     value={30}
-                                                    text="Every 30 minutes"
+                                                    text={m.settings_every_30_minutes()}
                                                 />
                                                 <SelectItem
                                                     value={60}
-                                                    text="Every 1 hour"
+                                                    text={m.settings_every_1_hour()}
                                                 />
                                                 <SelectItem
                                                     value={120}
-                                                    text="Every 2 hours"
+                                                    text={m.settings_every_2_hours()}
                                                 />
                                                 <SelectItem
                                                     value={360}
-                                                    text="Every 6 hours"
+                                                    text={m.settings_every_6_hours()}
                                                 />
                                             </Select>
                                         {/if}
@@ -1416,7 +1419,7 @@
                                     {#if syncConfig.config.last_synced_at}
                                         <TextInput
                                             id="sync-last-synced"
-                                            labelText="Last synced"
+                                            labelText={m.settings_last_synced()}
                                             value={new Date(
                                                 syncConfig.config.last_synced_at,
                                             ).toLocaleString()}
@@ -1431,12 +1434,12 @@
                                         onclick={saveSyncConfig}
                                         disabled={gitAvailable === false}
                                     >
-                                        Save Configuration
+                                        {m.settings_save_configuration()}
                                     </Button>
 
                                     {#if syncConfigured && gitAvailable !== false}
                                         <div class="manual-actions">
-                                            <h3>Manual Actions</h3>
+                                            <h3>{m.settings_manual_actions()}</h3>
                                             {#if syncLoading}
                                                 <InlineLoading
                                                     description={syncLoadingMessage}
@@ -1447,13 +1450,13 @@
                                                         kind="tertiary"
                                                         onclick={handleSyncPush}
                                                     >
-                                                        Push
+                                                        {m.settings_push()}
                                                     </Button>
                                                     <Button
                                                         kind="tertiary"
                                                         onclick={handleSyncPull}
                                                     >
-                                                        Pull
+                                                        {m.settings_pull()}
                                                     </Button>
                                                 </ButtonSet>
                                             {/if}
@@ -1473,21 +1476,16 @@
                         <section class="settings-section">
                             <div class="header-with-tag">
                                 <h2>{m.settings_performance_testing()}</h2>
-                                <Tag type="magenta" size="sm">Debug Only</Tag>
+                                <Tag type="magenta" size="sm">{m.settings_debug_only()}</Tag>
                             </div>
                             <p class="section-desc">
-                                Tools to test application performance with large
-                                datasets.
+                                {m.settings_performance_desc()}
                             </p>
                             <div class="settings-card">
                                 <div class="debug-card">
-                                    <h3>Seed Large Board</h3>
+                                    <h3>{m.settings_seed_large_board()}</h3>
                                     <p>
-                                        Create a new board named "Performance
-                                        Test Board" with 200 tickets (50 per
-                                        status). This is useful for verifying
-                                        lazy loading, infinite scroll, and
-                                        deferred rendering.
+                                        {m.settings_seed_large_board_desc()}
                                     </p>
                                     <div class="debug-actions">
                                         <Button
@@ -1495,7 +1493,7 @@
                                             icon={MagicWand}
                                             onclick={handleSeedPerformance}
                                         >
-                                            Seed 200 Tickets
+                                            {m.settings_seed_200_tickets()}
                                         </Button>
                                     </div>
                                 </div>
@@ -1504,29 +1502,18 @@
                                     class="debug-card"
                                     style="margin-top: 1.5rem;"
                                 >
-                                    <h3>How to Verify Lazy Loading</h3>
+                                    <h3>{m.settings_verify_lazy_loading()}</h3>
                                     <ul class="debug-guide">
                                         <li>
-                                            <strong>Infinite Scroll:</strong> Open
-                                            the "Performance Test Board". Scroll
-                                            down any column. You should see an "Inline
-                                            Loading" spinner briefly at the bottom
-                                            before more tickets appear.
+                                            <strong>{m.settings_infinite_scroll()}</strong> {m.settings_infinite_scroll_desc()}
                                         </li>
                                         <li>
-                                            <strong>Deferred Rendering:</strong>
-                                            Open the browser/Tauri inspector (F12).
-                                            Look at the DOM for tickets far down
-                                            the list. Their body content should be
-                                            empty (skeleton) until you scroll near
-                                            them.
+                                            <strong>{m.settings_deferred_rendering()}</strong>
+                                            {m.settings_deferred_rendering_desc()}
                                         </li>
                                         <li>
-                                            <strong>Network/DB Activity:</strong
-                                            > Observe the database logs or debug
-                                            console to see paginated SQL queries
-                                            (LIMIT/OFFSET) being executed as you
-                                            scroll.
+                                            <strong>{m.settings_network_db_activity()}</strong>
+                                            {m.settings_network_db_activity_desc()}
                                         </li>
                                     </ul>
                                 </div>
@@ -1537,13 +1524,11 @@
                     {#if matchesSearch("Events Audit Log Viewer")}
                         <section class="settings-section">
                             <div class="header-with-tag">
-                                <h2>Events Log</h2>
-                                <Tag type="magenta" size="sm">Debug Only</Tag>
+                                <h2>{m.settings_events_log()}</h2>
+                                <Tag type="magenta" size="sm">{m.settings_debug_only()}</Tag>
                             </div>
                             <p class="section-desc">
-                                Immutable audit log of all ticket and board
-                                actions. Events are append-only and ordered by
-                                creation time.
+                                {m.settings_events_log_desc()}
                             </p>
                             <div class="settings-card">
                                 <div class="debug-card">
@@ -1555,17 +1540,14 @@
                                             disabled={eventsLoading}
                                         >
                                             {eventsLoading
-                                                ? "Loading…"
-                                                : "Load Events"}
+                                                ? m.settings_loading()
+                                                : m.settings_load_events()}
                                         </Button>
                                         {#if events.length > 0}
                                             <span
                                                 style="margin-left: 0.75rem; font-size: 0.875rem; color: var(--cds-text-secondary); align-self: center;"
                                             >
-                                                {events.length} event{events.length !==
-                                                1
-                                                    ? "s"
-                                                    : ""}
+                                                {m.settings_event_count({ count: events.length })}
                                             </span>
                                         {/if}
                                     </div>
@@ -1573,7 +1555,7 @@
                                     {#if eventsError}
                                         <InlineNotification
                                             kind="error"
-                                            title="Failed to load events"
+                                            title={m.settings_failed_load_events()}
                                             subtitle={eventsError}
                                             hideCloseButton
                                         />
@@ -1588,7 +1570,7 @@
                                                 for="event-type-filter"
                                                 style="font-size: 0.875rem; color: var(--cds-text-secondary);"
                                             >
-                                                Filter:
+                                                {m.settings_filter()}
                                             </label>
                                             <select
                                                 id="event-type-filter"
@@ -1598,7 +1580,7 @@
                                                 {#each availableEventTypes as type}
                                                     <option value={type}>
                                                         {type === "all"
-                                                            ? "All Types"
+                                                            ? m.settings_all_types()
                                                             : type.replace(
                                                                   "_",
                                                                   " ",
@@ -1622,27 +1604,27 @@
                                                         <th
                                                             style="padding: 0.5rem; text-align: left; color: var(--cds-text-secondary); font-weight: 600; white-space: nowrap;"
                                                         >
-                                                            Type
+                                                            {m.settings_table_type()}
                                                         </th>
                                                         <th
                                                             style="padding: 0.5rem; text-align: left; color: var(--cds-text-secondary); font-weight: 600; white-space: nowrap;"
                                                         >
-                                                            Entity
+                                                            {m.settings_entity()}
                                                         </th>
                                                         <th
                                                             style="padding: 0.5rem; text-align: left; color: var(--cds-text-secondary); font-weight: 600; white-space: nowrap;"
                                                         >
-                                                            Actor
+                                                            {m.settings_actor()}
                                                         </th>
                                                         <th
                                                             style="padding: 0.5rem; text-align: left; color: var(--cds-text-secondary); font-weight: 600; white-space: nowrap;"
                                                         >
-                                                            Created
+                                                            {m.table_created()}
                                                         </th>
                                                         <th
                                                             style="padding: 0.5rem; text-align: left; color: var(--cds-text-secondary); font-weight: 600; white-space: nowrap;"
                                                         >
-                                                            Payload
+                                                            {m.settings_payload()}
                                                         </th>
                                                     </tr>
                                                 </thead>
@@ -1699,8 +1681,8 @@
                                                                 >
                                                                     {expandedEventId ===
                                                                     event.id
-                                                                        ? "Hide"
-                                                                        : "Show"}
+                                                                        ? m.settings_hide()
+                                                                        : m.settings_show()}
                                                                     JSON
                                                                 </Button>
                                                             </td>
@@ -1728,8 +1710,7 @@
                                         <p
                                             style="margin-top: 1rem; font-size: 0.875rem; color: var(--cds-text-secondary);"
                                         >
-                                            Click "Load Events" to fetch the
-                                            audit log.
+                                            {m.settings_load_events_hint()}
                                         </p>
                                     {/if}
                                 </div>
@@ -1746,8 +1727,7 @@
                         <section class="settings-section">
                             <h2>{m.settings_developer_tools()}</h2>
                             <p class="section-desc">
-                                Advanced tools for troubleshooting and database
-                                diagnostics.
+                                {m.settings_developer_tools_desc()}
                             </p>
                             <div class="settings-card">
                                 <div class="advanced-grid">
@@ -1755,11 +1735,10 @@
                                         kind="ghost"
                                         onclick={refreshWorkspaceState}
                                     >
-                                        Force State Re-init
+                                        {m.settings_force_state_reinit()}
                                     </Button>
                                     <p class="help-text">
-                                        Re-scans the workspace directory and
-                                        reloads all board metadata.
+                                        {m.settings_force_state_reinit_desc()}
                                     </p>
                                 </div>
                             </div>

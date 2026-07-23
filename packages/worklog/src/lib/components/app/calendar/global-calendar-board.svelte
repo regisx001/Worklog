@@ -14,6 +14,7 @@
     import TicketDeleteConfirm from "../kanban/ticket-delete-confirm.svelte";
     import TicketPreviewSheet from "../kanban/ticket-preview-sheet.svelte";
     import { getDb, SettingsRepo } from "$lib/db";
+    import * as m from "$lib/paraglide/messages.js";
 
     let { searchQuery = "" }: { searchQuery?: string } = $props();
 
@@ -133,8 +134,8 @@
         <div class="cal-notice">
             <InlineNotification
                 kind="info"
-                title="No dates set"
-                subtitle="Add a start date or due date to tickets to see them on the calendar."
+                title={m.calendar_no_dates()}
+                subtitle={m.calendar_no_dates_msg()}
                 hideCloseButton
             />
         </div>

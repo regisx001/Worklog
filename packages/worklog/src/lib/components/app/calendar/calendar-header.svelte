@@ -8,17 +8,17 @@
 
 <div class="cal-header">
     <div class="cal-nav">
-        <button class="nav-btn" onclick={() => state.prevPeriod()} aria-label="Previous period">
+        <button class="nav-btn" onclick={() => state.prevPeriod()} aria-label={m.calendar_previous_period()}>
             <ChevronLeft size={16} />
         </button>
         <h2 class="cal-title">{state.displayTitle}</h2>
-        <button class="nav-btn" onclick={() => state.nextPeriod()} aria-label="Next period">
+        <button class="nav-btn" onclick={() => state.nextPeriod()} aria-label={m.calendar_next_period()}>
             <ChevronRight size={16} />
         </button>
         <button class="today-btn" onclick={() => state.goToToday()}>{m.calendar_today()}</button>
     </div>
 
-    <div class="view-toggle" role="group" aria-label="Calendar view">
+    <div class="view-toggle" role="group" aria-label={m.calendar_view()}>
         <button
             class="toggle-btn"
             class:active={state.viewMode === "month"}

@@ -1,6 +1,6 @@
 import { overwriteGetLocale, getLocale, setLocale as paraglideSetLocale } from "$lib/paraglide/runtime.js";
 
-type Locale = "en" | "fr";
+type Locale = "en" | "fr" | "zh-CN";
 
 /**
  * Reactive bridge between paraglide's plain-JS locale and Svelte 5 runes.

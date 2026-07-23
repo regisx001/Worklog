@@ -205,7 +205,7 @@
             class="ticket-body"
             role="button"
             tabindex="0"
-            aria-label="Preview {ticket.title}"
+            aria-label={m.ticket_preview_aria({ title: ticket.title })}
             onclick={() => onPreview?.(ticket)}
             onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') onPreview?.(ticket); }}
         >

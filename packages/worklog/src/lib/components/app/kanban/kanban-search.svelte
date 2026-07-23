@@ -13,6 +13,7 @@
         ToolbarSearch,
         ToastNotification,
     } from "carbon-components-svelte";
+    import * as m from "$lib/paraglide/messages.js";
 
     let searchQuery = $state("");
 </script>
@@ -22,7 +23,7 @@
         <ToolbarSearch
             value={searchQuery}
             oninput={(e: any) => (searchQuery = e.currentTarget.value)}
-            placeholder="Search tickets…"
+            placeholder={m.board_search_placeholder()}
             persistent
         />
         <!-- <div class="toolbar-stats">

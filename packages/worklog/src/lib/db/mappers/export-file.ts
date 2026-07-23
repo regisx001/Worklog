@@ -6,6 +6,7 @@ import type { ExportOptions } from './types';
 import { extractSnapshot } from './extract';
 import { snapshotToSingleJson, snapshotToFolderJsonFiles } from './serialize-json';
 import { snapshotToSingleCsv, snapshotToFolderCsvFiles } from './serialize-csv';
+import * as m from "$lib/paraglide/messages.js";
 
 /**
  * Full export orchestration: extract → serialize → prompt user → write to disk.
@@ -28,7 +29,7 @@ export async function exportToFile(db: Database, options: ExportOptions): Promis
             const filterName = options.format === 'json' ? 'JSON' : 'CSV';
 
             const filePath = await save({
-                title: `Export Workspace (${filterName})`,
+                title: m.export_dialog_title({ format: filterName }),
                 defaultPath: `${documentsPath}/.worklog/worklog_export_${dateSuffix}.${ext}`,
                 filters: [{ name: filterName, extensions: [ext] }],
             });
@@ -46,7 +47,7 @@ export async function exportToFile(db: Database, options: ExportOptions): Promis
 
             // Prompt user for a base directory by saving a placeholder file
             const basePath = await save({
-                title: 'Choose Export Folder Location',
+                title: m.export_dialog_choose_folder(),
                 defaultPath: `${documentsPath}/.worklog/worklog_export_${dateSuffix}/metadata.json`,
                 filters: [{ name: 'JSON', extensions: ['json'] }],
             });

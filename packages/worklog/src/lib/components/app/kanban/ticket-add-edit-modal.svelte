@@ -95,16 +95,22 @@
 
         let replacement = "";
         let newCursorPos = start;
+        const boldText = m.markdown_placeholder_bold_text();
+        const italicText = m.markdown_placeholder_italic_text();
+        const headingText = m.markdown_toolbar_heading();
+        const itemText = m.markdown_placeholder_item();
+        const codeText = m.markdown_placeholder_code();
+        const linkText = m.markdown_placeholder_link_text();
 
         switch (formatType) {
             case "bold":
-                replacement = `**${selected || "bold text"}**`;
+                replacement = `**${selected || boldText}**`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + 2;
                 break;
             case "italic":
-                replacement = `*${selected || "italic text"}*`;
+                replacement = `*${selected || italicText}*`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + 1;
@@ -112,40 +118,40 @@
             case "heading":
                 // Insert a new line if we are not at start of line
                 const needsNewLine = start > 0 && text[start - 1] !== "\n";
-                replacement = `${needsNewLine ? "\n" : ""}### ${selected || "Heading"}`;
+                replacement = `${needsNewLine ? "\n" : ""}### ${selected || headingText}`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + replacement.length;
                 break;
             case "bullet":
                 const needsNLBullet = start > 0 && text[start - 1] !== "\n";
-                replacement = `${needsNLBullet ? "\n" : ""}- ${selected || "Item"}`;
+                replacement = `${needsNLBullet ? "\n" : ""}- ${selected || itemText}`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + replacement.length;
                 break;
             case "number":
                 const needsNLNum = start > 0 && text[start - 1] !== "\n";
-                replacement = `${needsNLNum ? "\n" : ""}1. ${selected || "Item"}`;
+                replacement = `${needsNLNum ? "\n" : ""}1. ${selected || itemText}`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + replacement.length;
                 break;
             case "code":
-                replacement = `\`${selected || "code"}\``;
+                replacement = `\`${selected || codeText}\``;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + 1;
                 break;
             case "codeblock":
                 const needsNLCode = start > 0 && text[start - 1] !== "\n";
-                replacement = `${needsNLCode ? "\n" : ""}\`\`\`\n${selected || "code"}\n\`\`\`\n`;
+                replacement = `${needsNLCode ? "\n" : ""}\`\`\`\n${selected || codeText}\n\`\`\`\n`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + (needsNLCode ? 5 : 4);
                 break;
             case "link":
-                replacement = `[${selected || "Link Text"}](https://example.com)`;
+                replacement = `[${selected || linkText}](https://example.com)`;
                 newCursorPos = selected
                     ? start + replacement.length
                     : start + 1;
@@ -167,37 +173,37 @@
             } else {
                 // Focus the placeholder text
                 if (formatType === "bold") {
-                    textareaRef.setSelectionRange(start + 2, start + 11);
+                    textareaRef.setSelectionRange(start + 2, start + 2 + boldText.length);
                 } else if (formatType === "italic") {
-                    textareaRef.setSelectionRange(start + 1, start + 12);
+                    textareaRef.setSelectionRange(start + 1, start + 1 + italicText.length);
                 } else if (formatType === "heading") {
                     const offset = replacement.indexOf("###") + 4;
                     textareaRef.setSelectionRange(
                         start + offset,
-                        start + offset + 7,
+                        start + offset + headingText.length,
                     );
                 } else if (formatType === "bullet") {
                     const offset = replacement.indexOf("- ") + 2;
                     textareaRef.setSelectionRange(
                         start + offset,
-                        start + offset + 4,
+                        start + offset + itemText.length,
                     );
                 } else if (formatType === "number") {
                     const offset = replacement.indexOf("1. ") + 3;
                     textareaRef.setSelectionRange(
                         start + offset,
-                        start + offset + 4,
+                        start + offset + itemText.length,
                     );
                 } else if (formatType === "code") {
-                    textareaRef.setSelectionRange(start + 1, start + 5);
+                    textareaRef.setSelectionRange(start + 1, start + 1 + codeText.length);
                 } else if (formatType === "codeblock") {
                     const offset = replacement.indexOf("```\n") + 4;
                     textareaRef.setSelectionRange(
                         start + offset,
-                        start + offset + 4,
+                        start + offset + codeText.length,
                     );
                 } else if (formatType === "link") {
-                    textareaRef.setSelectionRange(start + 1, start + 10);
+                    textareaRef.setSelectionRange(start + 1, start + 1 + linkText.length);
                 }
             }
         }, 0);
@@ -461,7 +467,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("bold")}
-                                    title="Bold (Ctrl+B)"
+                                    title={m.markdown_toolbar_bold()}
                                 >
                                     <TextBold size={16} />
                                 </button>
@@ -469,7 +475,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("italic")}
-                                    title="Italic (Ctrl+I)"
+                                    title={m.markdown_toolbar_italic()}
                                 >
                                     <TextItalic size={16} />
                                 </button>
@@ -477,7 +483,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("heading")}
-                                    title="Heading"
+                                    title={m.markdown_toolbar_heading()}
                                 >
                                     <HeadingIcon size={16} />
                                 </button>
@@ -486,7 +492,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("bullet")}
-                                    title="Unordered List"
+                                    title={m.markdown_toolbar_unordered_list()}
                                 >
                                     <List size={16} />
                                 </button>
@@ -494,7 +500,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("number")}
-                                    title="Ordered List"
+                                    title={m.markdown_toolbar_ordered_list()}
                                 >
                                     <ListNumbered size={16} />
                                 </button>
@@ -503,7 +509,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("code")}
-                                    title="Inline Code"
+                                    title={m.markdown_toolbar_inline_code()}
                                 >
                                     <Code size={16} />
                                 </button>
@@ -511,7 +517,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("codeblock")}
-                                    title="Code Block"
+                                    title={m.markdown_toolbar_code_block()}
                                 >
                                     <Terminal size={16} />
                                 </button>
@@ -519,7 +525,7 @@
                                     type="button"
                                     class="toolbar-btn"
                                     onclick={() => applyFormatting("link")}
-                                    title="Insert Link (Ctrl+K)"
+                                    title={m.markdown_toolbar_insert_link()}
                                 >
                                     <LinkIcon size={16} />
                                 </button>
@@ -531,7 +537,7 @@
                                     class:toolbar-btn--active={showCheatsheet}
                                     onclick={() =>
                                         (showCheatsheet = !showCheatsheet)}
-                                    title="Markdown Cheatsheet Help"
+                                    title={m.markdown_toolbar_help()}
                                 >
                                     <Help size={16} />
                                 </button>
@@ -541,42 +547,42 @@
                         {#if showCheatsheet}
                             <div class="markdown-cheatsheet">
                                 <div class="cheatsheet-title">
-                                    Quick Markdown Reference
+                                    {m.markdown_cheatsheet_title()}
                                 </div>
                                 <div class="cheatsheet-grid">
                                     <div class="cheatsheet-item">
-                                        <code>**bold**</code> &rarr;
-                                        <strong>bold</strong>
+                                        <code>{m.markdown_example_bold()}</code> &rarr;
+                                        <strong>{m.markdown_cheatsheet_bold()}</strong>
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>*italic*</code> &rarr;
-                                        <em>italic</em>
+                                        <code>{m.markdown_example_italic()}</code> &rarr;
+                                        <em>{m.markdown_cheatsheet_italic()}</em>
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>### Heading</code> &rarr;
+                                        <code>{m.markdown_example_heading()}</code> &rarr;
                                         <span style="font-weight: 600;"
-                                            >H3 Header</span
+                                            >{m.markdown_cheatsheet_h3_header()}</span
                                         >
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>- item</code> &rarr; Bullet List
+                                        <code>{m.markdown_example_bullet()}</code> &rarr; {m.markdown_cheatsheet_bullet_list()}
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>1. item</code> &rarr; Number List
+                                        <code>{m.markdown_example_number()}</code> &rarr; {m.markdown_cheatsheet_number_list()}
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>`code`</code> &rarr;
-                                        <code>inline code</code>
+                                        <code>{m.markdown_example_inline_code()}</code> &rarr;
+                                        <code>{m.markdown_cheatsheet_inline_code()}</code>
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>[text](url)</code> &rarr;
+                                        <code>{m.markdown_example_link()}</code> &rarr;
                                         <span
                                             style="color: var(--cds-link-01, #0f62fe); text-decoration: underline;"
-                                            >Link</span
+                                            >{m.markdown_cheatsheet_link()}</span
                                         >
                                     </div>
                                     <div class="cheatsheet-item">
-                                        <code>```code```</code> &rarr; Code Block
+                                        <code>{m.markdown_example_code_block()}</code> &rarr; {m.markdown_toolbar_code_block()}
                                     </div>
                                 </div>
                             </div>

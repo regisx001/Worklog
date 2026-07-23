@@ -7,6 +7,8 @@ import {
 } from "$lib/components/app/types";
 import { getTicketSort } from "$lib/hooks/ticket-sort.svelte";
 import { Pending, TaskComplete, InProgress as InProgressIcon, CheckmarkFilled } from "carbon-icons-svelte";
+import * as m from "$lib/paraglide/messages.js";
+import { formatDate } from "$lib/utils/date-format";
 
 export type RowItem =
     | { kind: "group"; status: TicketStatus; label: string; color: string; icon: any; count: number }
@@ -125,8 +127,8 @@ export class GanttState {
             for (let i = 0; i < this.totalDays; i++) {
                 const d = new Date(s.getTime() + i * this.DAY_MS);
                 cols.push({
-                    label: d.toLocaleDateString("en-US", { weekday: "short" }),
-                    subLabel: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                    label: formatDate(d, { weekday: "short" }),
+                    subLabel: formatDate(d, { month: "short", day: "numeric" }),
                     span: 1, date: d,
                 });
             }
@@ -136,8 +138,8 @@ export class GanttState {
                 const d = new Date(s.getTime() + i * this.DAY_MS);
                 const span = Math.min(7, this.totalDays - i);
                 cols.push({
-                    label: `W${getWeekNumber(d)}`,
-                    subLabel: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                    label: m.gantt_week_number({ number: getWeekNumber(d) }),
+                    subLabel: formatDate(d, { month: "short", day: "numeric" }),
                     span, date: d,
                 });
                 i += span;
@@ -150,7 +152,7 @@ export class GanttState {
                 const daysLeft = Math.round((monthEnd.getTime() - d.getTime()) / this.DAY_MS) + 1;
                 const span = Math.min(daysLeft, this.totalDays - i);
                 cols.push({
-                    label: d.toLocaleDateString("en-US", { month: "long" }),
+                    label: formatDate(d, { month: "long" }),
                     subLabel: d.getFullYear().toString(),
                     span, date: d,
                 });
@@ -226,17 +228,17 @@ export class GanttState {
 
     getDaysLeft(ticket: Ticket): string {
         const now = new Date();
-        if (!ticket.due_date) return "No due date";
+        if (!ticket.due_date) return m.gantt_no_due_date();
         const diff = Math.ceil((new Date(ticket.due_date).getTime() - now.getTime()) / this.DAY_MS);
 
         if (ticket.status === "done") {
-            return "Completed";
+            return m.gantt_completed();
         }
 
-        if (diff < 0) return `${Math.abs(diff)}d overdue`;
-        if (diff === 0) return "Due today";
-        if (diff === 1) return "Tomorrow";
-        return `${diff}d left`;
+        if (diff < 0) return m.gantt_days_overdue({ count: Math.abs(diff) });
+        if (diff === 0) return m.table_due_today();
+        if (diff === 1) return m.table_tomorrow();
+        return m.gantt_days_left({ count: diff });
     }
 
     handleBarHover(e: MouseEvent, ticketId: string) {

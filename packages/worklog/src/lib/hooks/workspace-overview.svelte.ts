@@ -11,7 +11,6 @@ export interface OverviewMetrics {
 
 export interface StatusCount {
     status: string;
-    label: string;
     count: number;
     percentage: number;
 }
@@ -43,9 +42,8 @@ export interface LabelFrequency {
 export interface RecentActivityItem {
     id: string;
     eventType: string;
-    description: string;
+    payload: Record<string, unknown>;
     timestamp: string;
-    relativeTime: string;
 }
 
 export interface TimelinePoint {
@@ -63,38 +61,6 @@ export interface OverviewData {
     overdueBreakdown: OverdueBreakdown[];
     topLabels: LabelFrequency[];
     progressTimeline: TimelinePoint[];
-}
-
-function relativeTime(iso: string): string {
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    if (days < 30) return `${Math.floor(days / 7)}w ago`;
-    return iso.slice(0, 10);
-}
-
-function buildDescription(eventType: string, payload: Record<string, unknown>): string {
-    switch (eventType) {
-        case 'ticket_created':
-            return `Created "${(payload.title as string) || 'ticket'}"`;
-        case 'ticket_moved':
-            return `Moved "${(payload.title as string) || 'ticket'}" to ${(payload.to as string) || 'another status'}`;
-        case 'ticket_updated':
-            return `Updated "${(payload.title as string) || 'ticket'}"`;
-        case 'ticket_deleted':
-            return `Deleted "${(payload.title as string) || 'ticket'}"`;
-        case 'board_created':
-            return `Created board "${(payload.name as string) || ''}"`;
-        case 'board_archived':
-            return `Archived board "${(payload.name as string) || ''}"`;
-        default:
-            return eventType.replace(/_/g, ' ');
-    }
 }
 
 export function getWorkspaceOverview(getWorkspacePath: () => string | null) {
@@ -144,17 +110,10 @@ export function getWorkspaceOverview(getWorkspacePath: () => string | null) {
 
             // ── Status Breakdown ─────────────────────────────────────────────
             const STATUS_ORDER = ['backlog', 'todo', 'in_progress', 'done'];
-            const STATUS_LABELS: Record<string, string> = {
-                backlog: 'Backlog',
-                todo: 'To Do',
-                in_progress: 'In Progress',
-                done: 'Done',
-            };
             const statusBreakdown: StatusCount[] = STATUS_ORDER.map((status) => {
                 const count = allTickets.filter((t) => t.status === status).length;
                 return {
                     status,
-                    label: STATUS_LABELS[status],
                     count,
                     percentage: totalTickets > 0 ? Math.round((count / totalTickets) * 100) : 0,
                 };
@@ -170,7 +129,7 @@ export function getWorkspaceOverview(getWorkspacePath: () => string | null) {
             const busiestBoards: BoardTicketCount[] = [...boardOpenCounts.entries()]
                 .map(([boardId, count]) => ({
                     boardId,
-                    boardName: boardMap.get(boardId)?.name ?? 'Unknown',
+                    boardName: boardMap.get(boardId)?.name ?? '',
                     openCount: count,
                 }))
                 .sort((a, b) => b.openCount - a.openCount)
@@ -182,7 +141,7 @@ export function getWorkspaceOverview(getWorkspacePath: () => string | null) {
                 title: t.title,
                 priority: t.priority,
                 dueDate: t.due_date ?? '',
-                boardName: boardMap.get(t.board_id)?.name ?? 'Unknown',
+                boardName: boardMap.get(t.board_id)?.name ?? '',
             }));
 
             // ── Overdue Breakdown ───────────────────────────────────────────
@@ -192,10 +151,9 @@ export function getWorkspaceOverview(getWorkspacePath: () => string | null) {
             }));
             // Ensure p1, p2, p3 all appear even if zero
             const priorityOrder = ['p1', 'p2', 'p3'];
-            const priorityLabels: Record<string, string> = { p1: 'High', p2: 'Medium', p3: 'Low' };
             const mappedOverdue = new Map(overdueBreakdown.map((o) => [o.priority, o]));
             const fullOverdueBreakdown: OverdueBreakdown[] = priorityOrder.map((p) => ({
-                priority: priorityLabels[p],
+                priority: p,
                 count: mappedOverdue.get(p)?.count ?? 0,
             }));
 
@@ -215,9 +173,8 @@ export function getWorkspaceOverview(getWorkspacePath: () => string | null) {
             const recentActivity: RecentActivityItem[] = events.map((e) => ({
                 id: e.id,
                 eventType: e.event_type,
-                description: buildDescription(e.event_type, e.payload),
+                payload: e.payload,
                 timestamp: e.created_at,
-                relativeTime: relativeTime(e.created_at),
             }));
 
             // ── Progress Timeline (last 30 days) ────────────────────────────

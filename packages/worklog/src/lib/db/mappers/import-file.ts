@@ -6,6 +6,7 @@ import { parseSnapshotFromSingleJson, parseSnapshotFromFolder } from './deserial
 import { csvToTickets } from './deserialize-csv';
 import { importSnapshot } from './import';
 import type { BoardSnapshot } from './types';
+import * as m from "$lib/paraglide/messages.js";
 
 /**
  * Full import orchestration: prompt user → read → deserialize → import into DB.
@@ -24,11 +25,11 @@ export async function importFromFile(
     try {
         // Let user pick a file or folder
         const selected = await open({
-            title: 'Import Workspace Data',
+            title: m.import_dialog_title(),
             multiple: false,
             directory: false,
             filters: [
-                { name: 'Worklog Export', extensions: ['json', 'csv'] },
+                { name: m.import_dialog_filter_worklog_export(), extensions: ['json', 'csv'] },
             ],
         });
 

@@ -3,6 +3,7 @@ import { getSyncConfig } from "$lib/sync/sync-config.svelte";
 import { SyncEngine } from "$lib/sync/sync-engine";
 import { getDb } from "$lib/db";
 import { notifications } from "$lib/hooks/notifications.svelte";
+import * as m from "$lib/paraglide/messages.js";
 
 let schedulerInterval: number | null = null;
 let countdownInterval: number | null = null;
@@ -90,7 +91,7 @@ export function initSyncScheduler() {
                     } else if (result.status === "error") {
                         notifications.add({
                             kind: "error",
-                            title: "Auto-Sync Failed",
+                            title: m.sync_auto_failed(),
                             subtitle: result.message,
                             timeout: 5000,
                         });

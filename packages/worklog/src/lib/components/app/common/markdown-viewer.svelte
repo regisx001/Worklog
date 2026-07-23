@@ -1,6 +1,7 @@
 <script lang="ts">
     import { marked } from "marked";
     import DOMPurify from "dompurify";
+    import * as m from "$lib/paraglide/messages.js";
 
     export let content: string = "";
 
@@ -14,7 +15,7 @@
     {#if parsedHtml}
         {@html parsedHtml}
     {:else}
-        <p class="markdown-empty">No description provided.</p>
+        <p class="markdown-empty">{m.markdown_no_description()}</p>
     {/if}
 </div>
 

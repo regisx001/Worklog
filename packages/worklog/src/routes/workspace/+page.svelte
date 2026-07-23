@@ -2,6 +2,7 @@
     import { goto } from "$app/navigation";
 
     import { getWorkspaceShellContext } from "$lib/hooks/workspace-shell-context";
+    import * as m from "$lib/paraglide/messages.js";
 
     const { boardsApi } = getWorkspaceShellContext();
 
@@ -27,17 +28,17 @@
 
 {#if boardsApi.loading}
     <main class="workspace-state">
-        <article aria-busy="true">Loading boards...</article>
+        <article aria-busy="true">{m.workspace_loading_boards()}</article>
     </main>
 {:else if !hasBoards}
     <main class="workspace-state">
         <article>
-            No boards yet. Create one from the sidebar to get started.
+            {m.workspace_no_boards_sidebar()}
         </article>
     </main>
 {:else}
     <main class="workspace-state">
-        <article aria-busy="true">Opening board...</article>
+        <article aria-busy="true">{m.workspace_opening_board()}</article>
     </main>
 {/if}
 

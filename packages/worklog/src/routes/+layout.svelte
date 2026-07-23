@@ -9,11 +9,13 @@
 	// Initialize language
 	if (typeof localStorage !== "undefined") {
 		const savedLang = localStorage.getItem("app_lang");
-		if (savedLang === "fr" || savedLang === "en") {
+		if (savedLang === "fr" || savedLang === "en" || savedLang === "zh-CN") {
 			setReactiveLocale(savedLang);
 		} else {
-			const browserLang = navigator.language.split("-")[0];
-			const initLang = browserLang === "fr" ? "fr" : "en";
+			const browserLang = navigator.language;
+			const baseLang = browserLang.split("-")[0];
+			const initLang =
+				baseLang === "zh" ? "zh-CN" : baseLang === "fr" ? "fr" : "en";
 			setReactiveLocale(initLang);
 			localStorage.setItem("app_lang", initLang);
 		}
@@ -39,6 +41,7 @@
 	import { getDb } from "$lib/db";
 	import { exportDatabaseToFile } from "$lib/db/export";
 	import { importFromFile } from "$lib/db/mappers";
+	import * as m from "$lib/paraglide/messages.js";
 
 	let { children } = $props();
 	const workspace = getWorkspace();
@@ -95,8 +98,8 @@
 			if (success) {
 				notifications.add({
 					kind: "success",
-					title: "Export Successful",
-					subtitle: "Your workspace data has been saved.",
+					title: m.settings_export_successful(),
+					subtitle: m.app_export_success_msg(),
 					timeout: 3000,
 				});
 			}
@@ -104,7 +107,7 @@
 			console.error("Failed to export data", error);
 			notifications.add({
 				kind: "error",
-				title: "Export Failed",
+				title: m.settings_export_failed(),
 				subtitle: String(error),
 				timeout: 5000,
 			});
@@ -119,8 +122,12 @@
 			if (result) {
 				notifications.add({
 					kind: "success",
-					title: "Import Successful",
-					subtitle: `Created ${result.boardsCreated} boards, ${result.ticketsCreated} tickets. Updated ${result.ticketsUpdated} tickets.`,
+					title: m.settings_import_successful(),
+					subtitle: m.settings_import_success_msg({
+						boards: result.boardsCreated,
+						tickets: result.ticketsCreated,
+						updated: result.ticketsUpdated,
+					}),
 					timeout: 5000,
 				});
 				// Reload the workspace to pick up new data
@@ -130,7 +137,7 @@
 			console.error("Failed to import data", error);
 			notifications.add({
 				kind: "error",
-				title: "Import Failed",
+				title: m.settings_import_failed(),
 				subtitle: String(error),
 				timeout: 5000,
 			});
@@ -146,8 +153,8 @@
 			if (didUndo) {
 				notifications.add({
 					kind: "info",
-					title: "Undo",
-					subtitle: _undoRedo.lastUndoDesc || "Action reverted",
+					title: m.command_undo(),
+					subtitle: _undoRedo.lastUndoDesc || m.app_undo_default(),
 					timeout: 2000,
 				});
 			}
@@ -155,7 +162,7 @@
 			console.error("Undo failed", error);
 			notifications.add({
 				kind: "error",
-				title: "Undo Failed",
+				title: m.app_undo_failed(),
 				subtitle: String(error),
 				timeout: 4000,
 			});
@@ -168,8 +175,8 @@
 			if (didRedo) {
 				notifications.add({
 					kind: "info",
-					title: "Redo",
-					subtitle: _undoRedo.lastRedoDesc || "Action restored",
+					title: m.command_redo(),
+					subtitle: _undoRedo.lastRedoDesc || m.app_redo_default(),
 					timeout: 2000,
 				});
 			}
@@ -177,7 +184,7 @@
 			console.error("Redo failed", error);
 			notifications.add({
 				kind: "error",
-				title: "Redo Failed",
+				title: m.app_redo_failed(),
 				subtitle: String(error),
 				timeout: 4000,
 			});
@@ -200,11 +207,11 @@
 		redo,
 	};
 
-	const commandActions = buildCommandActions(appCallbacks);
-	const shortcuts: ShortcutDef[] = buildShortcuts({
+	const commandActions = $derived(buildCommandActions(appCallbacks));
+	const shortcuts: ShortcutDef[] = $derived(buildShortcuts({
 		...appCallbacks,
 		openCommandPalette: () => palette.toggle(),
-	});
+	}));
 
 	// Register command actions with the palette
 	$effect(() => {
