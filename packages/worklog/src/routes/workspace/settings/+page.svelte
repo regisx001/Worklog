@@ -41,8 +41,14 @@
     import type { ExportFormat, ExportMode } from "$lib/db/mappers";
     import { getSyncConfig } from "$lib/sync/sync-config.svelte";
     import { SyncEngine } from "$lib/sync/sync-engine";
-    import type { SyncStatus } from "$lib/sync/types";
+    import {
+        requestSyncResolution,
+        runSyncOperation,
+        syncState,
+    } from "$lib/sync/sync-scheduler.svelte";
+    import type { SyncResult, SyncStatus } from "$lib/sync/types";
     import { getAppZoom } from "$lib/hooks/app-zoom.svelte";
+    import { formatDateTime } from "$lib/utils/date-format";
     import {
         useAppAppearance,
         type ThemeMode,
@@ -188,6 +194,7 @@
     let syncLoading = $state(false);
     let syncLoadingMessage = $state("");
     let gitAvailable = $state<boolean | null>(null);
+    let syncBranchMismatch = $state<SyncResult | null>(null);
 
     // Load sync config on mount
     $effect(() => {
@@ -249,15 +256,17 @@
     }
 
     async function handleSyncPush() {
-        if (!workspace.path) return;
+        if (!workspace.path || syncState.isSyncing) return;
         syncLoading = true;
         syncLoadingMessage = m.settings_pushing_remote();
         syncConfig.setStatus("pushing");
         try {
             const db = await getDb(workspace.path);
-            const engine = new SyncEngine(workspace.path);
-            await engine.initialize(syncConfig.config);
-            const result = await engine.push(db, syncConfig.config);
+            const result = await runSyncOperation(
+                workspace.path,
+                syncConfig.config,
+                "push",
+            );
 
             if (result.status === "success") {
                 syncConfig.updateLastSynced(result.timestamp);
@@ -269,6 +278,15 @@
                     timeout: 3000,
                 });
             } else {
+                if (result.status === "branch_mismatch") {
+                    syncBranchMismatch = result;
+                }
+                if (
+                    result.status === "remote_has_data" ||
+                    result.status === "conflict"
+                ) {
+                    requestSyncResolution(result);
+                }
                 notifications.add({
                     kind: "error",
                     title: m.sync_push_failed(),
@@ -294,15 +312,17 @@
     }
 
     async function handleSyncPull() {
-        if (!workspace.path) return;
+        if (!workspace.path || syncState.isSyncing) return;
         syncLoading = true;
         syncLoadingMessage = m.settings_pulling_remote();
         syncConfig.setStatus("pulling");
         try {
             const db = await getDb(workspace.path);
-            const engine = new SyncEngine(workspace.path);
-            await engine.initialize(syncConfig.config);
-            const result = await engine.pull(db, syncConfig.config);
+            const result = await runSyncOperation(
+                workspace.path,
+                syncConfig.config,
+                "pull",
+            );
 
             if (result.status === "success") {
                 syncConfig.updateLastSynced(result.timestamp);
@@ -315,6 +335,7 @@
                 });
                 window.location.reload();
             } else if (result.status === "conflict") {
+                requestSyncResolution(result);
                 notifications.add({
                     kind: "warning",
                     title: m.settings_merge_conflict(),
@@ -323,6 +344,9 @@
                 });
                 syncConfig.setStatus("conflict");
             } else {
+                if (result.status === "branch_mismatch") {
+                    syncBranchMismatch = result;
+                }
                 notifications.add({
                     kind: "error",
                     title: m.sync_pull_failed(),
@@ -343,6 +367,26 @@
             syncLoading = false;
             syncLoadingMessage = "";
         }
+    }
+
+    function useRemoteDefaultBranch() {
+        const branch = syncBranchMismatch?.remoteDefaultBranch;
+        if (!branch) return;
+        syncBranch = branch;
+        syncBranchMismatch = null;
+        notifications.add({
+            kind: "success",
+            title: m.sync_branch_updated_title(),
+            subtitle: m.sync_branch_updated_message({ branch }),
+            timeout: 3000,
+        });
+    }
+
+    function formatSyncTimestamp(timestamp: string): string {
+        return formatDateTime(new Date(timestamp), {
+            dateStyle: "medium",
+            timeStyle: "short",
+        });
     }
 
     // ── Navigation ─────────────────────────────────────────────────────────
@@ -1330,13 +1374,36 @@
                                         disabled={gitAvailable === false}
                                     />
 
-                                    <PasswordInput
-                                        id="sync-access-token"
-                                        labelText={m.settings_access_token()}
-                                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                                        bind:value={syncAccessToken}
-                                        disabled={gitAvailable === false}
-                                    />
+                                    <div class="token-field">
+                                        <PasswordInput
+                                            id="sync-access-token"
+                                            labelText={m.settings_access_token()}
+                                            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                                            bind:value={syncAccessToken}
+                                            disabled={gitAvailable === false}
+                                        />
+                                        <p class="help-text">
+                                            {m.settings_access_token_permissions()}
+                                        </p>
+                                    </div>
+
+                                    {#if syncBranchMismatch}
+                                        <aside class="git-warning" role="alert">
+                                            <strong>{m.sync_branch_mismatch_title()}</strong>
+                                            <span>{syncBranchMismatch.message}</span>
+                                            {#if syncBranchMismatch.remoteDefaultBranch}
+                                                    <Button
+                                                        kind="ghost"
+                                                        size="small"
+                                                        onclick={useRemoteDefaultBranch}
+                                                >
+                                                    {m.sync_use_remote_branch({
+                                                        branch: syncBranchMismatch.remoteDefaultBranch,
+                                                    })}
+                                                </Button>
+                                            {/if}
+                                        </aside>
+                                    {/if}
 
                                     <div class="settings-grid">
                                         <TextInput
@@ -1420,9 +1487,9 @@
                                         <TextInput
                                             id="sync-last-synced"
                                             labelText={m.settings_last_synced()}
-                                            value={new Date(
+                                            value={formatSyncTimestamp(
                                                 syncConfig.config.last_synced_at,
-                                            ).toLocaleString()}
+                                            )}
                                             readonly
                                         />
                                     {/if}
@@ -1449,12 +1516,14 @@
                                                     <Button
                                                         kind="tertiary"
                                                         onclick={handleSyncPush}
+                                                        disabled={syncState.isSyncing}
                                                     >
                                                         {m.settings_push()}
                                                     </Button>
                                                     <Button
                                                         kind="tertiary"
                                                         onclick={handleSyncPull}
+                                                        disabled={syncState.isSyncing}
                                                     >
                                                         {m.settings_pull()}
                                                     </Button>
@@ -2126,6 +2195,12 @@
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+    }
+
+    .token-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     .sync-options {

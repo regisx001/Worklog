@@ -6,13 +6,19 @@
         ErrorFilled,
         Cloud,
     } from "carbon-icons-svelte";
-    import { Button } from "carbon-components-svelte";
+    import { Button, Modal } from "carbon-components-svelte";
 
-    import { syncState } from "$lib/sync/sync-scheduler.svelte";
+    import {
+        clearSyncResolution,
+        requestSyncResolution,
+        runSyncOperation,
+        syncState,
+    } from "$lib/sync/sync-scheduler.svelte";
     import { getSyncConfig } from "$lib/sync/sync-config.svelte";
     import { getWorkspace } from "$lib/hooks/workspace.svelte";
-    import { SyncEngine } from "$lib/sync/sync-engine";
     import { getDb } from "$lib/db";
+    import { formatDateTime } from "$lib/utils/date-format";
+    import type { SyncOperation, SyncResult } from "$lib/sync/types";
 
     import { notifications } from "$lib/hooks/notifications.svelte";
     import * as m from "$lib/paraglide/messages.js";
@@ -20,38 +26,50 @@
     const syncConfig = getSyncConfig();
     const workspace = getWorkspace();
 
-    let manualSyncing = $state(false);
-    let lastResult = $state<{
-        status: "success" | "error" | "conflict";
-        message: string;
-    } | null>(null);
+    let lastResult = $state<SyncResult | null>(null);
+    let resolutionOpen = $state(false);
+    let forcePushOpen = $state(false);
 
     const isSyncEnabled = $derived(
         !!syncConfig.config.remote_url && !!syncConfig.config.access_token,
     );
-    const isWorking = $derived(syncState.isSyncing || manualSyncing);
+    const isWorking = $derived(syncState.isSyncing);
 
-    async function handlePull() {
+    $effect(() => {
+        if (syncState.pendingResolution) resolutionOpen = true;
+    });
+
+    async function handleSync(operation: SyncOperation) {
         if (isWorking || !workspace.path) return;
-        manualSyncing = true;
         lastResult = null;
 
         try {
-            const db = await getDb(workspace.path);
-            const engine = new SyncEngine(workspace.path);
-            await engine.initialize(syncConfig.config);
-            const result = await engine.pull(db, syncConfig.config);
-
+            const result = await runSyncOperation(
+                workspace.path,
+                syncConfig.config,
+                operation,
+            );
             lastResult = result;
             if (result.status === "success") {
                 syncConfig.updateLastSynced(result.timestamp);
+                const db = await getDb(workspace.path);
                 await syncConfig.save(db);
                 notifications.add({
                     kind: "success",
-                    title: m.sync_pull_success(),
+                    title:
+                        result.successKind === "pulled" ||
+                        result.successKind === "force_pulled"
+                            ? m.sync_pull_success()
+                            : m.sync_push_success(),
                     subtitle: result.message,
                 });
             } else {
+                if (
+                    result.status === "remote_has_data" ||
+                    result.status === "conflict"
+                ) {
+                    requestSyncResolution(result);
+                }
                 notifications.add({
                     kind: result.status === "conflict" ? "warning" : "error",
                     title:
@@ -67,47 +85,31 @@
                 title: m.sync_error(),
                 subtitle: String(e),
             });
-        } finally {
-            manualSyncing = false;
         }
     }
 
-    async function handlePush() {
-        if (isWorking || !workspace.path) return;
-        manualSyncing = true;
-        lastResult = null;
+    function handlePull() {
+        void handleSync("pull");
+    }
 
-        try {
-            const db = await getDb(workspace.path);
-            const engine = new SyncEngine(workspace.path);
-            await engine.initialize(syncConfig.config);
-            const result = await engine.push(db, syncConfig.config);
+    function handlePush() {
+        void handleSync("push");
+    }
 
-            lastResult = result;
-            if (result.status === "success") {
-                syncConfig.updateLastSynced(result.timestamp);
-                await syncConfig.save(db);
-                notifications.add({
-                    kind: "success",
-                    title: m.sync_push_success(),
-                    subtitle: result.message,
-                });
-            } else {
-                notifications.add({
-                    kind: "error",
-                    title: m.sync_push_failed(),
-                    subtitle: result.message,
-                });
-            }
-        } catch (e) {
-            notifications.add({
-                kind: "error",
-                title: m.sync_error(),
-                subtitle: String(e),
-            });
-        } finally {
-            manualSyncing = false;
-        }
+    function closeResolution() {
+        resolutionOpen = false;
+        clearSyncResolution();
+    }
+
+    function chooseLocalData() {
+        resolutionOpen = false;
+        forcePushOpen = true;
+    }
+
+    async function confirmForcePush() {
+        forcePushOpen = false;
+        clearSyncResolution();
+        await handleSync("force_push");
     }
 
     function formatTimeRemaining(ms: number) {
@@ -120,8 +122,7 @@
 
     function formatLastSynced(dateStr: string | null) {
         if (!dateStr) return m.sync_last_synced_never();
-        const date = new Date(dateStr);
-        return date.toLocaleTimeString([], {
+        return formatDateTime(new Date(dateStr), {
             hour: "2-digit",
             minute: "2-digit",
         });
@@ -144,7 +145,7 @@
             <div class="status-icon">
                 {#if isWorking}
                     <div class="spinner"></div>
-                {:else if lastResult?.status === "error"}
+                {:else if syncState.lastResult?.status !== "success" && syncState.lastResult?.status !== "busy"}
                     <ErrorFilled size={16} class="error-icon" />
                 {:else}
                     <Cloud size={16} class="cloud-icon" />
@@ -169,6 +170,8 @@
                                 ),
                             })}</span
                         >
+                    {:else if syncState.lastResult?.status !== "success" && syncState.lastResult?.status !== "busy"}
+                        <span class="subtext">{syncState.lastResult?.message}</span>
                     {/if}
                 {/if}
             </div>
@@ -198,6 +201,33 @@
         </div>
     {/if}
 </div>
+
+{#if syncState.pendingResolution}
+    <Modal
+        bind:open={resolutionOpen}
+        modalHeading={m.sync_remote_data_title()}
+        primaryButtonText={m.sync_pull_remote_data()}
+        secondaryButtonText={m.sync_use_local_data()}
+        on:click:button--primary={() => {
+            closeResolution();
+            void handleSync("pull");
+        }}
+        on:click:button--secondary={chooseLocalData}
+    >
+        <p>{syncState.pendingResolution.message}</p>
+    </Modal>
+
+    <Modal
+        danger
+        bind:open={forcePushOpen}
+        modalHeading={m.sync_force_push_confirm_title()}
+        primaryButtonText={m.sync_force_push_confirm_action()}
+        secondaryButtonText={m.settings_dismiss()}
+        on:click:button--primary={() => void confirmForcePush()}
+    >
+        <p>{m.sync_force_push_confirm_message()}</p>
+    </Modal>
+{/if}
 
 <style>
     .sync-bar {

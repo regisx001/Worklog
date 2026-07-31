@@ -1,17 +1,12 @@
 import type Database from '@tauri-apps/plugin-sql';
-import { mkdir, exists } from '@tauri-apps/plugin-fs';
-import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { GitClient } from './git-client';
+import { mkdir, exists, writeTextFile } from '@tauri-apps/plugin-fs';
+import { GitClient, type RemoteInfo } from './git-client';
 import type { SyncConfig, SyncResult } from './types';
 import { extractSnapshot } from '$lib/db/mappers/extract';
 import { snapshotToFolderJsonFiles } from '$lib/db/mappers/serialize-json';
 import { importFromFolder } from '$lib/db/mappers/import-file';
-import * as m from "$lib/paraglide/messages.js";
+import * as m from '$lib/paraglide/messages.js';
 
-/**
- * Core sync orchestration layer.
- * Handles push/pull operations between SQLite and a remote git repository.
- */
 export class SyncEngine {
     private syncDir: string;
     private git: GitClient;
@@ -21,217 +16,284 @@ export class SyncEngine {
         this.git = new GitClient(this.syncDir);
     }
 
-    /**
-     * Initialize the sync directory and git repository.
-     * Called once when user first configures sync.
-     */
-    async initialize(config: SyncConfig): Promise<void> {
-        // Ensure sync directory exists
-        const dirExists = await exists(this.syncDir);
-        if (!dirExists) {
-            await mkdir(this.syncDir, { recursive: true });
-        }
-
-        // Ensure boards subdirectory exists
-        const boardsDir = `${this.syncDir}/boards`;
-        const boardsDirExists = await exists(boardsDir);
-        if (!boardsDirExists) {
-            await mkdir(boardsDir, { recursive: true });
-        }
-
-        // Initialize git if not already a repo
-        const isRepo = await this.git.isRepo();
-        if (!isRepo) {
-            await this.git.init();
-        }
-
-        // Configure remote and user
-        await this.git.setRemote(config.remote_url, config.access_token);
-        await this.git.setUser(config.git_name || 'Worklog', config.git_email || 'worklog@sync');
-    }
-
-    /**
-     * Push local database state to the remote repository.
-     *
-     * Flow: extract snapshot → write flat files → git add + commit + push
-     */
     async push(db: Database, config: SyncConfig): Promise<SyncResult> {
         try {
-            // 1. Extract snapshot from DB
-            const snapshot = await extractSnapshot(db);
-
-            // 2. Serialize to flat JSON files
-            const files = snapshotToFolderJsonFiles(snapshot);
-
-            // 3. Ensure directories exist
-            const boardsDir = `${this.syncDir}/boards`;
-            const boardsDirExists = await exists(boardsDir);
-            if (!boardsDirExists) {
-                await mkdir(boardsDir, { recursive: true });
-            }
-
-            // 4. Write all files to sync directory
-            for (const [relativePath, content] of files.entries()) {
-                const fullPath = `${this.syncDir}/${relativePath}`;
-                await writeTextFile(fullPath, content);
-            }
-
-            // 5. Ensure remote is configured
-            await this.git.setRemote(config.remote_url, config.access_token);
-
-            // 6. Stage, commit, push
-            await this.git.addAll();
-            const committed = await this.git.commit(
-                `sync: ${new Date().toISOString()}`
+            const prepared = await this.prepare(config);
+            const remoteStatus = this.remoteStatus(
+                prepared.remote,
+                config.branch,
+                { allowEmpty: true },
             );
+            if (remoteStatus) return remoteStatus;
 
-            if (committed) {
-                await this.git.push(config.branch);
+            if (
+                prepared.remote.branches.includes(config.branch) &&
+                !prepared.hasLocalCommits
+            ) {
+                return this.remoteHasDataResult(config, prepared.remote);
             }
 
-            const timestamp = new Date().toISOString();
-            return {
-                status: 'success',
-                message: committed
-                    ? m.sync_changes_pushed()
-                    : m.sync_no_changes_push(),
-                timestamp,
-            };
+            if (
+                prepared.remote.branches.includes(config.branch) &&
+                !(await this.git.isRemoteBranchIntegrated(config.branch))
+            ) {
+                return this.remoteHasDataResult(config, prepared.remote);
+            }
+
+            const committed = await this.writeSnapshot(db, 'sync');
+
+            // A push is required even when there is no new commit. This repairs
+            // an older local-only snapshot and proves that the remote accepted it.
+            await this.git.push(config.branch);
+
+            return this.result('success', {
+                message:
+                    prepared.remote.branches.length === 0
+                        ? m.sync_initial_push_success({ branch: config.branch })
+                        : committed
+                          ? m.sync_changes_pushed()
+                          : m.sync_no_changes_push(),
+                successKind: committed ? 'pushed' : 'up_to_date',
+            });
         } catch (error) {
-            return {
-                status: 'error',
-                message: String(error),
-                timestamp: new Date().toISOString(),
-            };
+            return this.errorResult(error, config);
         }
     }
 
-    /**
-     * Pull remote changes and import them into the database.
-     *
-     * Flow: git pull → read flat files → deserialize → import into DB
-     */
     async pull(db: Database, config: SyncConfig): Promise<SyncResult> {
         try {
-            // 1. Ensure remote is configured
-            await this.git.setRemote(config.remote_url, config.access_token);
+            const { remote } = await this.prepare(config);
+            const remoteStatus = this.remoteStatus(remote, config.branch);
+            if (remoteStatus) return remoteStatus;
 
-            // 2. Pull from remote
             try {
                 await this.git.pull(config.branch);
             } catch (error) {
-                const msg = String(error);
-                if (msg.includes('CONFLICT') || msg.includes('Merge conflict')) {
-                    return {
-                        status: 'conflict',
+                if (isConflictError(error)) {
+                    return this.result('conflict', {
                         message: m.sync_merge_conflict_message(),
-                        timestamp: new Date().toISOString(),
-                    };
+                    });
                 }
                 throw error;
             }
 
-            // 3. Import flat files from sync directory into DB
             const result = await importFromFolder(db, this.syncDir, 'merge');
-
-            const timestamp = new Date().toISOString();
-            return {
-                status: 'success',
+            return this.result('success', {
                 message: m.sync_pull_success_message({
                     boardsCreated: result.boardsCreated,
                     boardsUpdated: result.boardsUpdated,
                     ticketsCreated: result.ticketsCreated,
                     ticketsUpdated: result.ticketsUpdated,
                 }),
-                timestamp,
-            };
+                successKind: 'pulled',
+            });
         } catch (error) {
-            return {
-                status: 'error',
-                message: String(error),
-                timestamp: new Date().toISOString(),
-            };
+            return this.errorResult(error, config);
         }
     }
 
-    /**
-     * Force push: overwrite remote with local state.
-     */
     async forcePush(db: Database, config: SyncConfig): Promise<SyncResult> {
         try {
-            const snapshot = await extractSnapshot(db);
-            const files = snapshotToFolderJsonFiles(snapshot);
-
-            const boardsDir = `${this.syncDir}/boards`;
-            const boardsDirExists = await exists(boardsDir);
-            if (!boardsDirExists) {
-                await mkdir(boardsDir, { recursive: true });
-            }
-
-            for (const [relativePath, content] of files.entries()) {
-                await writeTextFile(`${this.syncDir}/${relativePath}`, content);
-            }
-
-            await this.git.setRemote(config.remote_url, config.access_token);
-            await this.git.addAll();
-            await this.git.commit(`sync (force): ${new Date().toISOString()}`);
+            const { remote } = await this.prepare(config);
+            const remoteStatus = this.remoteStatus(remote, config.branch, {
+                allowEmpty: true,
+                allowMissingBranch: true,
+            });
+            if (remoteStatus) return remoteStatus;
+            await this.writeSnapshot(db, 'sync (force)');
             await this.git.forcePush(config.branch);
 
-            return {
-                status: 'success',
+            return this.result('success', {
                 message: m.sync_force_push_success(),
-                timestamp: new Date().toISOString(),
-            };
+                successKind: 'force_pushed',
+            });
         } catch (error) {
-            return {
-                status: 'error',
-                message: String(error),
-                timestamp: new Date().toISOString(),
-            };
+            return this.errorResult(error, config);
         }
     }
 
-    /**
-     * Force pull: overwrite local DB with remote state.
-     */
     async forcePull(db: Database, config: SyncConfig): Promise<SyncResult> {
         try {
-            await this.git.setRemote(config.remote_url, config.access_token);
+            const { remote } = await this.prepare(config);
+            const remoteStatus = this.remoteStatus(remote, config.branch);
+            if (remoteStatus) return remoteStatus;
+
             await this.git.fetch();
             await this.git.hardReset(config.branch);
 
             const result = await importFromFolder(db, this.syncDir, 'replace');
-
-            return {
-                status: 'success',
+            return this.result('success', {
                 message: m.sync_force_pull_success({
                     boards: result.boardsCreated,
                     tickets: result.ticketsCreated,
                 }),
-                timestamp: new Date().toISOString(),
-            };
+                successKind: 'force_pulled',
+            });
         } catch (error) {
-            return {
-                status: 'error',
-                message: String(error),
-                timestamp: new Date().toISOString(),
-            };
+            return this.errorResult(error, config);
         }
     }
 
-    /**
-     * Check if git is available on the user's system.
-     */
     async isGitAvailable(): Promise<boolean> {
         return this.git.isGitAvailable();
     }
 
-    /**
-     * Check if the sync directory is already initialized as a git repo.
-     */
-    async isInitialized(): Promise<boolean> {
-        const dirExists = await exists(this.syncDir);
-        if (!dirExists) return false;
-        return this.git.isRepo();
+    private async prepare(config: SyncConfig): Promise<{
+        remote: RemoteInfo;
+        hasLocalCommits: boolean;
+    }> {
+        if (!config.access_token.trim()) {
+            throw new Error(m.sync_token_required());
+        }
+        if (!isGitHubHttpsUrl(config.remote_url)) {
+            throw new Error(m.sync_invalid_remote_url());
+        }
+        if (!config.branch.trim()) {
+            throw new Error(m.sync_branch_required());
+        }
+
+        await this.git.assertValidBranch(config.branch);
+        await this.ensureSyncDirectories();
+
+        if (!(await this.git.isRepo())) {
+            await this.git.init(config.branch);
+        }
+
+        await this.git.setRemote(config.remote_url, config.access_token);
+        await this.git.setUser(
+            config.git_name || 'Worklog',
+            config.git_email || 'worklog@sync',
+        );
+
+        return {
+            remote: await this.git.inspectRemote(),
+            hasLocalCommits: await this.git.hasCommits(),
+        };
     }
+
+    private async ensureSyncDirectories(): Promise<void> {
+        if (!(await exists(this.syncDir))) {
+            await mkdir(this.syncDir, { recursive: true });
+        }
+
+        const boardsDir = `${this.syncDir}/boards`;
+        if (!(await exists(boardsDir))) {
+            await mkdir(boardsDir, { recursive: true });
+        }
+    }
+
+    private async writeSnapshot(
+        db: Database,
+        commitPrefix: string,
+    ): Promise<boolean> {
+        const files = snapshotToFolderJsonFiles(await extractSnapshot(db));
+        for (const [relativePath, content] of files.entries()) {
+            await writeTextFile(`${this.syncDir}/${relativePath}`, content);
+        }
+
+        await this.git.addAll();
+        return this.git.commit(`${commitPrefix}: ${new Date().toISOString()}`);
+    }
+
+    private remoteStatus(
+        remote: RemoteInfo,
+        branch: string,
+        options: { allowEmpty?: boolean; allowMissingBranch?: boolean } = {},
+    ): SyncResult | null {
+        if (remote.branches.length === 0 && !options.allowEmpty) {
+            return this.result('remote_empty', {
+                message: m.sync_remote_empty_message({ branch }),
+                configuredBranch: branch,
+            });
+        }
+
+        if (
+            remote.defaultBranch !== null &&
+            remote.defaultBranch !== branch
+        ) {
+            return this.result('branch_mismatch', {
+                message: m.sync_branch_mismatch_message({
+                    configured: branch,
+                    remote: remote.defaultBranch,
+                }),
+                configuredBranch: branch,
+                remoteDefaultBranch: remote.defaultBranch,
+            });
+        }
+
+        if (
+            remote.branches.length > 0 &&
+            !remote.branches.includes(branch) &&
+            !options.allowMissingBranch
+        ) {
+            return this.result('branch_mismatch', {
+                message: m.sync_branch_missing_message({ configured: branch }),
+                configuredBranch: branch,
+                remoteDefaultBranch: remote.defaultBranch,
+            });
+        }
+
+        return null;
+    }
+
+    private errorResult(error: unknown, config: SyncConfig): SyncResult {
+        if (isConflictError(error)) {
+            return this.result('conflict', {
+                message: m.sync_merge_conflict_message(),
+            });
+        }
+
+        return this.result('error', {
+            message: redactSyncError(String(error), config.access_token),
+        });
+    }
+
+    private remoteHasDataResult(
+        config: SyncConfig,
+        remote: RemoteInfo,
+    ): SyncResult {
+        return this.result('remote_has_data', {
+            message: m.sync_remote_has_data_message({ branch: config.branch }),
+            configuredBranch: config.branch,
+            remoteDefaultBranch: remote.defaultBranch,
+        });
+    }
+
+    private result(
+        status: SyncResult['status'],
+        values: Omit<SyncResult, 'status' | 'timestamp'>,
+    ): SyncResult {
+        return { status, timestamp: new Date().toISOString(), ...values };
+    }
+}
+
+function isGitHubHttpsUrl(value: string): boolean {
+    try {
+        const url = new URL(value);
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        return (
+            url.protocol === 'https:' &&
+            url.hostname === 'github.com' &&
+            pathParts.length >= 2
+        );
+    } catch {
+        return false;
+    }
+}
+
+function isConflictError(error: unknown): boolean {
+    const message = String(error).toLowerCase();
+    return (
+        message.includes('conflict') ||
+        message.includes('non-fast-forward') ||
+        message.includes('fetch first')
+    );
+}
+
+function redactSyncError(message: string, token: string): string {
+    if (!token) return message;
+    return [token, encodeURIComponent(token)].reduce(
+        (redacted, value) => redacted.split(value).join('***'),
+        message,
+    );
 }

@@ -27,10 +27,31 @@ export type SyncStatus =
     | 'conflict'
     | 'not_configured';
 
+export type SyncOperation = 'push' | 'pull' | 'force_push' | 'force_pull' | 'auto';
+
+export type SyncResultStatus =
+    | 'success'
+    | 'conflict'
+    | 'error'
+    | 'busy'
+    | 'branch_mismatch'
+    | 'remote_has_data'
+    | 'remote_empty';
+
+export type SyncSuccessKind =
+    | 'pushed'
+    | 'up_to_date'
+    | 'pulled'
+    | 'force_pushed'
+    | 'force_pulled';
+
 export interface SyncResult {
-    status: 'success' | 'conflict' | 'error';
+    status: SyncResultStatus;
     message: string;
     timestamp: string;
+    successKind?: SyncSuccessKind;
+    configuredBranch?: string;
+    remoteDefaultBranch?: string | null;
 }
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {

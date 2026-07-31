@@ -1,4 +1,12 @@
 import { Command } from '@tauri-apps/plugin-shell';
+import {
+    gitInitArgs,
+    gitPushArgs,
+    parseRemoteInfo,
+    type RemoteInfo,
+} from './git-commands';
+
+export type { RemoteInfo } from './git-commands';
 
 /**
  * Thin wrapper around the system `git` CLI, executed via tauri-plugin-shell.
@@ -61,8 +69,8 @@ export class GitClient {
     /**
      * Initialize a new git repository.
      */
-    async init(): Promise<void> {
-        await this.exec('init');
+    async init(branch: string): Promise<void> {
+        await this.exec(...gitInitArgs(branch));
     }
 
     /**
@@ -70,15 +78,15 @@ export class GitClient {
      * Injects the access token into the HTTPS URL for authentication.
      */
     async setRemote(url: string, token: string): Promise<void> {
-        // Inject token: https://github.com/... → https://<token>@github.com/...
-        const authedUrl = url.replace('https://', `https://${token}@`);
+        const remoteUrl = new URL(url);
+        remoteUrl.username = token;
+        const authedUrl = remoteUrl.toString();
 
-        try {
-            // Try to add the remote first
-            await this.exec('remote', 'add', 'origin', authedUrl);
-        } catch {
-            // If it already exists, update it
+        const remotes = (await this.exec('remote')).split(/\s+/);
+        if (remotes.includes('origin')) {
             await this.exec('remote', 'set-url', 'origin', authedUrl);
+        } else {
+            await this.exec('remote', 'add', 'origin', authedUrl);
         }
     }
 
@@ -118,7 +126,7 @@ export class GitClient {
      * Push to the remote.
      */
     async push(branch: string): Promise<void> {
-        await this.exec('push', '-u', 'origin', branch);
+        await this.exec(...gitPushArgs(branch));
     }
 
     /**
@@ -144,6 +152,67 @@ export class GitClient {
         await this.exec('fetch', 'origin');
     }
 
+    /** Fetch one remote branch so its history can be compared safely. */
+    async fetchBranch(branch: string): Promise<void> {
+        await this.exec(
+            'fetch',
+            '--no-tags',
+            'origin',
+            `refs/heads/${branch}:refs/remotes/origin/${branch}`,
+        );
+    }
+
+    /**
+     * Checks whether the fetched remote branch is already included in HEAD.
+     * A false result means pushing could discard or diverge from remote data.
+     */
+    async isRemoteBranchIntegrated(branch: string): Promise<boolean> {
+        await this.fetchBranch(branch);
+        const args = [
+            'merge-base',
+            '--is-ancestor',
+            `refs/remotes/origin/${branch}`,
+            'HEAD',
+        ];
+        const cmd = Command.create('git', args, { cwd: this.workDir });
+        const output = await cmd.execute();
+
+        if (output.code === 0) return true;
+        if (output.code === 1) return false;
+
+        const errorMsg =
+            output.stderr ||
+            output.stdout ||
+            `git ${args.join(' ')} failed with code ${output.code}`;
+        throw new Error(errorMsg);
+    }
+
+    async inspectRemote(): Promise<RemoteInfo> {
+        const output = await this.exec('ls-remote', '--symref', 'origin');
+        return parseRemoteInfo(output);
+    }
+
+    async hasCommits(): Promise<boolean> {
+        try {
+            await this.exec('rev-parse', '--verify', 'HEAD');
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Returns the checked-out local branch, or null for an unborn/detached HEAD.
+     */
+    async currentBranch(): Promise<string | null> {
+        const branch = await this.exec('branch', '--show-current');
+        return branch || null;
+    }
+
+    async assertValidBranch(branch: string): Promise<void> {
+        await this.exec('check-ref-format', '--branch', branch);
+    }
+
     /**
      * Get the current git status (short form).
      */
@@ -163,7 +232,7 @@ export class GitClient {
      * Force push (overwrite remote).
      */
     async forcePush(branch: string): Promise<void> {
-        await this.exec('push', '--force', 'origin', branch);
+        await this.exec(...gitPushArgs(branch, true));
     }
 
     /**
