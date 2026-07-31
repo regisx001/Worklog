@@ -1,6 +1,6 @@
 [package]
 name = "worklog"
-version = "1.4.2"
+version = "1.5.1"
 description = "Local-first desktop project manager for small development teams"
 authors = ["Ezzoubair ZARQI"]
 edition = "2021"
