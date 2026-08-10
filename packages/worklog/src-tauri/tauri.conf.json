@@ -26,6 +26,8 @@
       {
         "title": "Worklog",
         "decorations": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "resizable": true,
         "minWidth": 1080,
         "minHeight": 700,

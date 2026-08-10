@@ -324,12 +324,14 @@
 		height: 100%;
 	}
 
+	:global(html) {
+		zoom: var(--app-zoom, 1);
+	}
+
 	:global(body) {
 		overflow: hidden;
-		transform: scale(var(--app-zoom, 1));
-		transform-origin: top left;
-		width: calc(100% / var(--app-zoom, 1)) !important;
-		height: calc(100% / var(--app-zoom, 1)) !important;
+		width: 100%;
+		height: 100%;
 	}
 
 	.layout-shell {

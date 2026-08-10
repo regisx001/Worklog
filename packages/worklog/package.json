@@ -25,6 +25,7 @@
     "@tauri-apps/plugin-sql": "~2",
     "@tauri-apps/plugin-store": "~2",
     "@tauri-apps/plugin-updater": "^2.10.1",
+    "@tauri-apps/plugin-window-state": "~2",
     "carbon-components-svelte": "^0.106.2",
     "carbon-icons-svelte": "^13.10.0",
     "dompurify": "^3.1.5",
