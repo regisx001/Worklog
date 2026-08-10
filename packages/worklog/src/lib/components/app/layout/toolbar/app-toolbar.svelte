@@ -78,6 +78,28 @@
         }
     };
 
+    async function handleHeaderPointerDown(e: PointerEvent) {
+        // Only trigger on primary left mouse click
+        if (e.button !== 0) return;
+
+        try {
+            const { getCurrentWindow } = await import("@tauri-apps/api/window");
+            const appWindow = getCurrentWindow();
+            if (e.detail === 2) {
+                if (await appWindow.isMaximized()) {
+                    await appWindow.unmaximize();
+                } else {
+                    await appWindow.maximize();
+                }
+                isMaximized = await appWindow.isMaximized();
+            } else {
+                await appWindow.startDragging();
+            }
+        } catch (error) {
+            console.error("Window drag failed", error);
+        }
+    }
+
     $effect(() => {
         let unlistenResize: (() => void) | undefined;
         let isAlive = true;
@@ -96,6 +118,7 @@
                     }
 
                     isMaximized = await appWindow.isMaximized();
+                    window.dispatchEvent(new Event("resize"));
                 });
             } catch (error) {
                 console.error(
@@ -138,6 +161,14 @@
     // @ts-ignore
     const version = __APP_VERSION__;
 
+    let isMac = $state(false);
+
+    $effect(() => {
+        if (typeof navigator !== "undefined") {
+            isMac = navigator.userAgent.includes("Mac") || navigator.platform.includes("Mac");
+        }
+    });
+
     const formattedSyncTime = $derived.by(() => {
         if (syncState.isSyncing) return m.toolbar_syncing();
         if (!syncState.nextSyncAt) return "";
@@ -153,17 +184,15 @@
     <svelte:fragment slot="skipToContent"><SkipToContent /></svelte:fragment>
 
     <img
-        style="position: absolute; margin: 0 1rem;"
+        style="position: absolute; margin: 0 1rem; {isMac ? 'left: 70px;' : ''}"
         src={logo}
         width="100px"
         alt=""
-        srcset=""
     />
     <div
         aria-hidden="true"
         class="toolbar-drag-region"
-        data-tauri-drag-region
-        ondblclick={() => runWindowControl("toggle-maximize")}
+        onpointerdown={handleHeaderPointerDown}
     ></div>
 
     {#if formattedSyncTime}
@@ -231,24 +260,26 @@
             </Button>
         {/if}
 
-        <Button onclick={() => runWindowControl("minimize")} kind="ghost">
-            <Subtract />
-        </Button>
+        {#if !isMac}
+            <Button onclick={() => runWindowControl("minimize")} kind="ghost">
+                <Subtract />
+            </Button>
 
-        <Button
-            onclick={() => runWindowControl("toggle-maximize")}
-            kind="ghost"
-        >
-            {#if isMaximized}
-                <Minimize />
-            {:else}
-                <Maximize />
-            {/if}
-        </Button>
+            <Button
+                onclick={() => runWindowControl("toggle-maximize")}
+                kind="ghost"
+            >
+                {#if isMaximized}
+                    <Minimize />
+                {:else}
+                    <Maximize />
+                {/if}
+            </Button>
 
-        <Button onclick={() => runWindowControl("close")} kind="danger-ghost">
-            <Close />
-        </Button>
+            <Button onclick={() => runWindowControl("close")} kind="danger-ghost">
+                <Close />
+            </Button>
+        {/if}
     </HeaderUtilities>
 </Header>
 
