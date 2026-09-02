@@ -1,10 +1,6 @@
 <script lang="ts">
     import {
-        Close,
-        Maximize,
-        Minimize,
         Settings,
-        Subtract,
         Asleep,
         LightFilled,
         Renew,
@@ -25,8 +21,6 @@
     import { useAppAppearance } from "$lib/hooks/app-appearance.svelte";
     import { getUndoRedo } from "$lib/hooks/undo-redo.svelte";
     import * as m from "$lib/paraglide/messages.js";
-
-    type WindowControlAction = "minimize" | "toggle-maximize" | "close";
 
     interface AppToolbarProps {
         showSettings?: boolean;
@@ -49,90 +43,6 @@
     const undoRedo = getUndoRedo();
 
     const appAppearance = useAppAppearance();
-    let isMaximized = $state(false);
-
-    const runWindowControl = async (action: WindowControlAction) => {
-        try {
-            const { getCurrentWindow } = await import("@tauri-apps/api/window");
-            const appWindow = getCurrentWindow();
-
-            if (action === "minimize") {
-                await appWindow.minimize();
-                return;
-            }
-
-            if (action === "toggle-maximize") {
-                if (await appWindow.isMaximized()) {
-                    await appWindow.unmaximize();
-                } else {
-                    await appWindow.maximize();
-                }
-
-                isMaximized = await appWindow.isMaximized();
-                return;
-            }
-
-            await appWindow.close();
-        } catch (error) {
-            console.error("Window control action failed", action, error);
-        }
-    };
-
-    async function handleHeaderPointerDown(e: PointerEvent) {
-        // Only trigger on primary left mouse click
-        if (e.button !== 0) return;
-
-        try {
-            const { getCurrentWindow } = await import("@tauri-apps/api/window");
-            const appWindow = getCurrentWindow();
-            if (e.detail === 2) {
-                if (await appWindow.isMaximized()) {
-                    await appWindow.unmaximize();
-                } else {
-                    await appWindow.maximize();
-                }
-                isMaximized = await appWindow.isMaximized();
-            } else {
-                await appWindow.startDragging();
-            }
-        } catch (error) {
-            console.error("Window drag failed", error);
-        }
-    }
-
-    $effect(() => {
-        let unlistenResize: (() => void) | undefined;
-        let isAlive = true;
-
-        (async () => {
-            try {
-                const { getCurrentWindow } = await import(
-                    "@tauri-apps/api/window"
-                );
-                const appWindow = getCurrentWindow();
-
-                isMaximized = await appWindow.isMaximized();
-                unlistenResize = await appWindow.onResized(async () => {
-                    if (!isAlive) {
-                        return;
-                    }
-
-                    isMaximized = await appWindow.isMaximized();
-                    window.dispatchEvent(new Event("resize"));
-                });
-            } catch (error) {
-                console.error(
-                    "Unable to subscribe to window state changes",
-                    error,
-                );
-            }
-        })();
-
-        return () => {
-            isAlive = false;
-            unlistenResize?.();
-        };
-    });
 
     function toggleTheme() {
         if (appAppearance.theme === "dark") {
@@ -161,14 +71,6 @@
     // @ts-ignore
     const version = __APP_VERSION__;
 
-    let isMac = $state(false);
-
-    $effect(() => {
-        if (typeof navigator !== "undefined") {
-            isMac = navigator.userAgent.includes("Mac") || navigator.platform.includes("Mac");
-        }
-    });
-
     const formattedSyncTime = $derived.by(() => {
         if (syncState.isSyncing) return m.toolbar_syncing();
         if (!syncState.nextSyncAt) return "";
@@ -184,16 +86,11 @@
     <svelte:fragment slot="skipToContent"><SkipToContent /></svelte:fragment>
 
     <img
-        style="position: absolute; margin: 0 1rem; {isMac ? 'left: 70px;' : ''}"
+        style="position: absolute; margin: 0 1rem;"
         src={logo}
         width="100px"
         alt=""
     />
-    <div
-        aria-hidden="true"
-        class="toolbar-drag-region"
-        onpointerdown={handleHeaderPointerDown}
-    ></div>
 
     {#if formattedSyncTime}
         <div class="sync-status">
@@ -259,37 +156,10 @@
                 <Settings />
             </Button>
         {/if}
-
-        {#if !isMac}
-            <Button onclick={() => runWindowControl("minimize")} kind="ghost">
-                <Subtract />
-            </Button>
-
-            <Button
-                onclick={() => runWindowControl("toggle-maximize")}
-                kind="ghost"
-            >
-                {#if isMaximized}
-                    <Minimize />
-                {:else}
-                    <Maximize />
-                {/if}
-            </Button>
-
-            <Button onclick={() => runWindowControl("close")} kind="danger-ghost">
-                <Close />
-            </Button>
-        {/if}
     </HeaderUtilities>
 </Header>
 
 <style>
-    .toolbar-drag-region {
-        flex: 1 1 auto;
-        min-width: 0;
-        height: 100%;
-    }
-
     :global(.bx--header__global) {
         margin-left: 0;
     }
