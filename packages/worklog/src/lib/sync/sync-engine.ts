@@ -152,8 +152,10 @@ export class SyncEngine {
             throw new Error(m.sync_branch_required());
         }
 
-        await this.git.assertValidBranch(config.branch);
+        // Ensure the sync directory exists before running any git command,
+        // since every GitClient command uses it as its working directory.
         await this.ensureSyncDirectories();
+        await this.git.assertValidBranch(config.branch);
 
         if (!(await this.git.isRepo())) {
             await this.git.init(config.branch);
