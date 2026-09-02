@@ -25,9 +25,8 @@
     "windows": [
       {
         "title": "Worklog",
-        "decorations": false,
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true,
+        "decorations": true,
+        "acceptFirstMouse": true,
         "resizable": true,
         "minWidth": 1080,
         "minHeight": 700,
